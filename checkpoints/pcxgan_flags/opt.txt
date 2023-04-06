@@ -1,0 +1,44 @@
+      apply_normalization: False                         
+               batch_size: 1                             
+          checkpoints_dir: ./checkpoints                 
+                crop_size: 256                           
+            d_res_filters: 1024                          
+                data_path: /media/aisec-102/DATA3/rachel/PCGAN/data/folds1234.npz
+           data_test_rate: 0.2                           
+              disc_beta_1: 0.0                           
+              disc_beta_2: 0.999                         
+         disc_filter_size: 4                             
+                  disc_lr: 0.0001                        
+           disc_n_filters: 64                            
+             disc_strides: 2                             
+            e_filter_size: 3                             
+              e_n_filters: 64                            
+                e_strides: 2                             
+           edge_threshold: 0.03                          
+           epoch_interval: 10                            
+                   epochs: 100                           	[default: 500]
+       feature_loss_coeff: 10.0                          
+               gen_beta_1: 0.0                           
+               gen_beta_2: 0.999                         
+                   gen_lr: 0.0001                        
+                  gpu_ids: 1                             
+                  isTrain: True                          	[default: None]
+ kl_divergence_loss_coeff: 0.1                           
+               latent_dim: 256                           
+       load_from_opt_file: False                         
+                load_size: 256                           
+             loss_weights: [1, 100]                      
+               model_path: /media/aisec1/DATA3/rachel/PCGAN/models/PCxGAN
+                     name: pcxgan_flags                  
+                    phase: train                         
+        remove_bad_images: True                          
+               result_log: results.log                   
+              result_logs: ./results                     
+       s_beta_filter_size: 3                             
+           s_beta_filters: 128                           
+                s_epsilon: 1e-05                         
+      s_gamma_filter_size: 3                             
+          s_gamma_filters: 128                           
+               sample_dir: ./training_samples            
+           test_data_path: /media/aisec-102/DATA3/Bibo2/Project/CT2MRI/dataset/CV/fold5.npz
+   vgg_feature_loss_coeff: 1                             
