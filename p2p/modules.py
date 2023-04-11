@@ -5,6 +5,8 @@ import os
 import numpy as np
 from datetime import datetime
 
+
+
 class Residual(kr.layers.Layer): 
     def __init__(self, 
                  num_channels, 
@@ -25,8 +27,6 @@ class Residual(kr.layers.Layer):
                 kernel_initializer = kr.initializers.GlorotNormal())
         self.bn1 = kr.layers.GroupNormalization(groups=num_channels)
         self.bn2 = kr.layers.GroupNormalization(groups=num_channels)
-        #self.bn1 = kr.layers.BatchNormalization()
-        #self.bn2 = kr.layers.BatchNormalization()
 
     def call(self, X):
         Y = kr.activations.relu(self.bn1(self.conv1(X)))
@@ -48,7 +48,6 @@ class ResidualT(kr.layers.Layer):
             kernel_initializer = kr.initializers.GlorotNormal())
        
         self.bn1 = kr.layers.GroupNormalization(groups=num_channels)
-        #self.bn1 = kr.layers.BatchNormalization()
      
 
     def call(self, X):
@@ -124,8 +123,11 @@ class EncoderModule(kr.Model):
         b2._name ='ResBlock_2'
         self.encoder.add(b2)
 
-        for i in range(1, 4):
-            b = ResnetBlock(int(2 ** (i + 6)), 2)
+        for i in range(1, 6):
+            if i < 4:
+                b = ResnetBlock(int(2 ** (i + 6)), 2)
+            else:
+                b = ResnetBlock(int(2 ** (3 + 6)), 2)
             b._name = f"ResBlock_{i+2}"
             self.encoder.add(b)
 
@@ -148,6 +150,8 @@ class DecoderModule(kr.Model):
         self.decoder.add(ResnetBlockT(channels//2, 1))
         self.decoder.add(ResnetBlockT(channels//2, 1))
         self.decoder.add(ResnetBlockT(channels, 1))
+        self.decoder.add(ResnetBlockT(channels, 1))
+        self.decoder.add(ResnetBlockT(channels, 1))
 
 
     def call(self, inputs__):
@@ -155,16 +159,20 @@ class DecoderModule(kr.Model):
 
 
 class p2p_generator(kr.Model):
-    def __init__(self, **kwargs):
+    def __init__(self, flags, **kwargs):
         
         super().__init__(**kwargs)
-
-        self.encoder = EncoderModule(channels=64, 
-                                        filter_size=3,
-                                        image_shape=(256,256,1))
+        e_filter_size = flags.e_filter_size
+        e_n_filters = flags.e_n_filters
+        d_n_filters = flags.d_n_filters
+        d_filter_size = flags.d_filter_size
+ 
+        self.encoder = EncoderModule(channels=e_n_filters, 
+                                        filter_size=e_filter_size,
+                                        image_shape=(flags.crop_size, flags.crop_size, 1))
         
-        self.decoder = DecoderModule(channels=256, 
-                                        filter_size=4)
+        self.decoder = DecoderModule(channels=d_n_filters, 
+                                        filter_size=d_filter_size)
         
         self.convT = kr.layers.Conv2DTranspose(1, 
                                                5, 
@@ -206,7 +214,7 @@ class P2PMonitor(kr.callbacks.Callback):
 		self.val_images = next(iter(val_dataset))
 		self.my_strategy = my_strategy
 		self.n_samples = 1
-		self.epoch_interval = 2
+		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
 
@@ -252,6 +260,6 @@ class P2PMonitor(kr.callbacks.Callback):
 				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
 				sample_file = os.path.join(self.sample_dir, filename)
 				plt.savefig(sample_file)
-				plt.show()
+				#plt.show()
 
 

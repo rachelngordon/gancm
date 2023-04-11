@@ -4,36 +4,39 @@ import tensorflow as tf
 import numpy as np
 import modules
 import loss
-#import evaluate
+import evaluate
 import os
+import pandas as pd
+from  matplotlib import pyplot as plt
+from datetime import datetime
 
 # Pix2Pix
 class pix2pix(kr.Model):
     def __init__(self, flags,**kwargs):
 
-		super().__init__(**kwargs)
-		self.flags = flags
+        super().__init__(**kwargs)
+        self.flags = flags
 
-		# pass new name each time
-		self.experiment_name = self.flags.name
-		self.samples_dir = self.flags.sample_dir
-		self.models_dir = self.flags.checkpoints_dir
-		self.image_shape = (self.flags.crop_size, self.flags.crop_size, 1)
-		self.image_size = self.flags.crop_size
-		self.batch_size = self.flags.batch_size
+        # pass new name each time
+        self.experiment_name = self.flags.name
+        self.samples_dir = self.flags.sample_dir
+        self.models_dir = self.flags.checkpoints_dir
+        self.image_shape = (self.flags.crop_size, self.flags.crop_size, 1)
+        self.image_size = self.flags.crop_size
+        self.batch_size = self.flags.batch_size
 
-		self.feature_loss_coeff = self.lags.feature_loss_coeff
-		self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
-		self.generator_loss_coeff = self.flags.generator_loss_coeff
-		self.ssim_loss_coeff = self.flags.ssim_loss_coeff
-		self.mae_loss_coeff = self.flags.mae_loss_coeff
-		self.disc_loss_coeff = self.flags.disc_loss_coeff
+        self.feature_loss_coeff = self.flags.feature_loss_coeff
+        self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
+        self.generator_loss_coeff = self.flags.generator_loss_coeff
+        self.ssim_loss_coeff = self.flags.ssim_loss_coeff
+        self.mae_loss_coeff = self.flags.mae_loss_coeff
+        self.disc_loss_coeff = self.flags.disc_loss_coeff
 
-		self.discriminator = modules.Discriminator(flags)
-		self.generator = modules.p2p_generator()
-		self.patch_size, self.combined_model = self.build_combined_model()
+        self.discriminator = modules.Discriminator(flags)
+        self.generator = modules.p2p_generator(flags)
+        self.patch_size, self.combined_model = self.build_combined_model()
 
-        # pass to flags: gen_lr = 0.0002, gen_beta_1 = 0.5
+        # pass to flags: gen_lr 0.0002, gen_beta_1 0.5
         self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
         self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
         self.discriminator_loss = loss.DiscriminatorLoss()
@@ -194,3 +197,59 @@ class pix2pix(kr.Model):
 
     def call(self, inputs):
         return self.generator(inputs)
+
+    
+    def model_evaluate(self, test_data, epoch=0):
+
+        results = []
+
+        for ct, mri in test_data:
+            
+            fake_mri = self.generator(ct)
+
+            fid = evaluate.calculate_fid(mri, fake_mri, 
+				input_shape=(self.flags.crop_size, self.flags.crop_size, 3))
+
+            mse, mae, cs, psnr, ssim = evaluate.get_metrics(mri, fake_mri)
+
+            results.append([fid, mse, mae, cs, psnr, ssim])
+            print("metrics: {}{}{}{}{}".format(fid, mse, mae, cs, psnr, ssim))
+
+        results = np.array(results).mean(axis=0)
+
+        filename = "results_{}_{}.log".format(epoch, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+        results_dir = os.path.join(self.flags.result_logs, self.flags.name)
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+        log_file = os.path.join(results_dir, filename)
+        np.savetxt(log_file, [results], fmt='%.6f', header="fid, mse, mae, cs, psnr,ssim", delimiter=",")
+
+
+    def save_model(self, flags):
+        # model_path = '/media/aisec1/DATA3/rachel/pcxgan/models/Pix2Pix_test'
+        self.generator.save(self.flags.model_path)
+
+
+    def plot_losses(self, hist):
+        
+        exp_path = '/media/aisec-102/DATA3/rachel/pcxgan/history/' + self.experiment_name
+
+        if not os.path.exists(exp_path):
+            os.makedirs(exp_path)
+
+
+        # save history to csv   
+        hist_df = pd.DataFrame(hist) 
+        hist_df.to_csv(exp_path + '/p2p_hist.csv')
+
+        losses = ['disc', 'gen', 'feat', 'vgg', 'ssim', 'mae']
+
+        # plot losses
+        for loss in losses:
+            plt.figure()
+            plt.plot(hist[loss + '_loss'])
+            plt.plot(hist['val_' + loss + '_loss'])
+            plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
+            plt.savefig(exp_path + '/p2p_' + loss + '_loss.png')
+
+

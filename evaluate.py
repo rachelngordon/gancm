@@ -1,20 +1,138 @@
-import os
+#import os
 import numpy as np
 import tensorflow as tf
-import tensorflow.io as tfio
+#import tensorflow.io as tfio
 from tensorflow.keras.models import load_model
-from matplotlib import pyplot
-import data_helper
-import plot
+#from matplotlib import pyplot
+#import plot
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 from tensorflow.keras.applications.inception_v3 import preprocess_input
 from scipy.linalg import sqrtm
 import math
 import sklearn.metrics as sk
-import data_loader
-import modules
+from flags import Flags
+#import data_loader
+#import modules
+
+flags = Flags().parse()
+
+# calculate frechet inception distance
+def calculate_fid(y_true, y_pred, input_shape = (flags.crop_size,flags.crop_size,3)):
+  
+  model = InceptionV3(include_top=False, pooling='avg', input_shape=input_shape)
+  
+  y_true = tf.image.grayscale_to_rgb(tf.convert_to_tensor(y_true))
+  y_pred = tf.image.grayscale_to_rgb(tf.convert_to_tensor(y_pred))
+  
+  # pre-process images
+  y_true = preprocess_input(y_true)
+  y_pred = preprocess_input(y_pred)
+  
+  y_true = model.predict(y_true)
+  y_pred = model.predict(y_pred)
+
+  # calculate mean and covariance statistics
+  mu1, sigma1 = y_true.mean(axis=0), np.cov(y_true, rowvar=False)
+  mu2, sigma2 = y_pred.mean(axis=0), np.cov(y_pred, rowvar=False)
+  
+  # calculate sum squared difference between means
+  ssdiff = np.sum((mu1 - mu2)**2.0)
+
+  # calculate sqrt of product between cov
+  covmean = sqrtm(np.matrix(sigma1).dot(np.matrix(sigma2)))
+
+  # check and correct imaginary numbers from sqrt
+  if np.iscomplexobj(covmean):
+    covmean = covmean.real
+
+  # calculate score
+  fid = ssdiff + np.trace(sigma1 + sigma2 - 2.0 * covmean)
+  return fid
 
 
+def get_metrics(y_true, y_pred):
+  
+  
+  y_true,y_pred = y_true.numpy(), y_pred.numpy()
+  mse=sk.mean_squared_error(y_true.flatten(),y_pred.flatten())
+  mae=sk.mean_absolute_error(y_true.flatten(),y_pred.flatten())
+  cs=sk.pairwise.cosine_similarity([y_true.flatten()], [y_pred.flatten()])
+  
+  if mse == 0:
+    psnr =  float('inf')
+  
+  else:
+    psnr=20 * math.log10(1 / math.sqrt(mse))
+  
+  y_true = (y_true + 1.0) / 2.0
+  y_pred = (y_pred + 1.0) / 2.0
+  
+  im1 = tf.image.convert_image_dtype(y_true, tf.float32)
+  im2 = tf.image.convert_image_dtype(y_pred, tf.float32)
+  ssim=float(tf.image.ssim(im1, im2, max_val=1.0, filter_size=11,
+                           filter_sigma=1.5, k1=0.01, k2=0.03)[0])
+  
+
+  return mse, mae, cs, psnr,ssim
+
+
+# plot the image, the translation, and the reconstruction
+def show_plot_generated(image, name = None, dataname = None, step = None):
+
+    image = (image + 1) / 2.0
+    f = pyplot.figure(figsize=(8,8))
+    pyplot.axis('off')
+    pyplot.imshow(np.squeeze(np.squeeze(image)),  cmap='gray')
+    sample_dir_ = 'generated_test/'+name+'/'+dataname+'/'
+    if not os.path.exists(sample_dir_):
+        os.makedirs(sample_dir_)
+    filename1 = sample_dir_+'%s_plot_%04d.png' % (name, (step+1))
+    pyplot.savefig(filename1)
+    pyplot.show()
+    pyplot.close()
+
+
+def predict_pcx(flags, decoder_file, label):
+  
+  #encoder = load_model(encoder_file)
+  decoder = load_model(decoder_file)
+  latent_vector = tf.random.normal(
+      shape=(flags.batch_size, flags.latent_dim), mean=0.0, stddev=2.0)
+  
+
+  generated = decoder([tf.convert_to_tensor(latent_vector), tf.convert_to_tensor(label)])
+  
+  modelname = 'PCxGAN_fold1245'
+  print(modelname)
+  
+  data_name = 'test'
+  
+  counter = 0
+  for image in generated:
+    show_plot_generated(image, modelname, data_name + str(counter), 0)
+    counter += 1
+  
+  return generated
+
+
+def predict_p2p(model_path, modelname, ct):
+  
+
+  generator = load_model(model_path)
+  
+  generated = generator(ct)
+  
+  data_name = 'test'
+  
+  counter = 0
+  for image in generated:
+    show_plot_generated(image, modelname, data_name + str(counter), 0)
+    counter += 1
+  
+  return generated
+
+
+'''
 def normalize_scale(x, file=''):
   ok_=True
   if x.max() - x.min()!=0:
@@ -33,9 +151,9 @@ def load_image(image_path):
   image_, _  = normalize_scale(np.squeeze(image_.numpy()))
   image_ = np.expand_dims(image_, axis=2)
   return image_
+'''
 
-
-
+'''
 def predict_image (model_file, image):
   
   model_AtoB = load_model(model_file)
@@ -49,8 +167,8 @@ def predict_image (model_file, image):
   
   data_name = image.split('/')[-1][:-4]
   plot.show_plot_generated(B_generated[0]*3500, modelname, data_name, 0 )
-
-
+'''
+'''
 def predict( model, image_ct ):
   #image_ct = 'dataset/dataset/Benters, T 0266877/IMAGE-DataSet#1/CT0009.dcm'
   #'dataset/dataset_test/test-sets/IMAGE-DataSet#1/CT0009.dcm'
@@ -60,10 +178,10 @@ def predict( model, image_ct ):
   
   #model = 'models/Pix2Pix/new/model_1466520.h5'
   predict_image(model, image_ct)
+'''
 
 
-
-
+'''
 def read_files(path):
   CT_IMAGES  = []
   MRI_IMAGES = []
@@ -76,7 +194,8 @@ def read_files(path):
           MRI_IMAGES.append(os.path.join(root, MRI_FILE))
   
   return CT_IMAGES, MRI_IMAGES
-
+'''
+'''
 # load all images in a directory into memory
 def load_predict (path, model_path):
   
@@ -126,196 +245,4 @@ def load_predict (path, model_path):
     generated_mri = (generated_mri + 1) / 2.0
     
     pyplot.image.imsave(dest_dir+"G-"+filename_mri, np.squeeze(generated_mri), cmap=pyplot.cm.gray)
-
-
-
-# calculate frechet inception distance
-def calculate_fid(y_true, y_pred, input_shape = (512,512,3)):
-  
-  model = InceptionV3(include_top=False, pooling='avg', input_shape=input_shape)
-  
-  # convert integer to floating point values
-  # y_true = y_true.astype('float32')
-  # y_pred = y_pred.astype('float32')
-  
-  y_true = tf.image.grayscale_to_rgb(tf.convert_to_tensor(y_true))
-  y_pred = tf.image.grayscale_to_rgb(tf.convert_to_tensor(y_pred))
-  
-  # pre-process images
-  y_true = preprocess_input(y_true)
-  y_pred = preprocess_input(y_pred)
-  
-  y_true = model.predict(y_true)
-  y_pred = model.predict(y_pred)
-  # calculate mean and covariance statistics
-  mu1, sigma1 = y_true.mean(axis=0), np.cov(y_true, rowvar=False)
-  mu2, sigma2 = y_pred.mean(axis=0), np.cov(y_pred, rowvar=False)
-  
-  # calculate sum squared difference between means
-  ssdiff = np.sum((mu1 - mu2)**2.0)
-  # calculate sqrt of product between cov
-  covmean = sqrtm(np.matrix(sigma1).dot(np.matrix(sigma2)))
-  # check and correct imaginary numbers from sqrt
-  if np.iscomplexobj(covmean):
-    covmean = covmean.real
-  # calculate score
-  fid = ssdiff + np.trace(sigma1 + sigma2 - 2.0 * covmean)
-  return fid
-
-
-# get MSE, MAE, CS, PSNR, SSIM
-def get_metrics___(y_true_, y_pred_):
-  
-  mse, mae, cs, psnr,ssim =[],[],[],[],[]
-  
-  for y_true,y_pred in zip(y_true_ ,y_pred_):
-    
-    y_true,y_pred = y_true.numpy(), y_pred.numpy()
-    mse.append(sk.mean_squared_error(y_true.flatten(),y_pred.flatten()))
-    mae.append(sk.mean_absolute_error(y_true.flatten(),y_pred.flatten()))
-    cs.append(sk.pairwise.cosine_similarity([y_true.flatten()], [y_pred.flatten()]))
-    
-    if mse[-1] == 0:
-      psnr_ =  float('inf')
-      psnr.append(psnr_)
-    else:
-      psnr.append(20 * math.log10(1 / math.sqrt(mse[-1])))
-    #fid = 0 #calculate_fid(x,y)
-    
-    y_true = (y_true + 1.0) / 2.0
-    y_pred = (y_pred + 1.0) / 2.0
-    
-    im1 = tf.image.convert_image_dtype(y_true, tf.float32)
-    im2 = tf.image.convert_image_dtype(y_pred, tf.float32)
-    ssim.append(float(tf.image.ssim(im1, im2, max_val=1.0, filter_size=11,
-                                    filter_sigma=1.5, k1=0.01, k2=0.03)[0]))
-    #print("ssim:", ssim)
-  
-  
-  
-  
-  return np.array(mse).mean(), np.array(mae).mean(), np.array(cs).mean(), np.array(psnr).mean(), np.array(ssim).mean()
-
-
-
-
-def get_metrics(y_true, y_pred):
-  
-  
-  y_true,y_pred = y_true.numpy(), y_pred.numpy()
-  mse=sk.mean_squared_error(y_true.flatten(),y_pred.flatten())
-  mae=sk.mean_absolute_error(y_true.flatten(),y_pred.flatten())
-  cs=sk.pairwise.cosine_similarity([y_true.flatten()], [y_pred.flatten()])
-  
-  if mse == 0:
-    psnr =  float('inf')
-  
-  else:
-    psnr=20 * math.log10(1 / math.sqrt(mse))
-  #fid = 0 #calculate_fid(x,y)
-  
-  y_true = (y_true + 1.0) / 2.0
-  y_pred = (y_pred + 1.0) / 2.0
-  
-  im1 = tf.image.convert_image_dtype(y_true, tf.float32)
-  im2 = tf.image.convert_image_dtype(y_pred, tf.float32)
-  ssim=float(tf.image.ssim(im1, im2, max_val=1.0, filter_size=11,
-                           filter_sigma=1.5, k1=0.01, k2=0.03)[0])
-  #print("ssim:", ssim)
-  
-  
-  
-  
-  return mse, mae, cs, psnr,ssim
-
-
-
-
-def predict_pcx(flags, decoder_file, label):
-  
-  #encoder = load_model(encoder_file)
-  decoder = load_model(decoder_file)
-  latent_vector = tf.random.normal(
-      shape=(flags.batch_size, flags.latent_dim), mean=0.0, stddev=2.0)
-  
-  
-  #print(samples.shape)
-  generated = decoder([tf.convert_to_tensor(latent_vector), tf.convert_to_tensor(label)])
-  
-  modelname = 'PCxGAN_fold1245'
-  print(modelname)
-  
-  data_name = 'test'
-  
-  counter = 0
-  for image in generated:
-    plot.show_plot_generated(image, modelname, data_name + str(counter), 0)
-    counter += 1
-  
-  return generated
-
-
-def predict_p2p(model_path, ct):
-  
-
-  generator = load_model(model_path)
-  
-  generated = generator(ct)
-  
-  modelname = 'Pix2Pix_fold2345'
-  print(modelname)
-  
-  data_name = 'test'
-  
-  counter = 0
-  for image in generated:
-    plot.show_plot_generated(image, modelname, data_name + str(counter), 0)
-    counter += 1
-  
-  return generated
-
-
-
-
-
-if __name__ == '__main__':
-  gpus = tf.config.experimental.list_physical_devices('GPU')
-  print(len(gpus))
-  if gpus:
-    # Restrict TensorFlow to only use the first GPU
-    try:
-      tf.config.experimental.set_visible_devices(gpus[1], 'GPU')
-    except RuntimeError as e:
-      # Visible devices must be set at program startup
-      print(e)
-  
-  
-  
-  BATCH_SIZE = 4
-  datafile = '/media/aisec1/DATA3/Bibo2/Project/CT2MRI/dataset/CT_MRI-512-Updated.npz'
-  test_dataset = data_loader.DataGenerator(datafile, batch_size=BATCH_SIZE, is_train=False, remove_bad_images=True).load()
-  
-  encoder_path = '/media/aisec1/DATA3/rachel/PCGAN/models/PCxGAN_e'
-  decoder_path = '/media/aisec1/DATA3/rachel/PCGAN/models/PCxGAN_d'
-  sampler_path = '/media/aisec1/DATA3/rachel/PCGAN/models/PCxGAN_s'
-  
-  for ct, mri, label in test_dataset:
-    predict_test(encoder_path, decoder_path, sampler_path, ct, label)
-  
-  '''
-  y = np.concatenate([y for x, y, mask in test_dataset], axis=0)
-  x = np.concatenate([x for x, y, mask in test_dataset], axis=0)
-
-  # predict on test set
-  y_pred = predict_test(encoder_path, decoder_path, x)
-
-  # get evaluation metrics
-  fid = calculate_fid(y, y_pred)
-  mse,mae,cs,psnr,ssim = get_metrics(y, y_pred)
-  print(fid)
-  print(mse)
-  print(mae)
-  print(cs)
-  print(psnr)
-  print(ssim)
-  '''
+'''
