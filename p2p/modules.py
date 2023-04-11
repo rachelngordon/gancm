@@ -123,11 +123,8 @@ class EncoderModule(kr.Model):
         b2._name ='ResBlock_2'
         self.encoder.add(b2)
 
-        for i in range(1, 6):
-            if i < 4:
-                b = ResnetBlock(int(2 ** (i + 6)), 2)
-            else:
-                b = ResnetBlock(int(2 ** (3 + 6)), 2)
+        for i in range(1, 4):
+            b = ResnetBlock(int(2 ** (i + 6)), 2)
             b._name = f"ResBlock_{i+2}"
             self.encoder.add(b)
 
@@ -149,8 +146,6 @@ class DecoderModule(kr.Model):
         self.decoder.add(ResnetBlockT(channels//4, 1))
         self.decoder.add(ResnetBlockT(channels//2, 1))
         self.decoder.add(ResnetBlockT(channels//2, 1))
-        self.decoder.add(ResnetBlockT(channels, 1))
-        self.decoder.add(ResnetBlockT(channels, 1))
         self.decoder.add(ResnetBlockT(channels, 1))
 
 
