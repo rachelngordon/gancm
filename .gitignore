@@ -1,7 +1,11 @@
 models/
 checkpoints/
 .ipynb_checkpoints/
-__pycache__
+__pycache__/
 *.h5
 *.zip
 *.npz
+generated_test/
+history/
+p2p/__pycache__/
+training_samples/
