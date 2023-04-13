@@ -67,7 +67,8 @@ class cyclegan(kr.Model):
 
     def build_combined_model(self):
 
-        self.discriminator.trainable = False
+        self.discriminator_mri.trainable = False
+        self.discriminator_ct.trainable = False
         ct_input = kr.Input(shape=self.image_shape, name="ct")
         mri_input = kr.Input(shape=self.image_shape, name="mri")
 
@@ -107,13 +108,16 @@ class cyclegan(kr.Model):
 
             total_loss = self.disc_loss_coeff * (loss_fake_mri + loss_real_mri + loss_fake_ct + loss_real_ct)
 
-        self.discriminator.trainable = True
+        self.discriminator_mri.trainable = True
+        self.discriminator_ct.trainable = True
         gradients = gradient_tape.gradient(
-            total_loss, self.discriminator.trainable_variables)
+            total_loss, self.discriminator_mri.trainable_variables) 
+            #self.discriminator_ct.trainable_variables)
 
 
         self.discriminator_optimizer.apply_gradients(
-            zip(gradients, self.discriminator.trainable_variables)
+            zip(gradients, self.discriminator_mri.trainable_variables)
+            #self.discriminator_ct.trainable_variables)
         )
 
         return total_loss
@@ -228,7 +232,7 @@ class cyclegan(kr.Model):
 
         for ct, mri in test_data:
             
-            fake_mri = self.generator(ct)
+            fake_mri = self.generator_mri(ct)
 
             fid = evaluate.calculate_fid(mri, fake_mri, 
 				input_shape=(self.flags.crop_size, self.flags.crop_size, 3))
@@ -250,7 +254,7 @@ class cyclegan(kr.Model):
 
     def save_model(self, flags):
         # model_path = '/media/aisec1/DATA3/rachel/pcxgan/models/Pix2Pix_test'
-        self.generator.save(self.flags.model_path)
+        self.generator_mri.save(self.flags.model_path)
 
 
     def plot_losses(self, hist):

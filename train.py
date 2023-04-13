@@ -25,7 +25,7 @@ history = model.fit(
 )
 
 
-#model.plot_losses(history.history)
-#model.model_evaluate(test_dataset)
-#model.save_model()
+model.plot_losses(history.history)
+model.model_evaluate(test_dataset)
+model.save_model()
 

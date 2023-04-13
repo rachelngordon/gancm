@@ -5,6 +5,16 @@ from cyclegan import cyclegan
 from flags import Flags
 import data_loader
 import modules
+import os
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+import tensorflow as tf
+
+if tf.test.gpu_device_name():
+    print('GPU found')
+else:
+    print("No GPU found")
 
 flags = Flags().parse()
 
