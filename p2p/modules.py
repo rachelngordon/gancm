@@ -208,7 +208,7 @@ class P2PMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags, my_strategy=False):
 		self.val_images = next(iter(val_dataset))
 		self.my_strategy = my_strategy
-		self.n_samples = 1
+		self.n_samples = 3
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)

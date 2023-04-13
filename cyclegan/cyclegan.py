@@ -2,7 +2,7 @@
 import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
-import modules
+from . import modules
 import loss
 import evaluate
 import os
@@ -25,65 +25,83 @@ class cyclegan(kr.Model):
         self.image_size = self.flags.crop_size
         self.batch_size = self.flags.batch_size
 
-        self.feature_loss_coeff = self.flags.feature_loss_coeff
-        self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
-        self.generator_loss_coeff = self.flags.generator_loss_coeff
         self.ssim_loss_coeff = self.flags.ssim_loss_coeff
         self.mae_loss_coeff = self.flags.mae_loss_coeff
         self.disc_loss_coeff = self.flags.disc_loss_coeff
+        self.cycle_loss_coeff = self.flags.cycle_loss_coeff
+        self.identity_loss_coeff = self.flags.identity_loss_coeff
+
+
 
         self.discriminator_mri = modules.Discriminator(flags)
         self.discriminator_ct = modules.Discriminator(flags)
         self.generator_mri = modules.cyclegan_generator(flags)
         self.generator_ct = modules.cyclegan_generator(flags)
-        self.patch_size, self.combined_model = self.build_combined_model()
+        self.combined_model = self.build_combined_model()
 
         # pass to flags: gen_lr 0.0002, gen_beta_1 0.5
-        self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
-        self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
-        self.discriminator_loss = loss.DiscriminatorLoss()
-        self.feature_matching_loss = loss.FeatureMatchingLoss()
-        self.vgg_loss = loss.VGGFeatureMatchingLoss()
-        self.mae_loss = loss.MAE()
+        self.mri_g_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
+        self.ct_g_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
 
-        self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
-        self.gen_loss_tracker = tf.keras.metrics.Mean(name="gen_loss")
-        self.feat_loss_tracker = tf.keras.metrics.Mean(name="feat_loss")
-        self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
-        self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
-        self.mae_loss_tracker = tf.keras.metrics.Mean(name="mae_loss")
+        self.ct_discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1)
+        self.mri_discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1)
+
+        self.discriminator_loss = loss.DiscriminatorLoss()
+
+    
+        # MRI trackers.
+        self.disc_loss_mri_tracker  = tf.keras.metrics.Mean(name="D_MRI")
+        self.ssim_loss_mri_tracker= tf.keras.metrics.Mean(name="SSIM_MRI")
+        self.mae_loss_mri_tracker= tf.keras.metrics.Mean(name="MAE_MRI")
+        self.cycle_loss_mri_tracker= tf.keras.metrics.Mean(name="Cy_MRI")
+        self.identity_loss_mri_tracker= tf.keras.metrics.Mean(name="Id_MRI")
+        #CT trackers
+        self.disc_loss_ct_tracker= tf.keras.metrics.Mean(name="D_CT")
+        self.ssim_loss_ct_tracker= tf.keras.metrics.Mean(name="SSIM_CT")
+        self.mae_loss_ct_tracker= tf.keras.metrics.Mean(name="MAE_CT")
+        self.cycle_loss_ct_tracker= tf.keras.metrics.Mean(name="Cy_CT")
+        self.identity_loss_ct_tracker= tf.keras.metrics.Mean(name="Id_CT")
 
 
     @property
     def metrics(self):
-        return [
-            self.disc_loss_tracker,
-            self.gen_loss_tracker,
-            self.feat_loss_tracker,
-            self.vgg_loss_tracker,
-            self.ssim_loss_tracker,
-            self.mae_loss_tracker]
+        return [self.disc_loss_mri_tracker,
+            self.ssim_loss_mri_tracker,
+            self.mae_loss_mri_tracker,
+            self.cycle_loss_mri_tracker,
+            self.identity_loss_mri_tracker,
+            self.disc_loss_ct_tracker,
+            self.ssim_loss_ct_tracker,
+            self.mae_loss_ct_tracker,
+            self.cycle_loss_ct_tracker,
+            self.identity_loss_ct_tracker]
 
 
     def build_combined_model(self):
 
         self.discriminator_mri.trainable = False
         self.discriminator_ct.trainable = False
+        
         ct_input = kr.Input(shape=self.image_shape, name="ct")
         mri_input = kr.Input(shape=self.image_shape, name="mri")
 
         generated_mri = self.generator_mri(ct_input)
         generated_ct = self.generator_ct(mri_input)
+        id_mri = self.generator_mri(mri_input)
+        id_ct = self.generator_ct(ct_input)
+        cycled_mri = self.generator_mri(generated_ct)
+        cycled_ct = self.generator_ct(generated_mri)
 
-        discriminator_mri_outputs = self.discriminator_mri([mri_input, generated_mri])
-        discriminator_ct_outputs = self.discriminator_ct([ct_input, generated_ct])
-        patch_size = discriminator_mri_outputs[-1].shape[1]
+        
+       
         combined_model = kr.Model(
             [ct_input, mri_input],
-            [discriminator_mri_outputs, generated_mri])
-            #[discriminator_ct_outputs, generated_ct])
+            [generated_mri, generated_ct,
+             id_mri, id_ct,
+             cycled_mri, cycled_ct
+             ])
 
-        return patch_size, combined_model
+        return combined_model
 
 
     def compile(self, **kwargs):
@@ -95,32 +113,41 @@ class cyclegan(kr.Model):
         fake_mri = self.generator_mri(real_ct)
         fake_ct = self.generator_ct(real_mri)
 
-        with tf.GradientTape() as gradient_tape:
-            pred_fake_mri = self.discriminator_mri([real_mri, fake_mri])[-1]  
-            pred_real_mri = self.discriminator_mri([real_mri, real_mri])[-1]  
+        with tf.GradientTape(persistent=True) as gradient_tape:
+            pred_fake_mri = self.discriminator_mri([real_mri, fake_mri])  
+            pred_real_mri = self.discriminator_mri([real_mri, real_mri])  
             loss_fake_mri = self.discriminator_loss(False, pred_fake_mri)
             loss_real_mri = self.discriminator_loss(True, pred_real_mri)
-
-            pred_fake_ct = self.discriminator_ct([real_ct, fake_ct])[-1]  
-            pred_real_ct = self.discriminator_ct([real_ct, real_ct])[-1]  
+            total_loss_mri = self.disc_loss_coeff * (loss_fake_mri + loss_real_mri)
+        
+        # with tf.GradientTape() as ct_gradient_tape:
+            pred_fake_ct = self.discriminator_ct([real_ct, fake_ct]) 
+            pred_real_ct = self.discriminator_ct([real_ct, real_ct])
             loss_fake_ct = self.discriminator_loss(False, pred_fake_ct)
             loss_real_ct = self.discriminator_loss(True, pred_real_ct)
 
-            total_loss = self.disc_loss_coeff * (loss_fake_mri + loss_real_mri + loss_fake_ct + loss_real_ct)
+            total_loss_ct = self.disc_loss_coeff * (loss_fake_ct + loss_real_ct)
 
         self.discriminator_mri.trainable = True
         self.discriminator_ct.trainable = True
-        gradients = gradient_tape.gradient(
-            total_loss, self.discriminator_mri.trainable_variables) 
-            #self.discriminator_ct.trainable_variables)
+        
+        gradients_mri = gradient_tape.gradient(
+            total_loss_mri, self.discriminator_mri.trainable_variables) 
 
-
-        self.discriminator_optimizer.apply_gradients(
-            zip(gradients, self.discriminator_mri.trainable_variables)
-            #self.discriminator_ct.trainable_variables)
+        self.mri_discriminator_optimizer.apply_gradients(
+            zip(gradients_mri, self.discriminator_mri.trainable_variables)
         )
 
-        return total_loss
+
+
+        gradients_ct = gradient_tape.gradient(
+            total_loss_ct, self.discriminator_ct.trainable_variables) 
+
+        self.ct_discriminator_optimizer.apply_gradients(
+            zip(gradients_ct, self.discriminator_ct.trainable_variables)
+        )
+
+        return total_loss_mri, total_loss_ct
 
 
     def train_generator(self, ct, mri__):
@@ -128,50 +155,59 @@ class cyclegan(kr.Model):
         self.discriminator_mri.trainable = False
         self.discriminator_ct.trainable = False
 
-        with tf.GradientTape() as tape:
-            fake_d_output, fake_mri = self.combined_model([ct, mri__])
-            #fake_ct = self.generator_ct(mri__)
-            real_d_output = self.discriminator_mri([mri__, mri__])
+        with tf.GradientTape(persistent=True) as tape:
+            generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct = self.combined_model([ct, mri__])
+    
+            ssim_loss_mri = self.ssim_loss_coeff * loss.SSIMLoss(mri__, generated_mri)
+            mae_loss_mri = self.mae_loss_coeff * loss.mae(mri__, generated_mri)
+            cycle_loss_mri = self.cycle_loss_coeff * loss.mae(mri__, cycled_mri)
+            cycle_loss_ct = self.cycle_loss_coeff * loss.mae(ct, cycled_ct)
+            identity_loss_mri = self.identity_loss_coeff * loss.mae(mri__, id_mri)
+            total_loss_mri = ssim_loss_mri + mae_loss_mri + cycle_loss_mri + cycle_loss_ct + identity_loss_mri
 
-            pred = fake_d_output[-1]
-            
-            # Compute generator loss
-            g_loss = self.generator_loss_coeff*loss.generator_loss(pred)
-            vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri__, fake_mri)
-            feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
-                real_d_output, fake_d_output
-            )
-            ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri__, fake_mri)
-            mae_loss = self.mae_loss_coeff * self.mae_loss(mri__, fake_mri)
-            total_loss = g_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
-            
-        all_trainable_variables = (
-            self.combined_model.trainable_variables
-        )
+            ssim_loss_ct = self.ssim_loss_coeff * loss.SSIMLoss(ct, generated_ct)
+            mae_loss_ct = self.mae_loss_coeff * loss.mae(ct, generated_ct)
+            cycle_loss_mri = self.cycle_loss_coeff * loss.mae(mri__, cycled_mri)
+            cycle_loss_ct = self.cycle_loss_coeff * loss.mae(ct, cycled_ct)
+            identity_loss_ct = self.identity_loss_coeff * loss.mae(ct, id_ct)
+            total_loss_ct = ssim_loss_ct + mae_loss_ct + cycle_loss_ct + cycle_loss_mri + identity_loss_ct
 
-        gradients = tape.gradient(total_loss, all_trainable_variables)
+        mri_g_variables = (self.generator_mri.trainable_variables)
+        mri_g_gradients = tape.gradient(total_loss_mri, mri_g_variables)
+        self.mri_g_optimizer.apply_gradients(zip(mri_g_gradients , mri_g_variables))
 
-        self.generator_optimizer.apply_gradients(
-            zip(gradients, all_trainable_variables)
-        )
+        ct_g_variables = (self.generator_ct.trainable_variables)
+        ct_g_gradients = tape.gradient(total_loss_ct, ct_g_variables)
+        self.ct_g_optimizer.apply_gradients(zip(ct_g_gradients , ct_g_variables))
 
-        return total_loss, vgg_loss, feature_loss, ssim_loss, mae_loss
+
+
+        losses__ = (ssim_loss_mri, mae_loss_mri, cycle_loss_mri, identity_loss_mri,
+                    ssim_loss_ct, mae_loss_ct, cycle_loss_ct, identity_loss_ct)
+
+        return losses__ 
 
 
     def train_step(self, data):
 
         ct, mri = data
-        
-        discriminator_loss = self.train_discriminator(ct, mri)
-        (generator_loss, vgg_loss, feature_loss, ssim_loss, mae_loss) = self.train_generator(ct, mri)
 
-        # Report progress.
-        self.disc_loss_tracker.update_state(discriminator_loss)
-        self.gen_loss_tracker.update_state(generator_loss)
-        self.feat_loss_tracker.update_state(feature_loss)
-        self.vgg_loss_tracker.update_state(vgg_loss)
-        self.ssim_loss_tracker.update_state(ssim_loss)
-        self.mae_loss_tracker.update_state(mae_loss)
+        total_loss_mri, total_loss_ct = self.train_discriminator(ct, mri)
+        losses = self.train_generator(ct, mri)
+        (ssim_loss_mri, mae_loss_mri, cycle_loss_mri, identity_loss_mri, ssim_loss_ct, mae_loss_ct, cycle_loss_ct, identity_loss_ct) = losses
+
+        # MRI trackers.
+        self.disc_loss_mri_tracker.update_state(total_loss_mri)
+        self.ssim_loss_mri_tracker.update_state(ssim_loss_mri)
+        self.mae_loss_mri_tracker.update_state(mae_loss_mri)
+        self.cycle_loss_mri_tracker.update_state(cycle_loss_mri)
+        self.identity_loss_mri_tracker.update_state(identity_loss_mri)
+        #CT trackers
+        self.disc_loss_ct_tracker.update_state(total_loss_ct)
+        self.ssim_loss_ct_tracker.update_state(ssim_loss_ct)
+        self.mae_loss_ct_tracker.update_state(mae_loss_ct)
+        self.cycle_loss_ct_tracker.update_state(cycle_loss_ct)
+        self.identity_loss_ct_tracker.update_state(identity_loss_ct)
 
 
         results = {m.name: m.result() for m in self.metrics}
@@ -184,39 +220,44 @@ class cyclegan(kr.Model):
         ct, mri = data
         fake_mri = self.generator_mri(ct)
         fake_ct = self.generator_ct(mri)
-
-        # Calculate the losses.
-        pred_fake_mri = self.discriminator_mri([fake_mri, mri])[-1]
-        pred_real_mri = self.discriminator_mri([mri, mri])[-1]  
+        pred_fake_mri = self.discriminator_mri([mri, fake_mri]) 
+        pred_real_mri = self.discriminator_mri([mri, mri]) 
         loss_fake_mri = self.discriminator_loss(False, pred_fake_mri)
         loss_real_mri = self.discriminator_loss(True, pred_real_mri)
 
-        pred_fake_ct = self.discriminator_ct([fake_ct, ct])[-1]
-        pred_real_ct = self.discriminator_ct([ct, ct])[-1]  
+
+        pred_fake_ct = self.discriminator_ct([ct, fake_ct])
+        pred_real_ct = self.discriminator_ct([ct, ct])
         loss_fake_ct = self.discriminator_loss(False, pred_fake_ct)
         loss_real_ct = self.discriminator_loss(True, pred_real_ct)
 
-        total_discriminator_loss = self.disc_loss_coeff * (loss_fake_mri + loss_real_mri + loss_fake_ct + loss_real_ct)
 
-        real_d_output = self.discriminator_mri([fake_mri, mri])
-        fake_d_output, fake_image = self.combined_model([ct, mri])
-        pred = fake_d_output[-1]
-        g_loss = self.generator_loss_coeff*loss.generator_loss(pred)
-        
-        vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
-        feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
-            real_d_output, fake_d_output)
-        ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
-        mae_loss = self.mae_loss_coeff * self.mae_loss(mri, fake_mri)
-        total_generator_loss = g_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
+        total_loss_mri = self.disc_loss_coeff * (loss_fake_mri + loss_real_mri)
+        total_loss_ct = self.disc_loss_coeff * (loss_fake_ct + loss_real_ct)
 
-        # Report progress.
-        self.disc_loss_tracker.update_state(total_discriminator_loss)
-        self.gen_loss_tracker.update_state(total_generator_loss)
-        self.feat_loss_tracker.update_state(feature_loss)
-        self.vgg_loss_tracker.update_state(vgg_loss)
-        self.ssim_loss_tracker.update_state(ssim_loss)
-        self.mae_loss_tracker.update_state(mae_loss)
+
+        generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct = self.combined_model([ct, mri])
+        ssim_loss_mri = self.ssim_loss_coeff * loss.SSIMLoss(mri, generated_mri)
+        mae_loss_mri = self.mae_loss_coeff * loss.mae(mri, generated_mri)
+        ssim_loss_ct = self.ssim_loss_coeff * loss.SSIMLoss(ct, generated_ct)
+        mae_loss_ct = self.mae_loss_coeff * loss.mae(ct, generated_ct)
+        cycle_loss_mri = self.cycle_loss_coeff * loss.mae(mri, cycled_mri)
+        cycle_loss_ct = self.cycle_loss_coeff * loss.mae(ct, cycled_ct)
+        identity_loss_mri = self.identity_loss_coeff * loss.mae(mri, id_mri)
+        identity_loss_ct = self.identity_loss_coeff * loss.mae(ct, id_ct)
+
+        # MRI trackers.
+        self.disc_loss_mri_tracker.update_state(total_loss_mri)
+        self.ssim_loss_mri_tracker.update_state(ssim_loss_mri)
+        self.mae_loss_mri_tracker.update_state(mae_loss_mri)
+        self.cycle_loss_mri_tracker.update_state(cycle_loss_mri)
+        self.identity_loss_mri_tracker.update_state(identity_loss_mri)
+        #CT trackers
+        self.disc_loss_ct_tracker.update_state(total_loss_ct)
+        self.ssim_loss_ct_tracker.update_state(ssim_loss_ct)
+        self.mae_loss_ct_tracker.update_state(mae_loss_ct)
+        self.cycle_loss_ct_tracker.update_state(cycle_loss_ct)
+        self.identity_loss_ct_tracker.update_state(identity_loss_ct)
 
         results = {m.name: m.result() for m in self.metrics}
 
@@ -267,14 +308,14 @@ class cyclegan(kr.Model):
 
         # save history to csv   
         hist_df = pd.DataFrame(hist) 
-        hist_df.to_csv(exp_path + '/p2p_hist.csv')
+        hist_df.to_csv(exp_path + '/cyclegan_hist.csv')
 
-        losses = ['disc', 'gen', 'feat', 'vgg', 'ssim', 'mae']
+        losses = ["D_MRI", "SSIM_MRI", "MAE_MRI", "Cy_MRI", "Id_MRI", "D_CT", "SSIM_CT", "MAE_CT", "Cy_CT", "Id_CT"]
 
         # plot losses
         for loss in losses:
             plt.figure()
-            plt.plot(hist[loss + '_loss'])
-            plt.plot(hist['val_' + loss + '_loss'])
-            plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
-            plt.savefig(exp_path + '/p2p_' + loss + '_loss.png')
+            plt.plot(hist[loss])
+            plt.plot(hist['val_' + loss])
+            plt.legend([loss,'val_' + loss],loc='upper right')
+            plt.savefig(exp_path + '/cyclegan_' + loss + '_loss.png')

@@ -80,11 +80,12 @@ class ResnetBlockT(kr.layers.Layer):
     def __init__(self, 
                  num_channels, 
                  num_residuals, 
+                 strides=2,
                  **kwargs):
         super(ResnetBlockT, self).__init__(**kwargs)
         self.residual_layers = []
         for i in range(num_residuals):
-            x = ResidualT(num_channels, strides=2)
+            x = ResidualT(num_channels, strides=strides)
             self.residual_layers.append(x)
 
     def call(self, X):
@@ -119,7 +120,7 @@ class EncoderModule(kr.Model):
             self.encoder.add(layer)
 
         #second block
-        b2 = ResnetBlock(channels, 2, first_block=True)
+        b2 = ResnetBlock(int(channels), 2, first_block=True)
         b2._name ='ResBlock_2'
         self.encoder.add(b2)
 
@@ -179,6 +180,7 @@ class cyclegan_generator(kr.Model):
         return kr.activations.sigmoid(self.convT(self.decoder(self.encoder(input__))))
 
 
+#This Discriminator is different from the p2p
 class Discriminator(kr.Model):
 	def __init__(self, flags, **kwargs):
 		super().__init__(**kwargs)
@@ -194,21 +196,19 @@ class Discriminator(kr.Model):
         
 	
 	def call(self, inputs_, **kwargs):
-		#print(f"{'=='.join(['#' for i in range (10)])}\n{inputs_[0].shape},\n {inputs_[1].shape}")
 		x = self.merged([inputs_[0], inputs_[1]])
-		x1 = self.downsample1(x)
-		x2 = self.downsample2(x1)
-		x3 = self.downsample3(x2)
-		x4 = self.downsample4(x3)
-		x5 = self.conv(x4)
-		return [x1, x2, x3, x4, x5]
+		x = self.downsample1(x)
+		x = self.downsample2(x)
+		x = self.downsample3(x)
+		x = self.downsample4(x)
+		return self.conv(x)
 
 
 class CycleMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags, my_strategy=False):
 		self.val_images = next(iter(val_dataset))
 		self.my_strategy = my_strategy
-		self.n_samples = 1
+		self.n_samples = 3
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)

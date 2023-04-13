@@ -1,0 +1,13 @@
+models/
+checkpoints/
+.ipynb_checkpoints/
+__pycache__/
+*.h5
+*.zip
+*.npz
+*.png
+*.dcm
+generated_test/
+history/
+p2p/__pycache__/
+traini

@@ -15,6 +15,8 @@ def l1_l2_loss(y_true, y_pred):
 	return tf.reduce_mean(tf.abs(y_true - y_pred)) + tf.reduce_mean(tf.math.squared_difference(y_true, y_pred))
 
 
+def mae(y_true, y_pred):
+	return tf.reduce_mean(tf.abs(y_true - y_pred)) 
 
 
 
