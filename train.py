@@ -1,10 +1,7 @@
-import sys
-sys.path.append('/media/aisec-102/DATA3/rachel/pcxgan/p2p')
-
-from pix2pix import pix2pix
+from p2p.pix2pix import pix2pix
 from flags import Flags
 import data_loader
-import modules
+import p2p.modules as modules
 
 flags = Flags().parse()
 
