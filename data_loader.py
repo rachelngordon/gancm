@@ -135,6 +135,8 @@ class DataGenerator_Ready(kr.utils.Sequence):
 		x, y, z = self.load_data(flags, return_labels)
 		self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
 
+		self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
+		
 		'''
 		if is_train:
 			self.dataset = self.dataset.cache().map(
