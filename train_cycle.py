@@ -7,16 +7,6 @@ import data_loader
 import cyclegan.modules as modules
 import os
 
-'''
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
-import tensorflow as tf
-
-if tf.test.gpu_device_name():
-    print('GPU found')
-else:
-    print("No GPU found")
-'''
 
 flags = Flags().parse()
 

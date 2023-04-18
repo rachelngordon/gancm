@@ -1,19 +1,17 @@
-from pcxgan.pcxgan import PCxGAN
+from pcxgan.pcxgan_ct import PCxGAN_ct
 from flags import Flags
 import data_loader
-import pcxgan.modules as modules
+import pcxgan.modules_ct as modules
 
 flags = Flags().parse()
 
 
 train_dataset = data_loader.DataGenerator_Ready(flags, flags.data_path).load()
-test_dataset = data_loader.DataGenerator_Ready(flags, flags.data_path, test_exp=True).load()
-#test_dataset = train_dataset[:100]
-#test_dataset = data_loader.DataGenerator_Ready(flags, flags.test_data_path).load()
+test_dataset = data_loader.DataGenerator_Ready(flags, flags.test_data_path).load()
 
 
 #Build and train the model
-model = PCxGAN(flags)
+model = PCxGAN_ct(flags)
 model.compile()
 history = model.fit(
   train_dataset,

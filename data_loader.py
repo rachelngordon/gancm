@@ -128,11 +128,11 @@ class DataGenerator(kr.utils.Sequence):
 		return self.test_idx, self.dataset.batch(self.batch_size, drop_remainder=True)
 
 class DataGenerator_Ready(kr.utils.Sequence):
-	def __init__(self, flags, data_path, return_labels=True, **kwargs):
+	def __init__(self, flags, data_path, return_labels=True, test_exp=False, **kwargs):
 		
 		super().__init__(**kwargs)
 		self.data_path = data_path
-		x, y, z = self.load_data(flags, return_labels)
+		x, y, z = self.load_data(flags, return_labels, test_exp)
 		self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
 
 		self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
@@ -155,11 +155,13 @@ class DataGenerator_Ready(kr.utils.Sequence):
 		
 		#print(self.dataset.element_spec)
 	
-	def load_data(self, flags, return_labels):
+	def load_data(self, flags, return_labels, test_exp):
 
 		data = np.load(self.data_path)
-		
-		x, y = data['arr_0'], data['arr_1']
+		if test_exp:
+			x, y = data['arr_0'][:100], data['arr_1'][:100]
+		else:
+			x, y = data['arr_0'], data['arr_1']
 		self.batch_size = flags.batch_size
 		self.image_shape = x.shape[1:]
 		self.image_size = self.image_shape[0]
