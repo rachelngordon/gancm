@@ -23,8 +23,11 @@ class SPADE(kr.layers.Layer):
 	def build(self, input_shape):
 		self.resize_shape = input_shape[1:3]
 	
-	def call(self, input_tensor, raw_mask):
-		mask = tf.image.resize(raw_mask, self.resize_shape, method="nearest")
+	def call(self, input_tensor, raw_mask, raw_ct):
+		# mask = tf.image.resize(raw_mask, self.resize_shape, method="nearest")
+		# ct = tf.image.resize(raw_ct, self.resize_shape, method="nearest")
+		merge = kr.layers.concatenate([raw_mask, raw_ct])
+		mask = tf.image.resize(merge, self.resize_shape, method="nearest")
 		x = self.conv(mask)
 		gamma = self.conv_gamma(x)
 		beta = self.conv_beta(x)
@@ -54,13 +57,13 @@ class ResBlock(kr.layers.Layer):
 			self.spade_3 = SPADE(input_filter, self.flags)
 			self.conv_3 = kr.layers.Conv2D(self.filters, self.flags.s_gamma_filter_size, padding="same")
 	
-	def call(self, input_tensor, mask):
-		x = self.spade_1(input_tensor, mask)
+	def call(self, input_tensor, mask, ct):
+		x = self.spade_1(input_tensor, mask, ct)
 		x = self.conv_1(tf.nn.leaky_relu(x, 0.2))
-		x = self.spade_2(x, mask)
+		x = self.spade_2(x, mask, ct)
 		x = self.conv_2(tf.nn.leaky_relu(x, 0.2))
 		skip = (
-			self.conv_3(tf.nn.leaky_relu(self.spade_3(input_tensor, mask), 0.2))
+			self.conv_3(tf.nn.leaky_relu(self.spade_3(input_tensor, mask, ct), 0.2))
 			if self.learned_skip
 			else input_tensor
 		)
@@ -163,10 +166,10 @@ class Encoder(kr.Model):
 		x = self.downsample2(x)
 		x = self.downsample3(x)
 		x = self.downsample4(x)
-		x5 = self.downsample5(x)
+		x = self.downsample5(x)
 		# x = self.downsample6(x)
-		x = self.flatten(x5)
-		return [self.mean(x), self.variance(x), x5]
+		x = self.flatten(x)
+		return [self.mean(x), self.variance(x)]
 	
 	def build_graph(self):
 		x = kr.layers.Input(shape=self.image_shape)
@@ -177,6 +180,7 @@ class Decoder(kr.Model):
 	def __init__(self, flags, **kwargs):
 		super().__init__(**kwargs)
 		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
+		self.image_shape = (flags.crop_size, flags.crop_size, 1)
 		self.latent_dim = flags.latent_dim
 		res_filters = flags.d_res_filters
 		self.dense1 = kr.layers.Dense(self.latent_dim * 4 * 4)
@@ -201,23 +205,24 @@ class Decoder(kr.Model):
 	def build_graph(self):
 		m = kr.layers.Input(shape=self.mask_shape)
 		l = kr.layers.Input(shape=self.latent_dim)
-		return kr.Model(inputs=[l, m], outputs=self.call([l, m]))
+		c = kr.layers.Input(shape=self.image_shape)
+		return kr.Model(inputs=[l, m, c], outputs=self.call([l, m, c]))
 	
 	def call(self, inputs_, **kwargs):
-		latent, mask = inputs_[0], inputs_[1]
+		latent, mask, ct = inputs_
 		x = self.dense1(latent)
 		x = self.reshape(x)
-		x = self.resblock1(x, mask)
+		x = self.resblock1(x, mask, ct)
 		x = self.upsample1(x)
-		x = self.resblock2(x, mask)
+		x = self.resblock2(x, mask, ct)
 		x = self.upsample2(x)
-		x = self.resblock3(x, mask)
+		x = self.resblock3(x, mask, ct)
 		x = self.upsample3(x)
-		x = self.resblock4(x, mask)
+		x = self.resblock4(x, mask, ct)
 		x = self.upsample4(x)
-		x = self.resblock5(x, mask)
+		x = self.resblock5(x, mask, ct)
 		x = self.upsample5(x)
-		x = self.resblock6(x, mask)
+		x = self.resblock6(x, mask, ct)
 		x = self.upsample6(x)
 		# x = self.resblock7(x, mask)
 		# x = self.upsample7(x)

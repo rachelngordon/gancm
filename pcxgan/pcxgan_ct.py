@@ -74,13 +74,13 @@ class PCxGAN_ct(kr.Model):
 		mask_input = kr.Input(shape=self.mask_shape, name="mask")
 		image_input = kr.Input(shape=self.image_shape, name="image")
 		latent_input = kr.Input(shape=self.latent_dim, name="latent")
-		ct_input = kr.Input(shape=(8,8,8,512), name="ct")
-		generated_image = self.decoder([latent_input, mask_input])
+		#ct_input = kr.Input(shape=(8,8,8,512), name="ct")
+		generated_image = self.decoder([latent_input, mask_input, image_input])
 		discriminator_output = self.discriminator([image_input, generated_image])
 		
 		patch_size = discriminator_output[-1].shape[1]
 		combined_model = kr.Model(
-			[latent_input, mask_input, image_input, ct_input],
+			[latent_input, mask_input, image_input],
 			[discriminator_output, generated_image],
 		)
 		return patch_size, combined_model
@@ -91,7 +91,7 @@ class PCxGAN_ct(kr.Model):
 	
 	def train_discriminator(self, latent_vector, segmentation_map, real_image, labels):
 		
-		fake_images = self.decoder([latent_vector, labels])
+		fake_images = self.decoder([latent_vector, labels, segmentation_map])
 		
 		with tf.GradientTape() as gradient_tape:
 			pred_fake = self.discriminator([segmentation_map, fake_images])[-1]  # check
@@ -114,10 +114,10 @@ class PCxGAN_ct(kr.Model):
 		
 		self.discriminator.trainable = False
 		with tf.GradientTape() as tape:
-			_, _, encoded_ct = self.encoder(segmentation_map)
+			#_, _, encoded_ct = self.encoder(segmentation_map)
 			real_d_output = self.discriminator([segmentation_map, image])  # check
 			fake_d_output, fake_image = self.combined_model(
-				[latent_vector, labels, segmentation_map, encoded_ct]
+				[latent_vector, labels, segmentation_map]
 			)
 			pred = fake_d_output[-1]
 			
@@ -178,9 +178,9 @@ class PCxGAN_ct(kr.Model):
 	def test_step(self, data):
 		ct, mri, labels = data
 		mean, variance, _ = self.encoder(mri)
-		_, _, encoded_ct = self.encoder(ct)
+		#_, _, encoded_ct = self.encoder(ct)
 		latent_vector = self.sampler([mean, variance])
-		fake_images = self.decoder([latent_vector, labels])
+		fake_images = self.decoder([latent_vector, labels, ct])
 		
 		# Calculate the losses.
 		pred_fake = self.discriminator([ct, fake_images])[-1]
@@ -191,7 +191,7 @@ class PCxGAN_ct(kr.Model):
 		
 		real_d_output = self.discriminator([ct, mri])
 		fake_d_output, fake_image = self.combined_model(
-			[latent_vector, labels, ct, encoded_ct]
+			[latent_vector, labels, ct]
 		)
 		pred = fake_d_output[-1]
 		g_loss = loss.generator_loss(pred)
@@ -217,8 +217,8 @@ class PCxGAN_ct(kr.Model):
 		return results
 	
 	def call(self, inputs):
-		latent_vectors, labels = inputs
-		return self.decoder([latent_vectors, labels])
+		latent_vectors, labels, ct = inputs
+		return self.decoder([latent_vectors, labels, ct])
 	
 	def model_evaluate(self, data, epoch=0):
 		results = []
@@ -228,7 +228,7 @@ class PCxGAN_ct(kr.Model):
 			latent_vector = tf.random.normal(
 				shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=2.0
 			)
-			fake_image = self.decoder([latent_vector, label])
+			fake_image = self.decoder([latent_vector, label, ct])
 			
 			fid = evaluate.calculate_fid(mri, fake_image,
 																	 input_shape=(
