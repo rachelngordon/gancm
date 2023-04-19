@@ -279,7 +279,7 @@ class GanMonitor(kr.callbacks.Callback):
 		latent_vector = tf.random.normal(
 			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0
 		)
-		return self.model.predict([latent_vector, self.val_images[2]])
+		return self.model.predict([latent_vector, self.val_images[2], self.val_images[0]])
 	
 	def save_models(self):
 		# e_name = "encoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))

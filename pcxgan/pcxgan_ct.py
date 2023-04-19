@@ -152,7 +152,7 @@ class PCxGAN_ct(kr.Model):
 	def train_step(self, data):
 		ct, mri, labels = data
 		# Obtain the learned moments of the real image distribution.
-		mean, variance, _ = self.encoder(mri)
+		mean, variance = self.encoder(mri)
 		
 		# Sample a latent from the distribution defined by the learned moments.
 		latent_vector = self.sampler([mean, variance])
@@ -177,7 +177,7 @@ class PCxGAN_ct(kr.Model):
 	
 	def test_step(self, data):
 		ct, mri, labels = data
-		mean, variance, _ = self.encoder(mri)
+		mean, variance = self.encoder(mri)
 		#_, _, encoded_ct = self.encoder(ct)
 		latent_vector = self.sampler([mean, variance])
 		fake_images = self.decoder([latent_vector, labels, ct])
