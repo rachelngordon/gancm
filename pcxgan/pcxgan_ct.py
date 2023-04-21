@@ -7,6 +7,9 @@ import loss
 import evaluate
 from datetime import datetime
 import os
+import pandas as pd
+from  matplotlib import pyplot as plt
+from datetime import datetime
 
 
 class PCxGAN_ct(kr.Model):
@@ -256,5 +259,26 @@ class PCxGAN_ct(kr.Model):
 		self.encoder.save(self.flags.model_path + '_e')
 		self.decoder.save(self.flags.model_path + '_d')
 
+
+	def plot_losses(self, hist):
+		
+		exp_path = '/media/aisec-102/DATA3/rachel/pcxgan/history/' + self.experiment_name
+		
+		if not os.path.exists(exp_path):
+			os.makedirs(exp_path)
+			
+		# save history to csv   
+		hist_df = pd.DataFrame(hist) 
+		hist_df.to_csv(exp_path + '/p2p_hist.csv')
+		
+		losses = ['disc', 'gen', 'feat', 'vgg', 'kl', 'ssim', 'mae']
+		
+		# plot losses
+		for loss in losses:
+			plt.figure()
+			plt.plot(hist[loss + '_loss'])
+			plt.plot(hist['val_' + loss + '_loss'])
+			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
+			plt.savefig(exp_path + '/p2p_' + loss + '_loss.png')
 
 
