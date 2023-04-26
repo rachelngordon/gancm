@@ -2,6 +2,7 @@ import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
 import math
+import cv2
 
 
 class DataGenerator(kr.utils.Sequence):
@@ -74,6 +75,7 @@ class DataGenerator(kr.utils.Sequence):
 		y = tf.cast(y, tf.float32)
 		
 		if return_labels:
+			
 			z = tf.sqrt(tf.math.reduce_sum(tf.image.sobel_edges(x) ** 2, axis=-1))
 			z = self.normalize(z.numpy())
 			z = tf.cast(z, tf.float32)
@@ -128,11 +130,11 @@ class DataGenerator(kr.utils.Sequence):
 		return self.test_idx, self.dataset.batch(self.batch_size, drop_remainder=True)
 
 class DataGenerator_Ready(kr.utils.Sequence):
-	def __init__(self, flags, data_path, return_labels=True, test_exp=False, **kwargs):
+	def __init__(self, flags, data_path, return_labels=True, **kwargs):
 		
 		super().__init__(**kwargs)
 		self.data_path = data_path
-		x, y, z = self.load_data(flags, return_labels, test_exp)
+		x, y, z = self.load_data(flags, return_labels)
 		self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
 
 		self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
@@ -155,13 +157,12 @@ class DataGenerator_Ready(kr.utils.Sequence):
 		
 		#print(self.dataset.element_spec)
 	
-	def load_data(self, flags, return_labels, test_exp):
+	def load_data(self, flags, return_labels):
 
 		data = np.load(self.data_path)
-		if test_exp:
-			x, y = data['arr_0'][:100], data['arr_1'][:100]
-		else:
-			x, y = data['arr_0'], data['arr_1']
+		
+		x, y = data['arr_0'], data['arr_1']
+
 		self.batch_size = flags.batch_size
 		self.image_shape = x.shape[1:]
 		self.image_size = self.image_shape[0]
@@ -183,21 +184,31 @@ class DataGenerator_Ready(kr.utils.Sequence):
 			except:
 				print("Couldn't delete the images")
 
-		
+		# normalizes from -1 to 1
 		if flags.apply_normalization:
-			x, y = (self.x - 0.5) / 0.5, (self.y - 0.5) / 0.5
+			x, y = (x - 0.5) / 0.5, (y - 0.5) / 0.5
+
+			# normalizes from 0 to 1
+			#x, y = (self.x - min(self.x)) / (max(self.x) - min(self.x)), (self.y - min(self.y)) / (max(self.y) - min(self.y))
 		
-		x = tf.cast(x, tf.float32)
-		y = tf.cast(y, tf.float32)
+		#x = tf.cast(x, tf.float32)
+		#y = tf.cast(y, tf.float32)
 		
 		if return_labels:
-			z = tf.sqrt(tf.math.reduce_sum(tf.image.sobel_edges(x) ** 2, axis=-1))
-			z = self.normalize(z.numpy())
-			z = tf.cast(z, tf.float32)
+			z = self.normalize_mask(x)
+
+			#z = tf.sqrt(tf.math.reduce_sum(tf.image.sobel_edges(x) ** 2, axis=-1))
+			#z = self.normalize(z.numpy())
+			#z = tf.cast(z, tf.float32)
+
 		else:
 			z=x
 		# print(self.x.shape, self.y.shape, self.mask.shape)
 		
+		# save normalized data to a file
+		path = '/media/aisec-102/DATA3/rachel/data/' + flags.name + '_n-1.npz'
+		np.savez(path, x, y, z)
+
 		return x, y, z
 	
 
@@ -245,6 +256,17 @@ class DataGenerator_Ready(kr.utils.Sequence):
 	def load(self):
 		return self.dataset.batch(self.batch_size, drop_remainder=True)
 	
+	def normalize_mask(self, x):
+		masks =[]
+
+		for image in x:
+			img_smooth = cv2.GaussianBlur(image, (5,5), 0)
+			_, threshold = cv2.threshold(img_smooth, np.mean(img_smooth)+0.01, 1, cv2.THRESH_BINARY)
+			masks.append(np.expand_dims(threshold, -1))
+
+    	#x = (x - x.min()) / (x.max() - x.min())
+		return np.array(masks)
+
 
 class DataGenerator_Paired(kr.utils.Sequence):
 	def __init__(self, flags, is_train=True, is_test=False, test_idx=[], **kwargs):

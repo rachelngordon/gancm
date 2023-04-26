@@ -7,7 +7,7 @@ flags = Flags().parse()
 
 
 train_dataset = data_loader.DataGenerator_Ready(flags, flags.data_path).load()
-test_dataset = data_loader.DataGenerator_Ready(flags, flags.data_path, test_exp=True).load()
+test_dataset = data_loader.DataGenerator_Ready(flags, flags.test_data_path).load()
 #test_dataset = train_dataset[:100]
 #test_dataset = data_loader.DataGenerator_Ready(flags, flags.test_data_path).load()
 
@@ -25,6 +25,6 @@ history = model.fit(
 
 
 #model.plot_losses(history.history)
-#model.model_evaluate(test_dataset)
 model.save_model()
+model.model_evaluate(test_dataset)
 

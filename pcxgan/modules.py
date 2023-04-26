@@ -196,7 +196,7 @@ class Decoder(kr.Model):
 		self.resblock7 = ResBlock(flags, filters=res_filters / 16)
 		self.upsample7 = kr.layers.UpSampling2D((2, 2))
 		self.activation = kr.layers.LeakyReLU(0.2)
-		self.out_image = kr.layers.Conv2D(1, kernel_size=4, padding='same', activation='sigmoid')
+		self.out_image = kr.layers.Conv2D(1, kernel_size=4, padding='same', activation='tanh')
 	
 	def build_graph(self):
 		m = kr.layers.Input(shape=self.mask_shape)
