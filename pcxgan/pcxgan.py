@@ -126,7 +126,7 @@ class PCxGAN(kr.Model):
 			feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
 				real_d_output, fake_d_output
 			)
-			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(tf.cast(image, tf.float32), fake_image)
+			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(image, fake_image)
 			mae_loss = self.mae_loss_coeff * self.mae_loss(image, fake_image)
 			total_loss = g_loss + kl_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
 		
