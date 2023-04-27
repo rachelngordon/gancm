@@ -1,9 +1,9 @@
-#import os
+import os
 import numpy as np
 import tensorflow as tf
 #import tensorflow.io as tfio
 from tensorflow.keras.models import load_model
-#from matplotlib import pyplot
+from matplotlib import pyplot
 #import plot
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 from tensorflow.keras.applications.inception_v3 import preprocess_input
@@ -130,6 +130,7 @@ def predict_p2p(model_path, modelname, ct):
     counter += 1
   
   return generated
+
 
 
 '''
