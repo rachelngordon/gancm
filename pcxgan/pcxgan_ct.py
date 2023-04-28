@@ -77,7 +77,6 @@ class PCxGAN_ct(kr.Model):
 		mask_input = kr.Input(shape=self.mask_shape, name="mask")
 		image_input = kr.Input(shape=self.image_shape, name="image")
 		latent_input = kr.Input(shape=self.latent_dim, name="latent")
-		#ct_input = kr.Input(shape=(8,8,8,512), name="ct")
 		generated_image = self.decoder([latent_input, mask_input, image_input])
 		discriminator_output = self.discriminator([image_input, generated_image])
 		
@@ -117,7 +116,7 @@ class PCxGAN_ct(kr.Model):
 		
 		self.discriminator.trainable = False
 		with tf.GradientTape() as tape:
-			#_, _, encoded_ct = self.encoder(segmentation_map)
+
 			real_d_output = self.discriminator([segmentation_map, image])  # check
 			fake_d_output, fake_image = self.combined_model(
 				[latent_vector, labels, segmentation_map]
@@ -140,10 +139,7 @@ class PCxGAN_ct(kr.Model):
 				self.encoder.trainable_variables
 		)
 		
-		# print(tf.shape(total_loss))
-		# print(tf.shape(all_trainable_variables))
-		# print(total_loss)
-		# print(all_trainable_variables)
+
 		gradients = tape.gradient(total_loss, all_trainable_variables)
 		
 		self.generator_optimizer.apply_gradients(
@@ -154,6 +150,7 @@ class PCxGAN_ct(kr.Model):
 	
 	def train_step(self, data):
 		ct, mri, labels = data
+
 		# Obtain the learned moments of the real image distribution.
 		mean, variance = self.encoder(mri)
 		
@@ -181,7 +178,6 @@ class PCxGAN_ct(kr.Model):
 	def test_step(self, data):
 		ct, mri, labels = data
 		mean, variance = self.encoder(mri)
-		#_, _, encoded_ct = self.encoder(ct)
 		latent_vector = self.sampler([mean, variance])
 		fake_images = self.decoder([latent_vector, labels, ct])
 		
@@ -227,6 +223,7 @@ class PCxGAN_ct(kr.Model):
 		results = []
 		
 		for ct, mri, label in data:
+
 			# Sample latent from a normal distribution.
 			latent_vector = tf.random.normal(
 				shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=2.0
@@ -242,7 +239,7 @@ class PCxGAN_ct(kr.Model):
 			results.append([fid, mse, mae, cs, psnr, ssim])
 			print("metrics: {}{}{}{}{}".format(fid, mse, mae, cs, psnr, ssim))
 		
-		# this part is done!
+
 		results = np.array(results).mean(axis=0)
 		
 		filename = "results_{}_{}.log".format(epoch, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
@@ -255,9 +252,8 @@ class PCxGAN_ct(kr.Model):
 	
 	
 	def save_model(self):
-		# model_path = '/media/aisec1/DATA3/rachel/PCGAN/models/PCxGAN'
-		self.encoder.save(self.flags.model_path + '_e')
-		self.decoder.save(self.flags.model_path + '_d')
+		self.encoder.save(self.flags.model_path + self.experiment_name + '_e')
+		self.decoder.save(self.flags.model_path + self.experiment_name + '_d')
 
 
 	def plot_losses(self, hist):
@@ -269,7 +265,7 @@ class PCxGAN_ct(kr.Model):
 			
 		# save history to csv   
 		hist_df = pd.DataFrame(hist) 
-		hist_df.to_csv(exp_path + '/p2p_hist.csv')
+		hist_df.to_csv(exp_path + '/hist.csv')
 		
 		losses = ['disc', 'gen', 'feat', 'vgg', 'kl', 'ssim', 'mae']
 		
@@ -279,6 +275,6 @@ class PCxGAN_ct(kr.Model):
 			plt.plot(hist[loss + '_loss'])
 			plt.plot(hist['val_' + loss + '_loss'])
 			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
-			plt.savefig(exp_path + '/p2p_' + loss + '_loss.png')
+			plt.savefig(exp_path + '/' + loss + '_loss.png')
 
 

@@ -17,7 +17,6 @@ class pix2pix(kr.Model):
         super().__init__(**kwargs)
         self.flags = flags
 
-        # pass new name each time
         self.experiment_name = self.flags.name
         self.samples_dir = self.flags.sample_dir
         self.models_dir = self.flags.checkpoints_dir
@@ -36,7 +35,6 @@ class pix2pix(kr.Model):
         self.generator = modules.p2p_generator(flags)
         self.patch_size, self.combined_model = self.build_combined_model()
 
-        # pass to flags: gen_lr 0.0002, gen_beta_1 0.5
         self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
         self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
         self.discriminator_loss = loss.DiscriminatorLoss()
@@ -226,8 +224,7 @@ class pix2pix(kr.Model):
 
 
     def save_model(self, flags):
-        # model_path = '/media/aisec1/DATA3/rachel/pcxgan/models/Pix2Pix_test'
-        self.generator.save(self.flags.model_path)
+        self.generator.save(self.flags.model_path + self.experiment_name)
 
 
     def plot_losses(self, hist):
@@ -240,7 +237,7 @@ class pix2pix(kr.Model):
 
         # save history to csv   
         hist_df = pd.DataFrame(hist) 
-        hist_df.to_csv(exp_path + '/p2p_hist.csv')
+        hist_df.to_csv(exp_path + '/hist.csv')
 
         losses = ['disc', 'gen', 'feat', 'vgg', 'ssim', 'mae']
 
@@ -250,6 +247,6 @@ class pix2pix(kr.Model):
             plt.plot(hist[loss + '_loss'])
             plt.plot(hist['val_' + loss + '_loss'])
             plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
-            plt.savefig(exp_path + '/p2p_' + loss + '_loss.png')
+            plt.savefig(exp_path + '/' + loss + '_loss.png')
 
 

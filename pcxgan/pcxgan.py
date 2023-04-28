@@ -135,10 +135,6 @@ class PCxGAN(kr.Model):
 				self.encoder.trainable_variables
 		)
 		
-		# print(tf.shape(total_loss))
-		# print(tf.shape(all_trainable_variables))
-		# print(total_loss)
-		# print(all_trainable_variables)
 		gradients = tape.gradient(total_loss, all_trainable_variables)
 		
 		self.generator_optimizer.apply_gradients(
@@ -149,6 +145,7 @@ class PCxGAN(kr.Model):
 	
 	def train_step(self, data):
 		ct, mri, labels = data
+
 		# Obtain the learned moments of the real image distribution.
 		mean, variance = self.encoder(mri)
 		
@@ -221,6 +218,7 @@ class PCxGAN(kr.Model):
 		results = []
 		
 		for ct, mri, label in data:
+
 			# Sample latent from a normal distribution.
 			latent_vector = tf.random.normal(
 				shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=2.0
@@ -236,7 +234,6 @@ class PCxGAN(kr.Model):
 			results.append([fid, mse, mae, cs, psnr, ssim])
 			print("metrics: {}{}{}{}{}".format(fid, mse, mae, cs, psnr, ssim))
 		
-		# this part is done!
 		results = np.array(results).mean(axis=0)
 		
 		filename = "results_{}_{}.log".format(epoch, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
@@ -249,9 +246,27 @@ class PCxGAN(kr.Model):
 	
 	
 	def save_model(self):
-		# model_path = '/media/aisec1/DATA3/rachel/PCGAN/models/PCxGAN'
-		self.encoder.save(self.flags.model_path + '_e')
-		self.decoder.save(self.flags.model_path + '_d')
+		self.encoder.save(self.flags.model_path + self.experiment_name + '_e')
+		self.decoder.save(self.flags.model_path + self.experiment_name + '_d')
 
 
-
+	def plot_losses(self, hist):
+		
+		exp_path = '/media/aisec-102/DATA3/rachel/pcxgan/history/' + self.experiment_name
+		
+		if not os.path.exists(exp_path):
+			os.makedirs(exp_path)
+			
+		# save history to csv   
+		hist_df = pd.DataFrame(hist) 
+		hist_df.to_csv(exp_path + '/hist.csv')
+		
+		losses = ['disc', 'gen', 'feat', 'vgg', 'kl', 'ssim', 'mae']
+		
+		# plot losses
+		for loss in losses:
+			plt.figure()
+			plt.plot(hist[loss + '_loss'])
+			plt.plot(hist['val_' + loss + '_loss'])
+			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
+			plt.savefig(exp_path + '/' + loss + '_loss.png')
