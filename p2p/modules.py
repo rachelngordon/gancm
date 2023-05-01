@@ -113,7 +113,7 @@ class EncoderModule(kr.Model):
         self.b1 = [kr.layers.Conv2D(channels, kernel_size=4, strides=2, padding='same',
 																		use_bias=False, input_shape=image_shape, name="Conv1", activation='relu'),
 									 kr.layers.Conv2D(channels, kernel_size=4, strides=2, padding='same',
-																		use_bias=False,input_shape=image_shape, name="Conv1"),
+																		use_bias=False,input_shape=image_shape, name="Conv2"),
                    kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init, name='IN1'),
                    kr.layers.Activation('relu', name='Relu')
                    ]
