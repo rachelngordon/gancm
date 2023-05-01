@@ -3,7 +3,7 @@ from flags import Flags
 import data_loader
 import p2p.modules as modules
 
-def main():
+def main(flags):
   train_dataset = data_loader.DataGenerator_PairedReady(flags, flags.data_path).load()
   test_dataset = data_loader.DataGenerator_PairedReady(flags, flags.test_data_path).load()
   
@@ -26,6 +26,6 @@ def main():
   
   
 if __name__ == '__main__':
-  flags = Flags()
-  main()
+  flags = Flags().parse()
+  main(flags)
 
