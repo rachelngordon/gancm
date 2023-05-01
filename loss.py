@@ -2,8 +2,8 @@ import tensorflow as tf
 import tensorflow.keras as kr
 
 def SSIMLoss(y_true, y_pred):
-# 	yy_true = (y_true + 1.0) / 2.0
-# 	yy_pred = (y_pred + 1.0) / 2.0
+ 	y_true = (y_true + 1.0) / 2.0
+ 	y_pred = (y_pred + 1.0) / 2.0
 	y_pred = tf.cast(y_pred, tf.float64)
 	return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0))
 
@@ -17,6 +17,8 @@ def l1_l2_loss(y_true, y_pred):
 
 
 def mae(y_true, y_pred):
+	y_true = (y_true + 1.0) / 2.0
+	y_pred = (y_pred + 1.0) / 2.0
 	return tf.reduce_mean(tf.abs(y_true - y_pred)) 
 
 
@@ -26,6 +28,7 @@ def kl_divergence_loss(mean, variance):
 	return -0.5 * tf.reduce_sum(1 + variance - tf.square(mean) - tf.exp(variance))
 
 def generator_loss(y):
+	y = (y + 1.0) / 2.0
 	return -tf.reduce_mean(y)
 
 
@@ -36,6 +39,9 @@ class FeatureMatchingLoss(kr.losses.Loss):
 
 	def call(self, y_true, y_pred):
 			loss = 0
+			y_true = (y_true + 1.0) / 2.0
+			y_pred = (y_pred + 1.0) / 2.0
+			
 			for i in range(len(y_true) - 1):
 					loss += self.mae(y_true[i], y_pred[i])
 			return loss
@@ -58,15 +64,12 @@ class VGGFeatureMatchingLoss(kr.losses.Loss):
 			self.mae = kr.losses.MeanAbsoluteError()
 
 	def call(self, y_true, y_pred):
-# 			y_true = (y_true + 1.0) / 2.0
-# 			y_pred = (y_pred + 1.0) / 2.0
+			y_true = (y_true + 1.0) / 2.0
+			y_pred = (y_pred + 1.0) / 2.0
 			
 			y_true = tf.image.grayscale_to_rgb(y_true)
 			y_pred = tf.image.grayscale_to_rgb(y_pred)
 			
-			# y_true = kr.layers.Concatenate()([y_true, y_true, y_true])
-			# y_pred = kr.layers.Concatenate()([y_pred, y_pred, y_pred])
-
 			y_true = kr.applications.vgg19.preprocess_input(127.5 * (y_true + 1))
 			y_pred = kr.applications.vgg19.preprocess_input(127.5 * (y_pred + 1))
 			real_features = self.vgg_model(y_true)
@@ -81,7 +84,6 @@ class DiscriminatorLoss(kr.losses.Loss):
 	def __init__(self, **kwargs):
 			super().__init__(**kwargs)
 			self.hinge_loss = kr.losses.Hinge()
-			#self.hinge_loss = kr.losses.BinaryCrossentropy()
 
 	def call(self, is_real, y_pred):
 			label = 1.0 if is_real else -1.0
@@ -92,8 +94,10 @@ class MAE(kr.losses.Loss):
 		super().__init__(**kwargs)
 		self.mae = kr.losses.MeanAbsoluteError()
 
-	def call(self, y, pred_y):
-		return self.mae(y, pred_y)
+	def call(self, y_true, y_pred):
+		y_true = (y_true + 1.0) / 2.0
+		y_pred = (y_pred + 1.0) / 2.0
+		return self.mae(y_true, y_pred)
 	
 
 '''Pix2Pix Losses'''
