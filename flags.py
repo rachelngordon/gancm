@@ -22,7 +22,7 @@ class Flags():
     parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
     
     # input/output sizes
-    parser.add_argument('--batch_size', type=int, default=8, help='input batch size')
+    parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
     parser.add_argument('--load_size', type=int, default=256, help='Scale images to this size. The final image will be cropped to --crop_size.')
     parser.add_argument('--crop_size', type=int, default=256, help='Crop to the width of crop_size (after initially scaling the images to load_size.)')
     parser.add_argument('--edge_threshold', type=float, default=0.03, help='Threshold for binarizing edge information.')
