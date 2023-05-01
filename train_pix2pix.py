@@ -1,7 +1,7 @@
 from p2p.pix2pix import Pix2Pix
 from flags import Flags
 import data_loader
-import pcxgan.modules as modules
+import p2p.modules as modules
 
 flags = Flags().parse()
 
