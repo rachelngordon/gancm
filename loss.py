@@ -1,5 +1,6 @@
 import tensorflow as tf
 import tensorflow.keras as kr
+import numpy as np
 
 def SSIMLoss(y_true, y_pred):
 	y_true = (y_true + 1.0) / 2.0
@@ -39,8 +40,8 @@ class FeatureMatchingLoss(kr.losses.Loss):
 
 	def call(self, y_true, y_pred):
 			loss = 0
-			y_true = (y_true + 1.0) / 2.0
-			y_pred = (y_pred + 1.0) / 2.0
+			y_true = (np.array(y_true) + 1.0) / 2.0
+			y_pred = (np.array(y_pred) + 1.0) / 2.0
 			
 			for i in range(len(y_true) - 1):
 					loss += self.mae(y_true[i], y_pred[i])
