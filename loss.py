@@ -2,8 +2,8 @@ import tensorflow as tf
 import tensorflow.keras as kr
 
 def SSIMLoss(y_true, y_pred):
- 	y_true = (y_true + 1.0) / 2.0
- 	y_pred = (y_pred + 1.0) / 2.0
+	y_true = (y_true + 1.0) / 2.0
+	y_pred = (y_pred + 1.0) / 2.0
 	y_pred = tf.cast(y_pred, tf.float64)
 	return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0))
 
