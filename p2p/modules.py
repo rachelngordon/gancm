@@ -13,20 +13,22 @@ class Residual(kr.layers.Layer):
                  use_1x1conv=False, 
                  strides=1):
         super().__init__()
-        
+				
+        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
         self.conv1 = kr.layers.Conv2D(
             num_channels, padding='same', kernel_size=3, strides=strides,
-            kernel_initializer = kr.initializers.GlorotNormal())
+					use_bias=False, kernel_initializer=kr.initializers.GlorotNormal())
         self.conv2 = kr.layers.Conv2D(
-            num_channels, kernel_size=3, padding='same',
+            num_channels, kernel_size=3, padding='same', use_bias=False,
             kernel_initializer = kr.initializers.GlorotNormal())
         self.conv3 = None
         if use_1x1conv:
             self.conv3 = kr.layers.Conv2D(
-                num_channels, kernel_size=1, strides=strides,
+                num_channels, kernel_size=1, strides=strides,use_bias=False,
                 kernel_initializer = kr.initializers.GlorotNormal())
-        self.bn1 = kr.layers.GroupNormalization(groups=num_channels)
-        self.bn2 = kr.layers.GroupNormalization(groups=num_channels)
+			
+        self.bn1 = kr.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
+        self.bn2 = kr.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
 
     def call(self, X):
         Y = kr.activations.relu(self.bn1(self.conv1(X)))
@@ -42,12 +44,12 @@ class ResidualT(kr.layers.Layer):
                  num_channels, 
                  strides=2):
         super().__init__()
-        
+        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
         self.conv1 = kr.layers.Conv2DTranspose(
-            num_channels, padding='same', kernel_size=4, strides=strides,
+            num_channels, padding='same', kernel_size=3, strides=strides,use_bias=False,
             kernel_initializer = kr.initializers.GlorotNormal())
        
-        self.bn1 = kr.layers.GroupNormalization(groups=num_channels)
+        self.bn1 = kr.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
      
 
     def call(self, X):
@@ -105,15 +107,15 @@ class EncoderModule(kr.Model):
         #define encoder
         self.encoder = kr.models.Sequential()
         self.encoder._name = "Encoder"
+        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
 
         #first conv
-        self.b1 = [kr.layers.Conv2D(channels, kernel_size=5, strides=2, padding='same', 
+        self.b1 = [kr.layers.Conv2D(channels, kernel_size=4, strides=2, padding='same',
+																		use_bias=False,
                                     input_shape=image_shape, name="Conv1"),
-                   kr.layers.GroupNormalization(groups=channels, name='BN1'),
-                   #kr.layers.BatchNormalization(name='BN1'),
-                   kr.layers.Activation('relu', name='Relu'),
-                   kr.layers.MaxPool2D(pool_size=3, strides=2, 
-                                       padding='same', name='MaxPool')]
+                   kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init, name='IN1'),
+                   kr.layers.Activation('relu', name='Relu')
+                   ]
         
         for layer in self.b1:
             self.encoder.add(layer)
@@ -143,10 +145,10 @@ class DecoderModule(kr.Model):
         #define encoder
         self.decoder = kr.models.Sequential()
         self.decoder._name = "Decoder"
-        self.decoder.add(ResnetBlockT(channels//4, 1))
-        self.decoder.add(ResnetBlockT(channels//2, 1))
-        self.decoder.add(ResnetBlockT(channels//2, 1))
         self.decoder.add(ResnetBlockT(channels, 1))
+        self.decoder.add(ResnetBlockT(channels//2, 1))
+        self.decoder.add(ResnetBlockT(channels//2, 1))
+        self.decoder.add(ResnetBlockT(channels//4, 1))
 
 
     def call(self, inputs__):
@@ -170,13 +172,13 @@ class p2p_generator(kr.Model):
                                         filter_size=d_filter_size)
         
         self.convT = kr.layers.Conv2DTranspose(1, 
-                                               5, 
+                                               4,
                                                strides=2, 
                                                padding='same')
         
 
     def call(self, input__):
-        return kr.activations.sigmoid(self.convT(self.decoder(self.encoder(input__))))
+        return kr.activations.tanh(self.convT(self.decoder(self.encoder(input__))))
 
 
 class Discriminator(kr.Model):

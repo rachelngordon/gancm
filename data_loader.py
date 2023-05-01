@@ -264,7 +264,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
 			_, threshold = cv2.threshold(img_smooth, np.mean(img_smooth)+0.01, 1, cv2.THRESH_BINARY)
 			masks.append(np.expand_dims(threshold, -1))
 
-    	#x = (x - x.min()) / (x.max() - x.min())
+			#x = (x - x.min()) / (x.max() - x.min())
 		return np.array(masks)
 
 
@@ -369,7 +369,7 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 		self.data_path = data_path
 		x, y = self.load_data(flags)
 		self.dataset = tf.data.Dataset.from_tensor_slices((x, y))
-        
+		
 		self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
 		#self.dataset = self.dataset.cache().map(
 			#lambda x, y: self.resize(x, y, resize_size=flags.crop_size), num_parallel_calls=tf.data.AUTOTUNE)
@@ -380,13 +380,21 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 		self.image_shape = x.shape[1:]
 		self.image_size = self.image_shape[0]
 		
-		if flags.apply_normalization:
-			x, y = (self.x - 0.5) / 0.5, (self.y - 0.5) / 0.5
+		#if flags.apply_normalization:
+		#use histogram equalizer
+		normalized_x, normalized_y = [],[]
+		for image_x, image_y in zip(x, y):
+			equalized_x = cv2.equalizeHist((image_x*255).squeeze().astype(np.uint8))
+			normalized_x.append(equalized_x/255.0)
+			equalized_y = cv2.equalizeHist((image_y * 255).squeeze().astype(np.uint8))
+			normalized_y.append(equalized_y/255.0)
 		
-		x = tf.cast(x, tf.float32)
-		y = tf.cast(y, tf.float32)
+		normalized_x = np.expand_dims((np.array(normalized_x)-0.5)/0.5, axis=-1)
+		normalized_y = np.expand_dims((np.array(normalized_y)-0.5)/0.5, axis=-1)
+		normalized_x = tf.cast(normalized_x, tf.float32)
+		normalized_y = tf.cast(normalized_y, tf.float32)
 		
-		return x, y
+		return normalized_x, normalized_y
 	
 	@tf.function()
 	def resize(self, input_1, input_2, resize_size=256):
