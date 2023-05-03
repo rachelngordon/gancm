@@ -209,7 +209,7 @@ class Discriminator(kr.Model):
 
 class P2PMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags, my_strategy=False):
-		self.val_images = next(iter(val_dataset))
+		self.val_images = val_dataset
 		self.my_strategy = my_strategy
 		self.n_samples = 3
 		self.epoch_interval = flags.epoch_interval
