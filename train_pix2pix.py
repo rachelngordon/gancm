@@ -22,6 +22,7 @@ def main(flags):
   data_test = np.load(test_data_path)
   x_test, y_test = data_test['x'], data_test['y']
 
+  print(x_train.shape)
 
   #Build and train the model
   model = Pix2Pix(flags)
@@ -31,6 +32,7 @@ def main(flags):
     validation_data=(x_test, y_test),
     epochs=flags.epochs,
     verbose=1,
+    batch_size = 1,
     callbacks=[modules.P2PMonitor((x_test[5:8], y_test[5:8]), flags)],
   )
   
