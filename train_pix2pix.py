@@ -4,13 +4,24 @@ import numpy as np
 import p2p.modules as modules
 
 def main(flags):
-  #train_dataset = data_loader.DataGenerator_PairedReady(flags, flags.data_path).load()
-  #test_dataset = data_loader.DataGenerator_PairedReady(flags, flags.test_data_path).load()
-  
-  data_train = np.load(flags.data_path)
-  x_train, y_train = data_train['x'], data_train['y']
-  data_test = np.load(flags.test_data_path)
+
+  data_path = "/media/aisec-102/DATA3/rachel/data/CV/normalized_neg1pos1_fold"
+  test_data_path = "/media/aisec-102/DATA3/rachel/data/CV/normalized_neg1pos1_fold5.npz"
+	
+
+  for i in [1,2,3,4]:
+    path = f"{data_path}{i}.npz"
+    if i == 1:
+      data = np.load(path)
+      x_train, y_train = data['x'], data['y']
+    else:
+      data = np.load(path)
+      x_train = np.concatenate((x_train, data['x']), axis=0)
+      y_train = np.concatenate((y_train, data['y']), axis=0)
+
+  data_test = np.load(test_data_path)
   x_test, y_test = data_test['x'], data_test['y']
+
 
   #Build and train the model
   model = Pix2Pix(flags)
@@ -25,7 +36,7 @@ def main(flags):
   
   
   model.save_model(flags)
-  model.model_evaluate(test_dataset)
+  model.model_evaluate((x_test, y_test))
   model.plot_losses(history.history)
   
   
