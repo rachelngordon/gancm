@@ -25,7 +25,10 @@ def main(flags):
   print(x_train.shape)
   print(x_test.shape)
   print(y_test.shape)
+  val_dataset = (x_test[5:8], y_test[5:8])
 
+  print(val_dataset[0].shape)
+  print(val_dataset[1].shape)
   #Build and train the model
   model = Pix2Pix(flags)
   model.compile()
@@ -35,7 +38,7 @@ def main(flags):
     epochs=flags.epochs,
     verbose=1,
     batch_size = flags.batch_size,
-    callbacks=[modules.P2PMonitor((x_test[5:8], y_test[5:8]), flags)],
+    callbacks=[modules.P2PMonitor(val_dataset, flags)],
   )
   
   
