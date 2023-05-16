@@ -39,8 +39,10 @@ class FeatureMatchingLoss(kr.losses.Loss):
 
 	def call(self, y_true, y_pred):
 			loss = 0
-			y_true = (y_true + 1.0) / 2.0
-			y_pred = (y_pred + 1.0) / 2.0
+			y_true = [(y + 1.0) / 2.0 for y in y_true]
+			y_pred = [(y + 1.0) / 2.0 for y in y_pred]
+			#y_true = (y_true + 1.0) / 2.0
+			#y_pred = (y_pred + 1.0) / 2.0
 			
 			for i in range(len(y_true) - 1):
 					loss += self.mae(y_true[i], y_pred[i])
