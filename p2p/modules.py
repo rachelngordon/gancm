@@ -209,7 +209,8 @@ class Discriminator(kr.Model):
 
 class P2PMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags, my_strategy=False):
-		self.val_images = val_dataset
+
+		self.val_ct, self.val_mri = val_dataset[0], val_dataset[1]
 		self.my_strategy = my_strategy
 		self.n_samples = 3
 		self.epoch_interval = flags.epoch_interval
@@ -229,13 +230,13 @@ class P2PMonitor(kr.callbacks.Callback):
 				
 			all_replicas = self.my_strategy.experimental_local_results(self.val_images)
 			self.val_images = all_replicas[0]
-			predictions = inferx(self.val_images[0])
+			predictions = inferx(self.val_ct)
 			#print(f"\n{self.val_images[0].shape}")
 			#values = self.my_strategy.experimental_local_results(predictions)
 			return predictions
 		else:
 			
-			return self.model(self.val_images[0])
+			return self.model(self.val_ct)
 
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:
@@ -246,10 +247,10 @@ class P2PMonitor(kr.callbacks.Callback):
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
 				for row in range(grid_row):
 					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((self.val_images[0][row].squeeze() + 1) / 2, cmap='gray')
+					ax[0].imshow((self.val_ct[row].squeeze() + 1) / 2, cmap='gray')
 					ax[0].axis("off")
 					ax[0].set_title("CT", fontsize=20)
-					ax[1].imshow((self.val_images[1][row].squeeze() + 1) / 2, cmap='gray')
+					ax[1].imshow((self.val_mri[row].squeeze() + 1) / 2, cmap='gray')
 					ax[1].axis("off")
 					ax[1].set_title("Ground Truth", fontsize=20)
 					ax[2].imshow((np.array(generated_images[row]).squeeze() + 1) / 2, cmap='gray')
