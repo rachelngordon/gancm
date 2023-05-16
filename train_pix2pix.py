@@ -23,6 +23,8 @@ def main(flags):
   x_test, y_test = data_test['x'], data_test['y']
 
   print(x_train.shape)
+  print(x_test.shape)
+  print(y_test.shape)
 
   #Build and train the model
   model = Pix2Pix(flags)
