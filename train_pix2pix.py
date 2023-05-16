@@ -25,11 +25,12 @@ def main(flags):
   print(x_train.shape)
   print(x_test.shape)
   print(y_test.shape)
-  val_dataset = (x_test[5:8], y_test[5:8])
-  print(len(val_dataset))
-  val = [x_test[5:8], y_test[5:8]]
+  val_dataset = (x_test, y_test)
   print(val_dataset[0].shape)
   print(val_dataset[1].shape)
+  val = [x_test, y_test]
+  print(val[0].shape)
+  print(val[1].shape)
   #Build and train the model
   model = Pix2Pix(flags)
   model.compile()
