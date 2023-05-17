@@ -13,24 +13,16 @@ def main(flags):
     path = f"{data_path}{i}.npz"
     if i == 1:
       data = np.load(path)
-      x_train, y_train = data['x'], data['y']
+      x_train, y_train = data['arr_0'], data['arr_1']
     else:
       data = np.load(path)
       x_train = np.concatenate((x_train, data['x']), axis=0)
       y_train = np.concatenate((y_train, data['y']), axis=0)
 
   data_test = np.load(test_data_path)
-  x_test, y_test = data_test['x'], data_test['y']
+  x_test, y_test = data_test['arr_0'], data_test['arr_1']
 
-  print(x_train.shape)
-  print(x_test.shape)
-  print(y_test.shape)
-  val_dataset = (x_test, y_test)
-  print(val_dataset[0].shape)
-  print(val_dataset[1].shape)
-  val = [x_test, y_test]
-  print(val[0].shape)
-  print(val[1].shape)
+  
   #Build and train the model
   model = Pix2Pix(flags)
   model.compile()
@@ -40,7 +32,7 @@ def main(flags):
     epochs=flags.epochs,
     verbose=1,
     batch_size = flags.batch_size,
-    callbacks=[modules.P2PMonitor(val_dataset, flags)],
+    callbacks=[modules.P2PMonitor((x_test[5:8], y_test[5:8]), flags)],
   )
   
   

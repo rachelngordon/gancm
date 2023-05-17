@@ -18,7 +18,7 @@ class Flags():
     parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
     parser.add_argument('--sample_dir', type=str, default='./training_samples', help='samples are saved here')
     parser.add_argument('--result_logs', type=str, default='./results' , help='Logs are stored here' )
-    parser.add_argument('--model_path', type=str, default='./models' , help='Model is stored here' )
+    parser.add_argument('--model_path', type=str, default='./models/' , help='Model is stored here' )
     parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
     
     # input/output sizes
