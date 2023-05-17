@@ -44,7 +44,7 @@ def calculate_fid(y_true, y_pred, input_shape = (flags.crop_size,flags.crop_size
 def get_metrics(y_true, y_pred):
   
   
-  y_true,y_pred = y_true.numpy(), y_pred.numpy()
+  #y_true,y_pred = y_true.numpy(), y_pred.numpy()
   mse=sk.mean_squared_error(y_true.flatten(),y_pred.flatten())
   mae=sk.mean_absolute_error(y_true.flatten(),y_pred.flatten())
   cs=sk.pairwise.cosine_similarity([y_true.flatten()], [y_pred.flatten()])
