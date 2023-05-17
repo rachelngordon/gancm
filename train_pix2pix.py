@@ -16,8 +16,8 @@ def main(flags):
       x_train, y_train = data['arr_0'], data['arr_1']
     else:
       data = np.load(path)
-      x_train = np.concatenate((x_train, data['x']), axis=0)
-      y_train = np.concatenate((y_train, data['y']), axis=0)
+      x_train = np.concatenate((x_train, data['arr_0']), axis=0)
+      y_train = np.concatenate((y_train, data['arr_1']), axis=0)
 
   data_test = np.load(test_data_path)
   x_test, y_test = data_test['arr_0'], data_test['arr_1']
