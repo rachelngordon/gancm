@@ -236,7 +236,7 @@ class Pix2Pix(kr.Model):
 
     def plot_losses(self, hist):
         
-        exp_path = '/media/aisec-102/DATA3/rachel/pcxgan/history/' + self.experiment_name
+        exp_path = '/media/aisec-102/DATA31/rachel/pcxgan/history/' + self.experiment_name
 
         if not os.path.exists(exp_path):
             os.makedirs(exp_path)
