@@ -34,9 +34,9 @@ def main(flags):
     z = np.expand_dims(z, axis=-1)
 
     batch_size = flags.batch_size
-    num_batches = math.ceil(len(x) / batch_size)
+    #num_batches = math.ceil(len(x) / batch_size)
     #buffer_size = len(x)
-    batch_idx = np.array_split(range(len(x)), num_batches)
+    #batch_idx = np.array_split(range(len(x)), num_batches)
     
     dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
     dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
@@ -51,6 +51,14 @@ def main(flags):
   train_data = batch_dataset(x_train, y_train, z_train)
   test_data = batch_dataset(x_test, y_test, z_test)
   
+  # Get the shape of the first batch
+  first_batch = next(iter(train_dataset))
+  batch_shape = tf.shape(first_batch)
+
+  # Print the shape
+  print(batch_shape)
+  print(first_batch.numpy())
+
 
   #Build and train the model
   model = PCxGAN(flags)
