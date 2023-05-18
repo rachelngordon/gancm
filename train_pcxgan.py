@@ -51,7 +51,7 @@ def main(flags):
   model = PCxGAN(flags)
   model.compile()
   history = model.fit(
-    train_data
+    train_data,
     validation_data=(x_test, y_test, mask_test),
     epochs=flags.epochs,
     verbose=1,
