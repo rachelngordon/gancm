@@ -51,6 +51,7 @@ def main(flags):
   train_data = batch_dataset(x_train, y_train, z_train)
   test_data = batch_dataset(x_test, y_test, z_test)
   
+  '''
   # Get the shape of the first batch
   first_batch = next(iter(train_data))
   batch_shape = tf.shape(first_batch)
@@ -58,6 +59,7 @@ def main(flags):
   # Print the shape
   print(batch_shape)
   print(first_batch.numpy())
+  '''
 
 
   #Build and train the model
