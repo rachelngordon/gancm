@@ -185,12 +185,13 @@ class DataGenerator_Ready(kr.utils.Sequence):
 				print("Couldn't delete the images")
 
 		# normalizes from -1 to 1
-		if flags.apply_normalization:
-			x, y = (x - 0.5) / 0.5, (y - 0.5) / 0.5
+		#if flags.apply_normalization:
+			#x, y = (x - 0.5) / 0.5, (y - 0.5) / 0.5
 
 			# normalizes from 0 to 1
 			#x, y = (self.x - min(self.x)) / (max(self.x) - min(self.x)), (self.y - min(self.y)) / (max(self.y) - min(self.y))
 		
+
 		#x = tf.cast(x, tf.float32)
 		#y = tf.cast(y, tf.float32)
 		
@@ -205,11 +206,21 @@ class DataGenerator_Ready(kr.utils.Sequence):
 			z=x
 		# print(self.x.shape, self.y.shape, self.mask.shape)
 		
-		# save normalized data to a file
-		path = '/media/aisec-102/DATA3/rachel/data/' + flags.name + '_n-1.npz'
-		np.savez(path, x, y, z)
+		# use histogram equalizer
+		normalized_x, normalized_y = [],[]
+		for image_x, image_y in zip(x, y):
+			equalized_x = cv2.equalizeHist((image_x*255).squeeze().astype(np.uint8))
+			normalized_x.append(equalized_x/255.0)
+			equalized_y = cv2.equalizeHist((image_y * 255).squeeze().astype(np.uint8))
+			normalized_y.append(equalized_y/255.0)
+		
+		normalized_x = np.expand_dims((np.array(normalized_x)-0.5)/0.5, axis=-1)
+		normalized_y = np.expand_dims((np.array(normalized_y)-0.5)/0.5, axis=-1)
+		normalized_x = tf.cast(normalized_x, tf.float32)
+		normalized_y = tf.cast(normalized_y, tf.float32)
 
-		return x, y, z
+
+		return normalized_x, normalized_y, z
 	
 
 	@tf.function()
