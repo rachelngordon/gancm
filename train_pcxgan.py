@@ -1,29 +1,47 @@
-from pcxgan.pcxgan_ct import PCxGAN_ct
+from pcxgan.pcxgan import PCxGAN
 from flags import Flags
 import data_loader
-import pcxgan.modules_ct as modules
+import pcxgan.modules as modules
+import numpy as np
 
-flags = Flags().parse()
+def main(flags):
 
+  data_path = "/media/aisec-102/DATA31/rachel/data/CV/norm_mask_neg1pos1_fold"
+  test_data_path = "/media/aisec-102/DATA31/rachel/data/CV/norm_mask_neg1pos1_fold5.npz"
+	
 
-train_dataset = data_loader.DataGenerator_Ready(flags, flags.data_path).load()
-test_dataset = data_loader.DataGenerator_Ready(flags, flags.test_data_path).load()
+  for i in [1,2,3,4]:
+    path = f"{data_path}{i}.npz"
+    if i == 1:
+      data = np.load(path)
+      x_train, y_train = data['arr_0'], data['arr_1']
+    else:
+      data = np.load(path)
+      x_train = np.concatenate((x_train, data['arr_0']), axis=0)
+      y_train = np.concatenate((y_train, data['arr_1']), axis=0)
 
+  data_test = np.load(test_data_path)
+  x_test, y_test = data_test['arr_0'], data_test['arr_1']
 
-#Build and train the model
-model = PCxGAN_ct(flags)
-model.compile()
-history = model.fit(
-  train_dataset,
-  validation_data=test_dataset,
-  epochs=flags.epochs,
-  verbose=1,
-  callbacks=[modules.GanMonitor(test_dataset, flags)],
-)
-
-
-
-model.model_evaluate(test_dataset)
-model.save_model()
-model.plot_losses(history.history)
-
+  
+  #Build and train the model
+  model = PCxGAN(flags)
+  model.compile()
+  history = model.fit(
+    x_train, y_train,
+    validation_data=(x_test, y_test),
+    epochs=flags.epochs,
+    verbose=1,
+    batch_size = flags.batch_size,
+    callbacks=[modules.GanMonitor((x_test[5:8], y_test[5:8]), flags)],
+  )
+  
+  
+  model.save_model(flags)
+  model.model_evaluate((x_test, y_test))
+  model.plot_losses(history.history)
+  
+  
+if __name__ == '__main__':
+  flags = Flags().parse()
+  main(flags)

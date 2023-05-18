@@ -1,4 +1,4 @@
-# PCGAN
+# PCxGAN
 import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
@@ -7,7 +7,8 @@ import loss
 import evaluate
 from datetime import datetime
 import os
-
+import matplotlib.pyplot as plt
+import pandas as pd
 
 class PCxGAN(kr.Model):
 	def __init__(
@@ -20,6 +21,7 @@ class PCxGAN(kr.Model):
 		self.experiment_name = flags.name
 		self.samples_dir = flags.sample_dir
 		self.models_dir = flags.checkpoints_dir
+		self.hist_dir = self.flags.hist_path
 		self.image_shape = (flags.crop_size, flags.crop_size, 1)
 		self.image_size = flags.crop_size
 		self.latent_dim = flags.latent_dim
@@ -32,6 +34,7 @@ class PCxGAN(kr.Model):
 		self.generator_loss_coeff = flags.generator_loss_coeff
 		self.ssim_loss_coeff = flags.ssim_loss_coeff
 		self.mae_loss_coeff = flags.mae_loss_coeff
+		self.disc_loss_coeff = self.flags.disc_loss_coeff
 		
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
@@ -97,7 +100,7 @@ class PCxGAN(kr.Model):
 			pred_real = self.discriminator([segmentation_map, real_image])[-1]  # check
 			loss_fake = self.discriminator_loss(False, pred_fake)
 			loss_real = self.discriminator_loss(True, pred_real)
-			total_loss = 0.5 * (loss_fake + loss_real)
+			total_loss = self.disc_loss_coeff * (loss_fake + loss_real)
 		
 		self.discriminator.trainable = True
 		gradients = gradient_tape.gradient(
@@ -181,7 +184,7 @@ class PCxGAN(kr.Model):
 		pred_real = self.discriminator([ct, mri])[-1]
 		loss_fake = self.discriminator_loss(False, pred_fake)
 		loss_real = self.discriminator_loss(True, pred_real)
-		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
+		total_discriminator_loss = self.disc_loss_coeff * (loss_fake + loss_real)
 		
 		real_d_output = self.discriminator([ct, mri])
 		fake_d_output, fake_image = self.combined_model(
@@ -214,10 +217,15 @@ class PCxGAN(kr.Model):
 		latent_vectors, labels = inputs
 		return self.decoder([latent_vectors, labels])
 	
-	def model_evaluate(self, data, epoch=0):
+	def model_evaluate(self, test_data, epoch=0):
 		results = []
+
+		num_batches = len(test_data[0]//self.batch_size)
 		
-		for ct, mri, label in data:
+		for i in range(0, num_batches, self.batch_size):
+			ct, mri, label = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size], test_data[2][i:i+self.batch_size]
+
+		#for ct, mri, label in test_data:
 
 			# Sample latent from a normal distribution.
 			latent_vector = tf.random.normal(
@@ -252,7 +260,7 @@ class PCxGAN(kr.Model):
 
 	def plot_losses(self, hist):
 		
-		exp_path = '/media/aisec-102/DATA3/rachel/pcxgan/history/' + self.experiment_name
+		exp_path = self.hist_dir + self.experiment_name
 		
 		if not os.path.exists(exp_path):
 			os.makedirs(exp_path)

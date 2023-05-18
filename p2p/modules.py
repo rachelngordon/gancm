@@ -210,7 +210,7 @@ class Discriminator(kr.Model):
 class P2PMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags, my_strategy=False):
 
-		self.val_ct, self.val_mri = val_dataset[0], val_dataset[1]
+		self.val_images = val_dataset
 		self.my_strategy = my_strategy
 		self.n_samples = 3
 		self.epoch_interval = flags.epoch_interval
@@ -230,13 +230,13 @@ class P2PMonitor(kr.callbacks.Callback):
 				
 			all_replicas = self.my_strategy.experimental_local_results(self.val_images)
 			self.val_images = all_replicas[0]
-			predictions = inferx(self.val_ct)
+			predictions = inferx(self.val_images[0])
 			#print(f"\n{self.val_images[0].shape}")
 			#values = self.my_strategy.experimental_local_results(predictions)
 			return predictions
 		else:
 			
-			return self.model(self.val_ct)
+			return self.model(self.val_images[0])
 
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:

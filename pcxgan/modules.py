@@ -87,6 +87,7 @@ class DownsampleModule(kr.layers.Layer):
 	def __init__(self, channels, filter_size, apply_norm=True, batch_norm=False, apply_dropout=False,
 							 apply_activation=True, **kwargs):
 		super().__init__(**kwargs)
+		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
 		self.block = kr.Sequential()
 		self.strides = 2
 		self.apply_activation = apply_activation
@@ -102,7 +103,7 @@ class DownsampleModule(kr.layers.Layer):
 
 		
 		if apply_norm:
-			self.block.add(kr.layers.GroupNormalization(groups=channels))
+			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
 		if batch_norm:
 			self.block.add(kr.layers.BatchNormalization())
 		if self.apply_activation:
@@ -118,6 +119,7 @@ class UpsampleModule(kr.layers.Layer):
 	def __init__(self, channels, filter_size, batch_norm=True, dropout=True,
 							 apply_activation=True, **kwargs):
 		super().__init__(**kwargs)
+		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
 		self.block = kr.Sequential()
 		self.strides = 2
 		self.apply_activation = apply_activation
@@ -130,7 +132,8 @@ class UpsampleModule(kr.layers.Layer):
 																						 activity_regularizer=kr.regularizers.l2(1e-5)))
 		
 		if batch_norm:
-			self.block.add(kr.layers.BatchNormalization())
+			#self.block.add(kr.layers.BatchNormalization())
+			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
 		if dropout:
 			self.block.add(kr.layers.Dropout(0.5))
 		if self.apply_activation:
@@ -271,11 +274,27 @@ class GanMonitor(kr.callbacks.Callback):
 	# self.model.model_evaluate(val_dataset)
 	
 	def infer(self):
+
 		latent_vector = tf.random.normal(
 			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0
 		)
-		return self.model.predict([latent_vector, self.val_images[2]])
-	
+
+		if self.my_strategy:
+			#@tf.function
+			def inferx(c):
+				return self.model.predict([latent_vector, c])
+				
+			all_replicas = self.my_strategy.experimental_local_results(self.val_images)
+			self.val_images = all_replicas[0]
+			predictions = inferx(self.val_images[2])
+			#print(f"\n{self.val_images[0].shape}")
+			#values = self.my_strategy.experimental_local_results(predictions)
+			return predictions
+		else:
+			
+			return self.model.predict([latent_vector, self.val_images[2]])
+		
+
 	def save_models(self):
 		# e_name = "encoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
 		d_name = "decoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
