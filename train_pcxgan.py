@@ -32,6 +32,7 @@ def main(flags):
     validation_data=(x_test, y_test, mask_test),
     epochs=flags.epochs,
     verbose=1,
+    batch_size = flags.batch_size
     callbacks=[modules.GanMonitor((x_test[5:8], y_test[5:8], mask_test[5:8]), flags)],
   )
   
