@@ -20,6 +20,7 @@ class Pix2Pix(kr.Model):
         self.experiment_name = self.flags.name
         self.samples_dir = self.flags.sample_dir
         self.models_dir = self.flags.checkpoints_dir
+        self.hist_dir = self.flags.hist_path
         self.image_shape = (self.flags.crop_size, self.flags.crop_size, 1)
         self.image_size = self.flags.crop_size
         self.batch_size = self.flags.batch_size
@@ -236,7 +237,7 @@ class Pix2Pix(kr.Model):
 
     def plot_losses(self, hist):
         
-        exp_path = '/media/aisec-102/DATA31/rachel/pcxgan/history/' + self.experiment_name
+        exp_path = self.hist_dir + self.experiment_name
 
         if not os.path.exists(exp_path):
             os.makedirs(exp_path)
