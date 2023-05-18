@@ -52,10 +52,10 @@ def main(flags):
   model.compile()
   history = model.fit(
     train_data,
-    validation_data=(x_test, y_test, mask_test),
+    validation_data=test_data,
     epochs=flags.epochs,
     verbose=1,
-    batch_size = flags.batch_size
+    batch_size = flags.batch_size,
     callbacks=[modules.GanMonitor(test_data, flags)],
   )
   
