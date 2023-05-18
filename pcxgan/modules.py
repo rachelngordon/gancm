@@ -155,7 +155,7 @@ class Encoder(kr.Model):
 		self.downsample3 = DownsampleModule(4 * n_filters, filter_size)
 		self.downsample4 = DownsampleModule(8 * n_filters, filter_size)
 		self.downsample5 = DownsampleModule(8 * n_filters, filter_size)
-		self.downsample6 = DownsampleModule(8 * n_filters, filter_size)
+		#self.downsample6 = DownsampleModule(8 * n_filters, filter_size)
 		
 		self.flatten = kr.layers.Flatten()
 		self.mean = kr.layers.Dense(self.latent_dim)
@@ -167,7 +167,7 @@ class Encoder(kr.Model):
 		x = self.downsample3(x)
 		x = self.downsample4(x)
 		x = self.downsample5(x)
-		x = self.downsample6(x)
+		#x = self.downsample6(x)
 		x = self.flatten(x)
 		return [self.mean(x), self.variance(x)]
 	
@@ -196,8 +196,8 @@ class Decoder(kr.Model):
 		self.upsample5 = kr.layers.UpSampling2D((2, 2))
 		self.resblock6 = ResBlock(flags, filters=res_filters / 8)
 		self.upsample6 = kr.layers.UpSampling2D((2, 2))
-		self.resblock7 = ResBlock(flags, filters=res_filters / 16)
-		self.upsample7 = kr.layers.UpSampling2D((2, 2))
+		#self.resblock7 = ResBlock(flags, filters=res_filters / 16)
+		#self.upsample7 = kr.layers.UpSampling2D((2, 2))
 		self.activation = kr.layers.LeakyReLU(0.2)
 		self.out_image = kr.layers.Conv2D(1, kernel_size=4, padding='same', activation='tanh')
 	
@@ -222,8 +222,8 @@ class Decoder(kr.Model):
 		x = self.upsample5(x)
 		x = self.resblock6(x, mask)
 		x = self.upsample6(x)
-		x = self.resblock7(x, mask)
-		x = self.upsample7(x)
+		#x = self.resblock7(x, mask)
+		#x = self.upsample7(x)
 		x = self.activation(x)
 		return self.out_image(x)
 
