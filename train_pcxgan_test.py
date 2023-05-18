@@ -13,19 +13,19 @@ def main(flags):
   test_data_path = "/media/aisec-102/DATA31/rachel/data/CV/norm_mask_neg1pos1_fold5.npz"
 	
 
-  train_data = data_loader.DataGenerator_Ready(flags, data_path)
-  test_data = data_loader.DataGenerator_Ready(flags, test_data_path)
+  (x_train, y_train, z_train) = data_loader.DataGenerator_Ready(flags, data_path)
+  (x_test, y_test, z_test) = data_loader.DataGenerator_Ready(flags, test_data_path)
 
   #Build and train the model
   model = PCxGAN(flags)
   model.compile()
   history = model.fit(
-    train_data,
-    validation_data=test_data,
+    (x_train, y_train, z_train),
+    validation_data=(x_test, y_test, z_test),
     epochs=flags.epochs,
     verbose=1,
     batch_size = flags.batch_size,
-    callbacks=[modules.GanMonitor(test_data, flags)],
+    callbacks=[modules.GanMonitor((x_test, y_test, z_test), flags)],
   )
   
   
