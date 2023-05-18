@@ -52,7 +52,7 @@ def main(flags):
   test_data = batch_dataset(x_test, y_test, z_test)
   
   # Get the shape of the first batch
-  first_batch = next(iter(train_dataset))
+  first_batch = next(iter(train_data))
   batch_shape = tf.shape(first_batch)
 
   # Print the shape
