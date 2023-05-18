@@ -79,7 +79,7 @@ class GaussianSampler(kr.layers.Layer):
 		epsilon = tf.random.normal(
 			shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=1.0
 		)
-		samples = means + epsilon * tf.exp(0.5 * variance)
+		samples = means + tf.exp(0.5 * variance) * epsilon
 		return samples
 
 
