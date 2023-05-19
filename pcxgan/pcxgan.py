@@ -220,12 +220,12 @@ class PCxGAN(kr.Model):
 	def model_evaluate(self, test_data, epoch=0):
 		results = []
 
-		num_batches = len(test_data[0]//self.batch_size)
+		#num_batches = len(test_data[0]//self.batch_size)
 		
-		for i in range(0, num_batches, self.batch_size):
-			ct, mri, label = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size], test_data[2][i:i+self.batch_size]
+		#for i in range(0, num_batches, self.batch_size):
+			#ct, mri, label = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size], test_data[2][i:i+self.batch_size]
 
-		#for ct, mri, label in test_data:
+		for ct, mri, label in test_data:
 
 			# Sample latent from a normal distribution.
 			latent_vector = tf.random.normal(
