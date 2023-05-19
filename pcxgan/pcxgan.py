@@ -214,7 +214,7 @@ class PCxGAN(kr.Model):
 		return results
 	
 	def call(self, inputs):
-		latent_vectors, labels, _ = inputs
+		latent_vectors, labels = inputs
 		return self.decoder([latent_vectors, labels])
 	
 	def model_evaluate(self, test_data, epoch=0):
