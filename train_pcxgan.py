@@ -26,26 +26,18 @@ def main(flags):
   data_test = np.load(test_data_path)
   x_test, y_test, z_test = data_test['arr_0'], data_test['arr_1'], data_test['arr_2']
 
-
+  
   def batch_dataset(x, y, z):
-
     x = np.expand_dims(x, axis=-1)
     y = np.expand_dims(y, axis=-1)
     z = np.expand_dims(z, axis=-1)
 
     batch_size = flags.batch_size
-    #num_batches = math.ceil(len(x) / batch_size)
-    #buffer_size = len(x)
-    #batch_idx = np.array_split(range(len(x)), num_batches)
-    
     dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
     dataset = dataset.map(
-				lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
-    #dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
-    #dataset = dataset.map(
-				#lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
-    
-    dataset.batch(batch_size, drop_remainder=True)
+        lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)),
+        num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.batch(batch_size, drop_remainder=True)
 
     return dataset
   
