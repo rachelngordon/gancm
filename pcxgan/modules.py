@@ -258,10 +258,11 @@ class Discriminator(kr.Model):
 
 
 class GanMonitor(kr.callbacks.Callback):
-	def __init__(self, val_dataset, flags):
+	def __init__(self, val_dataset, flags, my_strategy=False):
 		self.val_images = next(iter(val_dataset))
 		self.n_samples = flags.batch_size
 		self.epoch_interval = flags.epoch_interval
+		self.my_strategy = my_strategy
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
 		
