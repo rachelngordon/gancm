@@ -253,7 +253,7 @@ class PCxGAN(kr.Model):
 
 	
 	
-	def save_model(self, flags):
+	def save_model(self):
 		self.encoder.save(self.flags.model_path + self.experiment_name + '_e')
 		self.decoder.save(self.flags.model_path + self.experiment_name + '_d')
 
