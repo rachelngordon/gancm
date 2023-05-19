@@ -29,9 +29,9 @@ def main(flags):
 
   def batch_dataset(x, y, z):
 
-    #x = np.expand_dims(x, axis=-1)
-    #y = np.expand_dims(y, axis=-1)
-    #z = np.expand_dims(z, axis=-1)
+    x = np.expand_dims(x, axis=-1)
+    y = np.expand_dims(y, axis=-1)
+    z = np.expand_dims(z, axis=-1)
 
     batch_size = flags.batch_size
     #num_batches = math.ceil(len(x) / batch_size)
