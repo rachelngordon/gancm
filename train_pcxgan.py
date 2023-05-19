@@ -39,6 +39,8 @@ def main(flags):
     #batch_idx = np.array_split(range(len(x)), num_batches)
     
     dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
+    dataset = dataset.map(
+				lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
     #dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
     #dataset = dataset.map(
 				#lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
