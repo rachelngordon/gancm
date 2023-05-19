@@ -5,12 +5,13 @@ import p2p.modules as modules
 
 def main(flags):
 
-  data_path = "/media/aisec-102/DATA31/rachel/data/CV/normalized_neg1pos1_fold"
-  test_data_path = "/media/aisec-102/DATA31/rachel/data/CV/normalized_neg1pos1_fold4.npz"
+  data_path = "/grand/EVITA/data/CV/normalized_neg1pos1_fold"
+  test_data_path = "/grand/EVITA/data/CV/normalized_neg1pos1_fold4.npz"
 	
 
   for i in [1,2,3,5]:
     path = f"{data_path}{i}.npz"
+    
     if i == 1:
       data = np.load(path)
       x_train, y_train = data['arr_0'], data['arr_1']
