@@ -59,7 +59,7 @@ class Flags():
     parser.add_argument('--s_beta_filter_size', type=int, default=3 , help='' )
     parser.add_argument('--e_n_filters', type=int, default=64 , help='' )
     parser.add_argument('--e_filter_size', type=int, default=3 , help='' )
-    parser.add_argument('--e_strides', type=int, default=2 , help='' )
+    parser.add_argument('--strides', type=int, default=2 , help='' )
     parser.add_argument('--d_res_filters', type=int, default=1024 , help='' )
     parser.add_argument('--d_n_filters', type=int, default=256 , help='' )
     parser.add_argument('--d_filter_size', type=int, default=4 , help='' )
