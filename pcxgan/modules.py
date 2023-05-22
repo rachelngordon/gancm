@@ -133,16 +133,19 @@ class UpsampleModule(kr.layers.Layer):
 		
 		if batch_norm:
 			#self.block.add(kr.layers.BatchNormalization())
+			temp_inputs_ = inputs_.copy()
+			inputs_ = tf.cast(inputs_, tf.int32)
 			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			inputs_ = temp_inputs_
 		if dropout:
 			self.block.add(kr.layers.Dropout(0.5))
 		if self.apply_activation:
 			self.block.add(kr.layers.LeakyReLU(0.2))
 	
 	def call(self, inputs_):
-		inputs_ = tf.cast(inputs_, tf.int32)
+		
 		return self.block(inputs_)
-'''
+
 
 class UpsampleModule(kr.layers.Layer):
     def __init__(self, channels, filter_size, batch_norm=True, dropout=True,
@@ -179,7 +182,7 @@ class UpsampleModule(kr.layers.Layer):
 
     def process_int_branch(self, int_inputs):
         return self.int_branch(int_inputs)
-''' 
+
 
 
 class Encoder(kr.Model):
@@ -224,23 +227,23 @@ class Decoder(kr.Model):
 		self.dense1 = kr.layers.Dense(self.latent_dim * 4 * 4)
 		self.reshape = kr.layers.Reshape((4, 4, self.latent_dim))
 		self.resblock1 = ResBlock(flags, filters=res_filters)
-		self.upsample1 = kr.layers.UpSampling2D((2, 2))
-		#self.upsample1 = UpsampleModule(channels=res_filters, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
+		#self.upsample1 = kr.layers.UpSampling2D((2, 2))
+		self.upsample1 = UpsampleModule(channels=res_filters, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		self.resblock2 = ResBlock(flags, filters=res_filters)
-		self.upsample2 = kr.layers.UpSampling2D((2, 2))
-		#self.upsample2 = UpsampleModule(channels=res_filters, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
+		#self.upsample2 = kr.layers.UpSampling2D((2, 2))
+		self.upsample2 = UpsampleModule(channels=res_filters, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		self.resblock3 = ResBlock(flags, filters=res_filters)
-		self.upsample3 = kr.layers.UpSampling2D((2, 2))
-		#self.upsample3 = UpsampleModule(channels=res_filters, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
+		#self.upsample3 = kr.layers.UpSampling2D((2, 2))
+		self.upsample3 = UpsampleModule(channels=res_filters, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		self.resblock4 = ResBlock(flags, filters=res_filters / 2)
-		self.upsample4 = kr.layers.UpSampling2D((2, 2))
-		#self.upsample4 = UpsampleModule(channels=res_filters / 2, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
+		#self.upsample4 = kr.layers.UpSampling2D((2, 2))
+		self.upsample4 = UpsampleModule(channels=res_filters / 2, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		self.resblock5 = ResBlock(flags, filters=res_filters / 4)
-		self.upsample5 = kr.layers.UpSampling2D((2, 2))
-		#self.upsample5 = UpsampleModule(channels=res_filters / 4, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
+		#self.upsample5 = kr.layers.UpSampling2D((2, 2))
+		self.upsample5 = UpsampleModule(channels=res_filters / 4, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		self.resblock6 = ResBlock(flags, filters=res_filters / 8)
-		self.upsample6 = kr.layers.UpSampling2D((2, 2))
-		#self.upsample6 = UpsampleModule(channels=res_filters / 8, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
+		#self.upsample6 = kr.layers.UpSampling2D((2, 2))
+		self.upsample6 = UpsampleModule(channels=res_filters / 8, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		#self.resblock7 = ResBlock(flags, filters=res_filters / 16)
 		#self.upsample7 = kr.layers.UpSampling2D((2, 2))
 		self.activation = kr.layers.LeakyReLU(0.2)
