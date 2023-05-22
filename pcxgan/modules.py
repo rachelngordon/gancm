@@ -214,9 +214,9 @@ class Decoder(kr.Model):
 	
 	def call(self, inputs_, **kwargs):
 		latent, mask = inputs_[0], inputs_[1]
-		x = tf.cast(x, tf.int32)
 		x = self.dense1(latent)
 		x = self.reshape(x)
+		x = tf.cast(x, tf.int32)
 		x = self.resblock1(x, mask)
 		x = self.upsample1(x)
 		x = self.resblock2(x, mask)
