@@ -130,6 +130,7 @@ class UpsampleModule(kr.layers.Layer):
                                                            kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
                                                            activity_regularizer=kr.regularizers.l2(1e-5))
         if batch_norm:
+            gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
             self.group_norm = kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init)
         if dropout:
             self.dropout_layer = kr.layers.Dropout(0.5)
