@@ -140,7 +140,7 @@ class UpsampleModule(kr.layers.Layer):
 			self.block.add(kr.layers.LeakyReLU(0.2))
 	
 	def call(self, inputs_):
-		inputs_ = tf.cast(inputs_, tf.float32)
+		inputs_ = tf.cast(inputs_, tf.int32)
 		return self.block(inputs_)
 
 
