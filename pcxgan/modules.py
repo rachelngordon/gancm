@@ -116,6 +116,49 @@ class DownsampleModule(kr.layers.Layer):
 
 
 class UpsampleModule(kr.layers.Layer):
+    def __init__(self, channels, filter_size, batch_norm=True, dropout=True, apply_activation=True, **kwargs):
+        super(UpsampleModule, self).__init__(**kwargs)
+        self.channels = channels
+        self.filter_size = filter_size
+        self.strides = 2
+        self.batch_norm = batch_norm
+        self.dropout = dropout
+        self.apply_activation = apply_activation
+
+        self.conv_transpose = kr.layers.Conv2DTranspose(channels, filter_size, strides=self.strides, padding='same',
+                                                           kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
+                                                           kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
+                                                           activity_regularizer=kr.regularizers.l2(1e-5))
+        if batch_norm:
+            self.group_norm = kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init)
+        if dropout:
+            self.dropout_layer = kr.layers.Dropout(0.5)
+        if self.apply_activation:
+            self.leaky_relu = kr.layers.LeakyReLU(0.2)
+        
+    def call(self, inputs_):
+        x = self.conv_transpose(inputs_)
+        if self.batch_norm:
+			
+            prev_layer = self.block.layers[0]
+            prev_layer_input = prev_layer.input
+            this_layer_input = prev_layer_input.copy()
+            this_layer_input = tf.cast(this_layer_input, tf.int32)
+			
+            x = self.group_norm(this_layer_input)
+	    
+            #layer = self.block.layers[1]
+            #layer.input = this_layer_input
+            
+        if self.dropout:
+            x = self.dropout_layer(x)
+        if self.apply_activation:
+            x = self.leaky_relu(x)
+        return x
+    
+
+'''
+class UpsampleModule(kr.layers.Layer):
 	def __init__(self, channels, filter_size, batch_norm=True, dropout=True,
 							 apply_activation=True, **kwargs):
 		super().__init__(**kwargs)
@@ -133,15 +176,60 @@ class UpsampleModule(kr.layers.Layer):
 		
 		if batch_norm:
 			#self.block.add(kr.layers.BatchNormalization())
-			prev_layer = self.block.layers[0]
-			prev_layer_input = prev_layer.input
-			this_layer_input = prev_layer_input.copy()
-			this_layer_input = tf.cast(this_layer_input, tf.int32)
+			#prev_layer = self.block.layers[0]
+			#prev_layer_input = prev_layer.input
+			#this_layer_input = prev_layer_input.copy()
+			#this_layer_input = tf.cast(this_layer_input, tf.int32)
 			
 			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
 
-			layer = self.block.layers[1]
-			layer.input = this_layer_input
+			#layer = self.block.layers[1]
+			#layer.input = this_layer_input
+			
+		if dropout:
+			self.block.add(kr.layers.Dropout(0.5))
+		if self.apply_activation:
+			self.block.add(kr.layers.LeakyReLU(0.2))
+	
+		# Iterate over layers and print their names and indices
+		for i, layer in enumerate(self.block.layers):
+			print("Layer Name:", layer.name)
+			print("Layer Index:", i)
+			print()
+
+	def call(self, inputs_):
+		return self.block(inputs_)
+	
+
+
+class UpsampleModule(kr.layers.Layer):
+	def __init__(self, channels, filter_size, batch_norm=True, dropout=True,
+							 apply_activation=True, **kwargs):
+		super().__init__(**kwargs)
+		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
+		self.block = kr.Sequential()
+		self.strides = 2
+		self.apply_activation = apply_activation
+		
+		# self.block.add(kr.layers.UpSampling2D((2, 2)))
+		
+		self.block.add(kr.layers.Conv2DTranspose(channels, filter_size, strides=self.strides, padding='same',
+																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
+																						 kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
+																						 activity_regularizer=kr.regularizers.l2(1e-5)))
+		
+		if batch_norm:
+			#self.block.add(kr.layers.BatchNormalization())
+			#prev_layer = self.block.layers[0]
+			#prev_layer_input = prev_layer.input
+			#this_layer_input = prev_layer_input.copy()
+			#this_layer_input = tf.cast(this_layer_input, tf.int32)
+			
+			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+
+			#layer = self.block.layers[1]
+			#layer.input = this_layer_input
+			
 		if dropout:
 			self.block.add(kr.layers.Dropout(0.5))
 		if self.apply_activation:
@@ -156,7 +244,7 @@ class UpsampleModule(kr.layers.Layer):
 	def call(self, inputs_):
 		return self.block(inputs_)
 
-'''
+
 class UpsampleModule(kr.layers.Layer):
     def __init__(self, channels, filter_size, batch_norm=True, dropout=True,
                  apply_activation=True, **kwargs):
