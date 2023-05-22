@@ -133,17 +133,19 @@ class UpsampleModule(kr.layers.Layer):
 		
 		if batch_norm:
 			#self.block.add(kr.layers.BatchNormalization())
-			temp_inputs_ = inputs_.copy()
-			inputs_ = tf.cast(inputs_, tf.int32)
 			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
-			inputs_ = temp_inputs_
 		if dropout:
 			self.block.add(kr.layers.Dropout(0.5))
 		if self.apply_activation:
 			self.block.add(kr.layers.LeakyReLU(0.2))
 	
+		# Iterate over layers and print their names and indices
+		for i, layer in enumerate(self.block.layers):
+			print("Layer Name:", layer.name)
+			print("Layer Index:", i)
+			print()
+
 	def call(self, inputs_):
-		
 		return self.block(inputs_)
 
 '''
