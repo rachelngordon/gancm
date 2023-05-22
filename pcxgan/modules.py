@@ -223,6 +223,7 @@ class Decoder(kr.Model):
 		x = self.resblock3(x, mask)
 		x = tf.cast(x, tf.int32)
 		x = self.upsample3(x)
+		x = tf.cast(x, tf.floatt32)
 		x = self.resblock4(x, mask)
 		x = self.upsample4(x)
 		x = self.resblock5(x, mask)
