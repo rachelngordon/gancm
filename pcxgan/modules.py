@@ -186,40 +186,22 @@ class Decoder(kr.Model):
 		self.reshape = kr.layers.Reshape((4, 4, self.latent_dim))
 		self.resblock1 = ResBlock(flags, filters=res_filters)
 		#self.upsample1 = kr.layers.UpSampling2D((2, 2))
-		self.upsample1 = kr.layers.Conv2DTranspose(1, kernel_size=(2,2), strides=flags.strides, padding='same',
-																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
-																						 kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-																						 activity_regularizer=kr.regularizers.l2(1e-5))
+		self.upsample1 = UpsampleModule(channels=res_filters, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		self.resblock2 = ResBlock(flags, filters=res_filters)
 		#self.upsample2 = kr.layers.UpSampling2D((2, 2))
-		self.upsample2 = kr.layers.Conv2DTranspose(1, kernel_size=(2,2), strides=flags.strides, padding='same',
-																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
-																						 kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-																						 activity_regularizer=kr.regularizers.l2(1e-5))
+		self.upsample2 = UpsampleModule(channels=res_filters, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		self.resblock3 = ResBlock(flags, filters=res_filters)
 		#self.upsample3 = kr.layers.UpSampling2D((2, 2))
-		self.upsample3 = kr.layers.Conv2DTranspose(1, kernel_size=(2,2), strides=flags.strides, padding='same',
-																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
-																						 kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-																						 activity_regularizer=kr.regularizers.l2(1e-5))
+		self.upsample3 = UpsampleModule(channels=res_filters, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		self.resblock4 = ResBlock(flags, filters=res_filters / 2)
 		#self.upsample4 = kr.layers.UpSampling2D((2, 2))
-		self.upsample4 = kr.layers.Conv2DTranspose(1, kernel_size=(2,2), strides=flags.strides, padding='same',
-																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
-																						 kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-																						 activity_regularizer=kr.regularizers.l2(1e-5))
+		self.upsample4 = UpsampleModule(channels=res_filters / 2, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		self.resblock5 = ResBlock(flags, filters=res_filters / 4)
 		#self.upsample5 = kr.layers.UpSampling2D((2, 2))
-		self.upsample5 = kr.layers.Conv2DTranspose(1, kernel_size=(2,2), strides=flags.strides, padding='same',
-																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
-																						 kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-																						 activity_regularizer=kr.regularizers.l2(1e-5))
+		self.upsample5 = UpsampleModule(channels=res_filters / 4, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		self.resblock6 = ResBlock(flags, filters=res_filters / 8)
 		#self.upsample6 = kr.layers.UpSampling2D((2, 2))
-		self.upsample6 = kr.layers.Conv2DTranspose(1, kernel_size=(2,2), strides=flags.strides, padding='same',
-																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
-																						 kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-																						 activity_regularizer=kr.regularizers.l2(1e-5))
+		self.upsample6 = UpsampleModule(channels=res_filters / 8, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		#self.resblock7 = ResBlock(flags, filters=res_filters / 16)
 		#self.upsample7 = kr.layers.UpSampling2D((2, 2))
 		self.activation = kr.layers.LeakyReLU(0.2)
