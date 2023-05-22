@@ -172,7 +172,7 @@ class UpsampleModule(kr.layers.Layer):
         float_outputs = self.float_branch(inputs_)
 
         # Process the int part of the inputs (assuming it's in the second tensor)
-        int_inputs = tf.cast(inputs_, tf.int32)
+        int_inputs = tf.cast(float_outputs, tf.int32)
         int_outputs = self.process_int_branch(int_inputs)
 
         return int_outputs
