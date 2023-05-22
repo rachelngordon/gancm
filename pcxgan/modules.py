@@ -146,7 +146,7 @@ class UpsampleModule(kr.layers.Layer):
 		
 		return self.block(inputs_)
 
-
+'''
 class UpsampleModule(kr.layers.Layer):
     def __init__(self, channels, filter_size, batch_norm=True, dropout=True,
                  apply_activation=True, **kwargs):
@@ -182,7 +182,7 @@ class UpsampleModule(kr.layers.Layer):
 
     def process_int_branch(self, int_inputs):
         return self.int_branch(int_inputs)
-
+'''
 
 
 class Encoder(kr.Model):
