@@ -84,7 +84,7 @@ class GaussianSampler(kr.layers.Layer):
 
 
 class DownsampleModule(kr.layers.Layer):
-	def __init__(self, channels, filter_size, apply_norm=True, batch_norm=False, apply_dropout=False,
+	def __init__(self, flags, channels, filter_size, apply_norm=True, batch_norm=False, apply_dropout=False,
 							 apply_activation=True, **kwargs):
 		super().__init__(**kwargs)
 		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
@@ -103,7 +103,7 @@ class DownsampleModule(kr.layers.Layer):
 
 		
 		if apply_norm:
-			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			self.block.add(kr.layers.GroupNormalization(groups=flags.groups, gamma_initializer=gamma_init))
 		if batch_norm:
 			self.block.add(kr.layers.BatchNormalization())
 		if self.apply_activation:
@@ -116,7 +116,7 @@ class DownsampleModule(kr.layers.Layer):
 
 
 class UpsampleModule(kr.layers.Layer):
-	def __init__(self, channels, filter_size, batch_norm=True, dropout=True,
+	def __init__(self, flags, channels, filter_size, batch_norm=True, dropout=True,
 							 apply_activation=True, **kwargs):
 		super().__init__(**kwargs)
 		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
@@ -133,7 +133,7 @@ class UpsampleModule(kr.layers.Layer):
 		
 		if batch_norm:
 			#self.block.add(kr.layers.BatchNormalization())
-			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			self.block.add(kr.layers.GroupNormalization(groups=flags.groups, gamma_initializer=gamma_init))
 		if dropout:
 			self.block.add(kr.layers.Dropout(0.5))
 		if self.apply_activation:
@@ -150,11 +150,11 @@ class Encoder(kr.Model):
 		self.latent_dim = flags.latent_dim
 		n_filters = flags.e_n_filters
 		filter_size = flags.e_filter_size
-		self.downsample1 = DownsampleModule(n_filters, filter_size=filter_size, apply_norm=False)
-		self.downsample2 = DownsampleModule(2 * n_filters, filter_size)
-		self.downsample3 = DownsampleModule(4 * n_filters, filter_size)
-		self.downsample4 = DownsampleModule(8 * n_filters, filter_size)
-		self.downsample5 = DownsampleModule(8 * n_filters, filter_size)
+		self.downsample1 = DownsampleModule(flags, n_filters, filter_size=filter_size, apply_norm=False)
+		self.downsample2 = DownsampleModule(flags, 2 * n_filters, filter_size)
+		self.downsample3 = DownsampleModule(flags, 4 * n_filters, filter_size)
+		self.downsample4 = DownsampleModule(flags, 8 * n_filters, filter_size)
+		self.downsample5 = DownsampleModule(flags, 8 * n_filters, filter_size)
 		#self.downsample6 = DownsampleModule(8 * n_filters, filter_size)
 		
 		self.flatten = kr.layers.Flatten()
@@ -236,10 +236,10 @@ class Discriminator(kr.Model):
 		n_filters = flags.disc_n_filters
 		filter_size = flags.disc_filter_size
 		self.merged = kr.layers.Concatenate()
-		self.downsample1 = DownsampleModule(n_filters, filter_size, apply_norm=False)
-		self.downsample2 = DownsampleModule(2 * n_filters, filter_size)
-		self.downsample3 = DownsampleModule(4 * n_filters, filter_size)
-		self.downsample4 = DownsampleModule(8 * n_filters, filter_size)
+		self.downsample1 = DownsampleModule(flags, n_filters, filter_size, apply_norm=False)
+		self.downsample2 = DownsampleModule(flags, 2 * n_filters, filter_size)
+		self.downsample3 = DownsampleModule(flags, 4 * n_filters, filter_size)
+		self.downsample4 = DownsampleModule(flags, 8 * n_filters, filter_size)
 		self.conv = kr.layers.Conv2D(self.image_shape[-1], kernel_size=filter_size, padding='same')
 	
 	def call(self, inputs_, **kwargs):
