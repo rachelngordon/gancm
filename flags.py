@@ -33,7 +33,6 @@ class Flags():
     
     # model specifics
     parser.add_argument('--latent_dim', type=int, default=256 , help='' )
-    parser.add_argument('--groups', type=int, default=8, help='' )
     parser.add_argument('--feature_loss_coeff', type=float, default=4.0 , help='' )
     parser.add_argument('--vgg_feature_loss_coeff', type=float, default=1 , help='' )
     parser.add_argument('--kl_divergence_loss_coeff', type=float, default=0.05 , help='' )
