@@ -140,6 +140,7 @@ class UpsampleModule(kr.layers.Layer):
 			self.block.add(kr.layers.LeakyReLU(0.2))
 	
 	def call(self, inputs_):
+		inputs_ = tf.cast(inputs_, tf.int32)
 		return self.block(inputs_)
 '''
 
@@ -201,11 +202,7 @@ class Encoder(kr.Model):
 	
 	def call(self, input_, **kwargs):
 		x = self.downsample1(input_)
-		print("encoder:")
-		print(x.dtype)
 		x = self.downsample2(x)
-		print("down 1:")
-		print(x.dtype)
 		x = self.downsample3(x)
 		x = self.downsample4(x)
 		x = self.downsample5(x)
