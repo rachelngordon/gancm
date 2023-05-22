@@ -193,13 +193,13 @@ class Decoder(kr.Model):
 		self.resblock3 = ResBlock(flags, filters=res_filters)
 		#self.upsample3 = kr.layers.UpSampling2D((2, 2))
 		self.upsample3 = UpsampleModule(channels=res_filters, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
-		self.resblock4 = ResBlock(flags, filters=int(res_filters / 2))
+		self.resblock4 = ResBlock(flags, filters=res_filters / 2)
 		#self.upsample4 = kr.layers.UpSampling2D((2, 2))
 		self.upsample4 = UpsampleModule(channels=res_filters / 2, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
-		self.resblock5 = ResBlock(flags, filters=int(res_filters / 4))
+		self.resblock5 = ResBlock(flags, filters=res_filters / 4)
 		#self.upsample5 = kr.layers.UpSampling2D((2, 2))
 		self.upsample5 = UpsampleModule(channels=res_filters / 4, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
-		self.resblock6 = ResBlock(flags, filters=int(res_filters / 8))
+		self.resblock6 = ResBlock(flags, filters=res_filters / 8)
 		#self.upsample6 = kr.layers.UpSampling2D((2, 2))
 		self.upsample6 = UpsampleModule(channels=res_filters / 8, filter_size=(2,2), batch_norm=True, dropout=True, apply_activation=True)
 		#self.resblock7 = ResBlock(flags, filters=res_filters / 16)
@@ -214,6 +214,7 @@ class Decoder(kr.Model):
 	
 	def call(self, inputs_, **kwargs):
 		latent, mask = inputs_[0], inputs_[1]
+		x = tf.cast(x, tf.int32)
 		x = self.dense1(latent)
 		x = self.reshape(x)
 		x = self.resblock1(x, mask)
