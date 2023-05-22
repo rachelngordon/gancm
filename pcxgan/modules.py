@@ -140,7 +140,8 @@ class UpsampleModule(kr.layers.Layer):
 			self.block.add(kr.layers.LeakyReLU(0.2))
 	
 	def call(self, inputs_):
-		print(type(inputs_))
+		print(type(inputs_[0]))
+		print(type(inputs_[1]))
 		return self.block(inputs_)
 
 
