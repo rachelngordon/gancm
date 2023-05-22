@@ -114,7 +114,7 @@ class DownsampleModule(kr.layers.Layer):
 	def call(self, inputs__):
 		return self.block(inputs__)
 
-'''
+
 class UpsampleModule(kr.layers.Layer):
 	def __init__(self, channels, filter_size, batch_norm=True, dropout=True,
 							 apply_activation=True, **kwargs):
@@ -140,7 +140,6 @@ class UpsampleModule(kr.layers.Layer):
 			self.block.add(kr.layers.LeakyReLU(0.2))
 	
 	def call(self, inputs_):
-		inputs_ = tf.cast(inputs_, tf.int32)
 		return self.block(inputs_)
 '''
 
@@ -179,7 +178,7 @@ class UpsampleModule(kr.layers.Layer):
 
     def process_int_branch(self, int_inputs):
         return self.int_branch(int_inputs)
-    
+''' 
 
 
 class Encoder(kr.Model):
@@ -259,20 +258,12 @@ class Decoder(kr.Model):
 		latent, mask = inputs_[0], inputs_[1]
 		x = self.dense1(latent)
 		x = self.reshape(x)
-		print("begin:")
-		print(x.dtype)
 		x = self.resblock1(x, mask)
 		x = self.upsample1(x)
 		x = self.resblock2(x, mask)
 		x = self.upsample2(x)
 		x = self.resblock3(x, mask)
-		#x = tf.cast(x, tf.int32)
-		print("res 3:")
-		print(x.dtype)
 		x = self.upsample3(x)
-		#x = tf.cast(x, tf.floatt32)
-		print("ups 3:")
-		print(x.dtype)
 		x = self.resblock4(x, mask)
 		x = self.upsample4(x)
 		x = self.resblock5(x, mask)
