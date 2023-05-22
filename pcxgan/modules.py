@@ -216,12 +216,12 @@ class Decoder(kr.Model):
 		latent, mask = inputs_[0], inputs_[1]
 		x = self.dense1(latent)
 		x = self.reshape(x)
-		x = tf.cast(x, tf.int32)
 		x = self.resblock1(x, mask)
 		x = self.upsample1(x)
 		x = self.resblock2(x, mask)
 		x = self.upsample2(x)
 		x = self.resblock3(x, mask)
+		x = tf.cast(x, tf.int32)
 		x = self.upsample3(x)
 		x = self.resblock4(x, mask)
 		x = self.upsample4(x)
