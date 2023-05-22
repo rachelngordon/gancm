@@ -133,7 +133,15 @@ class UpsampleModule(kr.layers.Layer):
 		
 		if batch_norm:
 			#self.block.add(kr.layers.BatchNormalization())
+			prev_layer = self.block.layers[0]
+			prev_layer_input = prev_layer.input
+			this_layer_input = prev_layer_input.copy()
+			this_layer_input = tf.cast(this_layer_input, tf.int32)
+			
 			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+
+			layer = self.block.layers[1]
+			layer.input = this_layer_input
 		if dropout:
 			self.block.add(kr.layers.Dropout(0.5))
 		if self.apply_activation:
