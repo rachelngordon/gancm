@@ -146,7 +146,7 @@ class UpsampleModule(kr.layers.Layer):
             #this_layer_input = prev_layer_input.copy()
             #this_layer_input = tf.cast(this_layer_input, tf.int32)
 
-            this_layer_input = x.copy()
+            this_layer_input = tf.identity(x)
             this_layer_input = tf.cast(this_layer_input, tf.int32)
 
             x = self.group_norm(this_layer_input)
