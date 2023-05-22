@@ -141,11 +141,14 @@ class UpsampleModule(kr.layers.Layer):
         x = self.conv_transpose(inputs_)
         if self.batch_norm:
 			
-            prev_layer = self.block.layers[0]
-            prev_layer_input = prev_layer.input
-            this_layer_input = prev_layer_input.copy()
+            #prev_layer = self.block.layers[0]
+            #prev_layer_input = prev_layer.input
+            #this_layer_input = prev_layer_input.copy()
+            #this_layer_input = tf.cast(this_layer_input, tf.int32)
+
+            this_layer_input = x.copy()
             this_layer_input = tf.cast(this_layer_input, tf.int32)
-			
+
             x = self.group_norm(this_layer_input)
 	    
             #layer = self.block.layers[1]
