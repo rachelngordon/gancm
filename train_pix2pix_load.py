@@ -1,31 +1,34 @@
-from p2p.pix2pix import Pix2Pix
 from flags import Flags
 import numpy as np
 import p2p.modules as modules
+import tensorflow.keras as kr
 
 def main(flags):
 
-  data_path = "/media/aisec-102/DATA3/rachel/data/CV/normalized_neg1pos1_fold"
-  test_data_path = "/media/aisec-102/DATA3/rachel/data/CV/normalized_neg1pos1_fold4.npz"
+  data_path = "/grand/EVITA/ct-mri/data/CV/normalized_neg1pos1_fold"
+  test_data_path = f"/grand/EVITA/ct-mri/data/CV/normalized_neg1pos1_fold{flags.test_fold}.npz"
 	
+  folds = list(range(1,6))
+  folds.remove(flags.test_fold)
 
-  for i in [1,2,3,5]:
+  for i in folds:
     path = f"{data_path}{i}.npz"
+    
     if i == 1:
       data = np.load(path)
-      x_train, y_train = data['x'], data['y']
+      x_train, y_train = data['arr_0'], data['arr_1']
     else:
       data = np.load(path)
-      x_train = np.concatenate((x_train, data['x']), axis=0)
-      y_train = np.concatenate((y_train, data['y']), axis=0)
+      x_train = np.concatenate((x_train, data['arr_0']), axis=0)
+      y_train = np.concatenate((y_train, data['arr_1']), axis=0)
 
   data_test = np.load(test_data_path)
-  x_test, y_test = data_test['x'], data_test['y']
+  x_test, y_test = data_test['arr_0'], data_test['arr_1']
 
-  print(x_train.shape)
-
+  
   #Build and train the model
-  model = Pix2Pix(flags)
+  ## fill in model path
+  model = kr.models.load_model('model_checkpoint')
   model.compile()
   history = model.fit(
     x_train, y_train,
@@ -35,6 +38,7 @@ def main(flags):
     batch_size = flags.batch_size,
     callbacks=[modules.P2PMonitor((x_test[5:8], y_test[5:8]), flags)],
   )
+
   
   
   model.save_model(flags)
