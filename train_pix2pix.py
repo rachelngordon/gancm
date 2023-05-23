@@ -6,10 +6,12 @@ import p2p.modules as modules
 def main(flags):
 
   data_path = "/grand/EVITA/ct-mri/data/CV/normalized_neg1pos1_fold"
-  test_data_path = "/grand/EVITA/ct-mri/data/CV/normalized_neg1pos1_fold4.npz"
+  test_data_path = f"/grand/EVITA/ct-mri/data/CV/normalized_neg1pos1_fold{flags.test_fold}.npz"
 	
+  folds = list(range(1,6))
+  folds.remove(flags.test_fold)
 
-  for i in [1,2,3,5]:
+  for i in folds:
     path = f"{data_path}{i}.npz"
     
     if i == 1:
