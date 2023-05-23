@@ -3,10 +3,10 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 train_pix2pix_load.py --exp_name p2p_fold1234_100 --test_fold 5 --epochs 50", 0),
-    ("python3 train_pix2pix_load.py --exp_name p2p_fold1235_100 --test_fold 4 --epochs 50", 1),
-    ("python3 train_pix2pix_load.py --exp_name p2p_fold1245_100 --test_fold 3 --epochs 50", 2),
-    ("python3 train_pix2pix_load.py --exp_name p2p_fold1345_100 --test_fold 2 --epochs 50", 3)
+    ("python3 train_pix2pix.py --exp_name p2p_fold1234 --test_fold 5 --epochs 40", 0),
+    ("python3 train_pix2pix.py --exp_name p2p_fold1235 --test_fold 4 --epochs 40", 1),
+    ("python3 train_pix2pix.py --exp_name p2p_fold1245 --test_fold 3 --epochs 40", 2),
+    ("python3 train_pix2pix.py --exp_name p2p_fold1345 --test_fold 2 --epochs 40", 3)
 ]
 
 # Function to run a command on a GPU
