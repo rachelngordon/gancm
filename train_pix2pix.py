@@ -5,8 +5,8 @@ import p2p.modules as modules
 
 def main(flags):
 
-  data_path = "/grand/EVITA/data/CV/normalized_neg1pos1_fold"
-  test_data_path = "/grand/EVITA/data/CV/normalized_neg1pos1_fold4.npz"
+  data_path = "/grand/EVITA/ct-mri/data/CV/normalized_neg1pos1_fold"
+  test_data_path = "/grand/EVITA/ct-mri/data/CV/normalized_neg1pos1_fold4.npz"
 	
 
   for i in [1,2,3,5]:
