@@ -2,6 +2,7 @@ from flags import Flags
 import numpy as np
 import p2p.modules as modules
 import tensorflow.keras as kr
+import re
 
 def main(flags):
 
@@ -25,10 +26,23 @@ def main(flags):
   data_test = np.load(test_data_path)
   x_test, y_test = data_test['arr_0'], data_test['arr_1']
 
-  
-  #Build and train the model
-  ## fill in model path
-  model = kr.models.load_model('model_checkpoint')
+
+
+
+  # get model path
+  path = "/grand/EVITA/ct-mri/pcxgan/models/" + flags.name
+  underscore_number_pattern = r"_(\d+)$"
+
+  # Check if the path ends with an underscore followed by a number
+  match = re.search(underscore_number_pattern, path)
+  if match:
+      # Remove the underscore and the number from the end of the path
+      path = path[:match.start()]
+
+
+
+  # load and train the model
+  model = kr.models.load_model('/grand/EVITA/ct-mri/pcxgan/models/p2p_fold1234')
   model.compile()
   history = model.fit(
     x_train, y_train,
@@ -42,8 +56,8 @@ def main(flags):
   
   
   model.save_model(flags)
-  model.model_evaluate((x_test, y_test))
-  model.plot_losses(history.history)
+  #model.model_evaluate((x_test, y_test))
+  #model.plot_losses(history.history)
   
   
 if __name__ == '__main__':
