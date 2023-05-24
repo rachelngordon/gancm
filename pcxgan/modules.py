@@ -114,53 +114,6 @@ class DownsampleModule(kr.layers.Layer):
 	def call(self, inputs__):
 		return self.block(inputs__)
 
-'''
-class UpsampleModule(kr.layers.Layer):
-    def __init__(self, channels, filter_size, batch_norm=True, dropout=True, apply_activation=True, **kwargs):
-        super(UpsampleModule, self).__init__(**kwargs)
-        self.channels = channels
-        self.filter_size = filter_size
-        self.strides = 2
-        self.batch_norm = batch_norm
-        self.dropout = dropout
-        self.apply_activation = apply_activation
-
-        self.conv_transpose = kr.layers.Conv2DTranspose(channels, filter_size, strides=self.strides, padding='same',
-                                                           kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
-                                                           kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-                                                           activity_regularizer=kr.regularizers.l2(1e-5))
-        if batch_norm:
-            gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
-            self.group_norm = kr.layers.GroupNormalization(groups=int(channels), gamma_initializer=gamma_init)
-        if dropout:
-            self.dropout_layer = kr.layers.Dropout(0.5)
-        if self.apply_activation:
-            self.leaky_relu = kr.layers.LeakyReLU(0.2)
-        
-    def call(self, inputs_):
-        x = self.conv_transpose(inputs_)
-        if self.batch_norm:
-			
-            #prev_layer = self.block.layers[0]
-            #prev_layer_input = prev_layer.input
-            #this_layer_input = prev_layer_input.copy()
-            #this_layer_input = tf.cast(this_layer_input, tf.int32)
-
-            #this_layer_input = tf.identity(x)
-            #this_layer_input = tf.cast(this_layer_input, tf.int32)
-
-            x = self.group_norm(x)
-	    
-            #layer = self.block.layers[1]
-            #layer.input = this_layer_input
-            
-        if self.dropout:
-            x = self.dropout_layer(x)
-        if self.apply_activation:
-            x = self.leaky_relu(x)
-        return x
-'''   
-
 
 
 
@@ -369,7 +322,7 @@ class GanMonitor(kr.callbacks.Callback):
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
 				for row in range(grid_row):
 					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((self.val_images[0][row].numpy().squeeze()) , cmap='gray')
+					ax[0].imshow((self.val_images[2][row].numpy().squeeze()) , cmap='gray')
 					ax[0].axis("off")
 					ax[0].set_title("Mask", fontsize=20)
 					ax[1].imshow((self.val_images[1][row].numpy().squeeze()), cmap='gray')
