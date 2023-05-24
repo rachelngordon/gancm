@@ -81,7 +81,7 @@ def main(flags):
   
   
   model.save_model()
-  model.model_evaluate(test_data)
+  #model.model_evaluate(test_data)
   model.plot_losses(history.history)
   
   
