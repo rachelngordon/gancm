@@ -28,19 +28,6 @@ def main(flags):
 
 
 
-
-  # get model path
-  path = "/grand/EVITA/ct-mri/pcxgan/models/" + flags.name
-  underscore_number_pattern = r"_(\d+)$"
-
-  # Check if the path ends with an underscore followed by a number
-  match = re.search(underscore_number_pattern, path)
-  if match:
-      # Remove the underscore and the number from the end of the path
-      path = path[:match.start()]
-
-
-
   # load and train the model
   model = kr.models.load_model('/grand/EVITA/ct-mri/pcxgan/models/p2p_fold1234')
   model.compile()
@@ -53,6 +40,7 @@ def main(flags):
     callbacks=[modules.P2PMonitor((x_test[5:8], y_test[5:8]), flags)],
   )
 
+
   
   
   model.save_model(flags)
@@ -64,3 +52,16 @@ if __name__ == '__main__':
   flags = Flags().parse()
   main(flags)
 
+
+'''
+  # get model path
+  # need to adjust to get previous model path not just the first one
+  path = "/grand/EVITA/ct-mri/pcxgan/models/" + flags.name
+  underscore_number_pattern = r"_(\d+)$"
+
+  # Check if the path ends with an underscore followed by a number
+  match = re.search(underscore_number_pattern, path)
+  if match:
+      # Remove the underscore and the number from the end of the path
+      path = path[:match.start()]
+'''
