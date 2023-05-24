@@ -14,7 +14,7 @@ def main(flags):
   for i in folds:
     path = f"{data_path}{i}.npz"
     
-    if i == 1:
+    if i == folds[0]:
       data = np.load(path)
       x_train, y_train = data['arr_0'], data['arr_1']
     else:
