@@ -247,7 +247,7 @@ class CycleMonitor(kr.callbacks.Callback):
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
 				for row in range(grid_row):
 					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((self.val_images[0][row].squeeze()), cmap='gray')
+					ax[0].imshow(self.val_images[0][row].squeeze(), cmap='gray', aspect='auto')
 					ax[0].axis("off")
 					ax[0].set_title("CT", fontsize=20)
 					ax[1].imshow((self.val_images[1][row].squeeze()), cmap='gray')
