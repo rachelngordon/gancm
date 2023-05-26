@@ -13,7 +13,7 @@ class Residual(kr.layers.Layer):
                  use_1x1conv=False, 
                  strides=1):
         super().__init__()
-        
+        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
         self.conv1 = kr.layers.Conv2D(
             num_channels, padding='same', kernel_size=3, strides=strides,
             kernel_initializer = kr.initializers.GlorotNormal())
@@ -25,8 +25,8 @@ class Residual(kr.layers.Layer):
             self.conv3 = kr.layers.Conv2D(
                 num_channels, kernel_size=1, strides=strides,
                 kernel_initializer = kr.initializers.GlorotNormal())
-        self.bn1 = kr.layers.GroupNormalization(groups=num_channels)
-        self.bn2 = kr.layers.GroupNormalization(groups=num_channels)
+        self.bn1 = kr.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
+        self.bn2 = kr.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
 
     def call(self, X):
         Y = kr.activations.relu(self.bn1(self.conv1(X)))
@@ -43,11 +43,13 @@ class ResidualT(kr.layers.Layer):
                  strides=2):
         super().__init__()
         
+        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
+
         self.conv1 = kr.layers.Conv2DTranspose(
             num_channels, padding='same', kernel_size=4, strides=strides,
             kernel_initializer = kr.initializers.GlorotNormal())
        
-        self.bn1 = kr.layers.GroupNormalization(groups=num_channels)
+        self.bn1 = kr.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
      
 
     def call(self, X):
@@ -103,6 +105,8 @@ class EncoderModule(kr.Model):
         
         super().__init__(**kwargs)
 
+        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
+
         #define encoder
         self.encoder = kr.models.Sequential()
         self.encoder._name = "Encoder"
@@ -110,7 +114,7 @@ class EncoderModule(kr.Model):
         #first conv
         self.b1 = [kr.layers.Conv2D(channels, kernel_size=5, strides=2, padding='same', 
                                     input_shape=image_shape, name="Conv1"),
-                   kr.layers.GroupNormalization(groups=channels, name='BN1'),
+                   kr.layers.GroupNormalization(groups=channels, name='BN1', gamma_initializer=gamma_init),
                    #kr.layers.BatchNormalization(name='BN1'),
                    kr.layers.Activation('relu', name='Relu'),
                    kr.layers.MaxPool2D(pool_size=3, strides=2, 
@@ -177,7 +181,7 @@ class cyclegan_generator(kr.Model):
         
 
     def call(self, input__):
-        return kr.activations.sigmoid(self.convT(self.decoder(self.encoder(input__))))
+        return kr.activations.tanh(self.convT(self.decoder(self.encoder(input__))))
 
 
 #This Discriminator is different from the p2p

@@ -11,7 +11,7 @@ from  matplotlib import pyplot as plt
 from datetime import datetime
 
 # CycleGAN
-class cyclegan(kr.Model):
+class CycleGAN(kr.Model):
     def __init__(self, flags,**kwargs):
 
         super().__init__(**kwargs)
