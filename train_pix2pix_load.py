@@ -28,40 +28,16 @@ def main(flags):
 
 
 
-  # load and train the model
-  model = kr.models.load_model('/grand/EVITA/ct-mri/pcxgan/models/p2p_fold1234')
-  model.compile()
-  history = model.fit(
-    x_train, y_train,
-    validation_data=(x_test, y_test),
-    epochs=flags.epochs,
-    verbose=1,
-    batch_size = flags.batch_size,
-    callbacks=[modules.P2PMonitor((x_test[5:8], y_test[5:8]), flags)],
-  )
+  # load and evaluate the model
 
+  # get model path
+  path = "/grand/EVITA/ct-mri/pcxgan/models/" + flags.name
 
-  
-  
-  model.save_model(flags)
-  #model.model_evaluate((x_test, y_test))
-  #model.plot_losses(history.history)
+  model = kr.models.load_model(path)
+  model.model_evaluate((x_test, y_test))
   
   
 if __name__ == '__main__':
   flags = Flags().parse()
   main(flags)
 
-
-'''
-  # get model path
-  # need to adjust to get previous model path not just the first one
-  path = "/grand/EVITA/ct-mri/pcxgan/models/" + flags.name
-  underscore_number_pattern = r"_(\d+)$"
-
-  # Check if the path ends with an underscore followed by a number
-  match = re.search(underscore_number_pattern, path)
-  if match:
-      # Remove the underscore and the number from the end of the path
-      path = path[:match.start()]
-'''
