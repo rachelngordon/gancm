@@ -149,10 +149,17 @@ class DecoderModule(kr.Model):
         #define encoder
         self.decoder = kr.models.Sequential()
         self.decoder._name = "Decoder"
+        self.decoder.add(ResnetBlockT(channels, 1))
+        self.decoder.add(ResnetBlockT(channels//2, 1))
+        self.decoder.add(ResnetBlockT(channels//2, 1))
+        self.decoder.add(ResnetBlockT(channels//4, 1))
+
+        '''
         self.decoder.add(ResnetBlockT(channels//4, 1))
         self.decoder.add(ResnetBlockT(channels//2, 1))
         self.decoder.add(ResnetBlockT(channels//2, 1))
         self.decoder.add(ResnetBlockT(channels, 1))
+        '''
 
 
     def call(self, inputs__):
