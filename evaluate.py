@@ -9,6 +9,7 @@ from scipy.linalg import sqrtm
 import math
 import sklearn.metrics as sk
 from flags import Flags
+from datetime import datetime
 
 
 flags = Flags().parse()
@@ -114,3 +115,36 @@ def predict_p2p(model_path, modelname, ct):
     counter += 1
   
   return generated
+
+
+def model_evaluate(flags, generator, test_data, epoch=0):
+
+
+        results = []
+        
+        num_batches = len(test_data[0]//flags.batch_size)
+
+        for i in range(0, num_batches, flags.batch_size):
+            ct, mri = test_data[0][i:i+flags.batch_size], test_data[1][i:i+flags.batch_size]
+
+
+        #for ct, mri in test_data:
+            
+            fake_mri = generator(ct)
+
+            fid = calculate_fid(mri, fake_mri, input_shape=(flags.crop_size, flags.crop_size, 3))
+
+            mse, mae, cs, psnr, ssim = get_metrics(mri, fake_mri)
+
+            results.append([fid, mse, mae, cs, psnr, ssim])
+            print("metrics: {}{}{}{}{}".format(fid, mse, mae, cs, psnr, ssim))
+
+        results = np.array(results).mean(axis=0)
+
+        filename = "results_{}_{}.log".format(epoch, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+        results_dir = os.path.join(flags.result_logs, flags.name)
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+        log_file = os.path.join(results_dir, filename)
+        np.savetxt(log_file, [results], fmt='%.6f', header="fid, mse, mae, cs, psnr,ssim", delimiter=",")
+

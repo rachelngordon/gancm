@@ -2,7 +2,7 @@ from flags import Flags
 import numpy as np
 import p2p.modules as modules
 import tensorflow.keras as kr
-import re
+import evaluate
 
 def main(flags):
 
@@ -21,7 +21,7 @@ def main(flags):
   path = "/grand/EVITA/ct-mri/pcxgan/models/" + flags.name
 
   model = kr.models.load_model(path)
-  model.model_evaluate((x_test, y_test))
+  evaluate.model_evaluate((x_test, y_test))
   
   
 if __name__ == '__main__':
