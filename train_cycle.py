@@ -45,7 +45,7 @@ def main(flags):
   
   
   model.save_model(flags)
-  model.model_evaluate((x_test, y_test))
+  #model.model_evaluate((x_test, y_test))
   model.plot_losses(history.history)
   
   
