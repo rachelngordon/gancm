@@ -3,10 +3,10 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1234_1000 --test_fold 5", 0),
-    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1235_1000 --test_fold 4", 1),
-    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1245_1000 --test_fold 3", 2),
-    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1345_1000 --test_fold 2", 3)
+    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1234_1000 --test_fold 5 --epochs 1000 --batch_size 32", 0),
+    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1235_1000 --test_fold 4 --epochs 1000 --batch_size 32", 1),
+    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1245_1000 --test_fold 3 --epochs 1000 --batch_size 32", 2),
+    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1345_1000 --test_fold 2 --epochs 1000 --batch_size 32", 3)
 ]
 
 # Function to run a command on a GPU
