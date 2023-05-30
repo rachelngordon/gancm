@@ -201,6 +201,7 @@ class Discriminator(kr.Model):
         
 	
 	def call(self, inputs_, **kwargs):
+		'''
 		x = self.merged([inputs_[0], inputs_[1]])
 		x1 = self.downsample1(x)
 		x2 = self.downsample2(x1)
@@ -216,7 +217,7 @@ class Discriminator(kr.Model):
 		x = self.downsample3(x)
 		x = self.downsample4(x)
 		return self.conv(x)
-        '''
+        
 
 
 class CycleMonitor(kr.callbacks.Callback):
