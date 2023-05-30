@@ -240,7 +240,7 @@ class PCxGAN_ct(kr.Model):
 			print("metrics: {}{}{}{}{}".format(fid, mse, mae, cs, psnr, ssim))
 		
 
-		results = np.array(results).mean(axis=0)
+		results = np.array(results, dtype=object).mean(axis=0)
 		
 		filename = "results_{}_{}.log".format(epoch, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
 		results_dir = os.path.join(self.flags.result_logs, self.flags.name)
