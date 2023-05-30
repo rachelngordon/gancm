@@ -61,8 +61,8 @@ class DataGenerator_Ready(kr.utils.Sequence):
 
 def main(flags):
 
-  data_path = "/media/aisec-102/DATA31/rachel/data/CV/mask_data/norm_mask_neg1pos1_fold"
-  test_data_path = "/media/aisec-102/DATA31/rachel/data/CV/mask_data/norm_mask_neg1pos1_fold5"
+  data_path = "/grand/EVITA/ct-mri/pcxgan/data/mask_data/norm_mask_neg1pos1_fold"
+  test_data_path = "/grand/EVITA/ct-mri/pcxgan/data/mask_data/norm_mask_neg1pos1_fold5"
 
   train_data = DataGenerator_Ready(flags, data_path, if_train=True).load()
   test_data = DataGenerator_Ready(flags, test_data_path, if_train=False).load()
