@@ -10,6 +10,7 @@ import os
 from datetime import datetime
 import data_loader
 import flags
+import tensorflow_addons as tfa
 
 
 class SPADE(kr.layers.Layer):
@@ -105,7 +106,7 @@ class DownsampleModule(kr.layers.Layer):
 
 		
 		if apply_norm:
-			self.block.add(kr.layers.GroupNormalization(groups=channels))
+			self.block.add(tfa.layers.GroupNormalization(groups=channels))
 		if batch_norm:
 			self.block.add(kr.layers.BatchNormalization())
 		if self.apply_activation:
