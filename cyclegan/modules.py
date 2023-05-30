@@ -208,23 +208,13 @@ class Discriminator(kr.Model):
         
 	
 	def call(self, inputs_, **kwargs):
-		
-		x = self.merged([inputs_[0], inputs_[1]])
-		x1 = self.downsample1(x)
-		x2 = self.downsample2(x1)
-		x3 = self.downsample3(x2)
-		x4 = self.downsample4(x3)
-		x5 = self.conv(x4)
-		return [x1, x2, x3, x4, x5]
-
-		'''
 		x = self.merged([inputs_[0], inputs_[1]])
 		x = self.downsample1(x)
 		x = self.downsample2(x)
 		x = self.downsample3(x)
 		x = self.downsample4(x)
 		return self.conv(x)
-        '''
+
         
 
 
