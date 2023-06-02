@@ -164,7 +164,7 @@ def pcxgan_evaluate(flags, decoder, test_data, epoch=0):
     fake_image = decoder([latent_vector, label, ct])
     
     mri = (mri + 1.0) / 2.0
-    fake_mri = (fake_mri + 1.0) / 2.0
+    fake_image = (fake_image + 1.0) / 2.0
     
     fid = calculate_fid(mri, fake_image,
                                   input_shape=(
