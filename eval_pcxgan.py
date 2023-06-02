@@ -7,7 +7,7 @@ import data_loader
 
 def main(flags):
 
-  test_data_path = f"/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold{flags.test_fold}.npz"
+  test_data_path = f"/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold{flags.test_fold}"
   test_data = data_loader.DataGenerator_Ready(flags, test_data_path, if_train=False).load()
 
 
