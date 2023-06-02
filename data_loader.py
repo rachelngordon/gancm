@@ -130,6 +130,54 @@ class DataGenerator(kr.utils.Sequence):
 		return self.test_idx, self.dataset.batch(self.batch_size, drop_remainder=True)
 
 class DataGenerator_Ready(kr.utils.Sequence):
+  def __init__(self, flags, data_path, if_train = True, **kwargs):
+    
+    super().__init__(**kwargs)
+
+    
+    self.data_path = data_path
+    self.batch_size = flags.batch_size
+    x, y, z = self.load_data(self.data_path, if_train=if_train)
+    self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
+    self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
+    self.dataset = self.dataset.map(
+    lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
+
+    
+	
+	
+  def load_data(self, data_path, if_train=True):
+		
+    if if_train:
+      
+      for i in [1,2,3,4]:
+        path = f"{data_path}{i}.npz"
+        if i == 1:
+          data = np.load(path)
+          x, y, z = data['arr_0'], data['arr_1'], data['arr_2']
+        else:
+          data = np.load(path)
+          x = np.concatenate((x, data['arr_0']), axis=0)
+          y = np.concatenate((y, data['arr_1']), axis=0)
+          z = np.concatenate((z, data['arr_2']), axis=0)
+	
+      return x, y, z
+
+    else: 
+        path = f"{data_path}.npz"
+        data = np.load(path)
+        x, y, z = data['arr_0'], data['arr_1'], data['arr_2']
+        return x, y, z
+    
+  def __getitem__(self, idx):
+    return self.dataset.batch(self.batch_size, drop_remainder=True)
+  
+  def load(self):
+      return self.dataset.batch(self.batch_size, drop_remainder=True)
+	
+	
+'''
+class DataGenerator_Ready(kr.utils.Sequence):
 	def __init__(self, flags, data_path, return_labels=True, **kwargs):
 		
 		super().__init__(**kwargs)
@@ -139,16 +187,16 @@ class DataGenerator_Ready(kr.utils.Sequence):
 
 		self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
 		
-		'''
-		if is_train:
-			self.dataset = self.dataset.cache().map(
-				self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE).shuffle(
-				self.buffer_size)
-		else:
-			self.dataset = self.dataset.cache().map(
-				self.resize, num_parallel_calls=tf.data.AUTOTUNE).shuffle(
-				self.buffer_size)
-		'''
+
+		#if is_train:
+			#self.dataset = self.dataset.cache().map(
+				#self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE).shuffle(
+				#self.buffer_size)
+		#else:
+			#self.dataset = self.dataset.cache().map(
+				#self.resize, num_parallel_calls=tf.data.AUTOTUNE).shuffle(
+				#self.buffer_size)
+
 		
 		if return_labels:
 			self.dataset = self.dataset.map(
@@ -278,6 +326,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
 			#x = (x - x.min()) / (x.max() - x.min())
 		return np.array(masks)
 
+	'''
 
 class DataGenerator_Paired(kr.utils.Sequence):
 	def __init__(self, flags, is_train=True, is_test=False, test_idx=[], **kwargs):

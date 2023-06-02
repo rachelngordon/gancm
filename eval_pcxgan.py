@@ -3,16 +3,12 @@ import numpy as np
 import pcxgan.modules as modules
 import tensorflow.keras as kr
 import evaluate
+import data_loader
 
 def main(flags):
 
-
   test_data_path = f"/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold{flags.test_fold}.npz"
-	
-
-  data_test = np.load(test_data_path)
-  x_test, y_test = data_test['arr_0'], data_test['arr_1']
-
+  test_data = data_loader.DataGenerator_Ready(flags, test_data_path, if_train=False).load()
 
 
   # load and evaluate the model
@@ -21,7 +17,7 @@ def main(flags):
   path = "/grand/EVITA/ct-mri/pcxgan/models/" + flags.name + '_d'
 
   model = kr.models.load_model(path)
-  evaluate.pcxgan_evaluate(flags, model, (x_test, y_test))
+  evaluate.pcxgan_evaluate(flags, model, test_data)
   
   
 if __name__ == '__main__':

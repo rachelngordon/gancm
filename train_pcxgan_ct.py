@@ -64,8 +64,8 @@ def main(flags):
   data_path = "/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold"
   test_data_path = "/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold5"
 
-  train_data = DataGenerator_Ready(flags, data_path, if_train=True).load()
-  test_data = DataGenerator_Ready(flags, test_data_path, if_train=False).load()
+  train_data = data_loader.DataGenerator_Ready(flags, data_path, if_train=True).load()
+  test_data = data_loader.DataGenerator_Ready(flags, test_data_path, if_train=False).load()
 
   #Build and train the model
   model = PCxGAN_ct(flags)
