@@ -21,6 +21,7 @@ class PCxGAN_ct(kr.Model):
 		super().__init__(**kwargs)
 		self.flags = flags
 		self.experiment_name = flags.name
+		self.hist_path = flags.hist_path
 		self.samples_dir = flags.sample_dir
 		self.models_dir = flags.checkpoints_dir
 		self.image_shape = (flags.crop_size, flags.crop_size, 1)
@@ -258,7 +259,7 @@ class PCxGAN_ct(kr.Model):
 
 	def plot_losses(self, hist):
 		
-		exp_path = '/media/aisec-102/DATA3/rachel/pcxgan/history/' + self.experiment_name
+		exp_path = self.hist_path + self.experiment_name
 		
 		if not os.path.exists(exp_path):
 			os.makedirs(exp_path)

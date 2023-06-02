@@ -20,6 +20,7 @@ class CycleGAN(kr.Model):
         # pass new name each time
         self.experiment_name = self.flags.name
         self.samples_dir = self.flags.sample_dir
+        self.hist_path = self.flags.hist_path
         self.models_dir = self.flags.checkpoints_dir
         self.image_shape = (self.flags.crop_size, self.flags.crop_size, 1)
         self.image_size = self.flags.crop_size
@@ -321,7 +322,7 @@ class CycleGAN(kr.Model):
 
     def plot_losses(self, hist):
         
-        exp_path = '/media/aisec-102/DATA31/rachel/pcxgan/history/' + self.experiment_name
+        exp_path = self.hist_path + self.experiment_name
 
         if not os.path.exists(exp_path):
             os.makedirs(exp_path)
