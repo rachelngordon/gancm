@@ -132,6 +132,9 @@ def model_evaluate(flags, generator, test_data, epoch=0):
             
             fake_mri = generator(ct)
 
+            mri = (mri + 1.0) / 2.0
+            fake_mri = (fake_mri + 1.0) / 2.0
+
             fid = calculate_fid(mri, fake_mri, input_shape=(flags.crop_size, flags.crop_size, 3))
 
             mse, mae, cs, psnr, ssim = get_metrics(mri, fake_mri)

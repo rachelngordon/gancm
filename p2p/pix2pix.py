@@ -212,6 +212,7 @@ class Pix2Pix(kr.Model):
         #for ct, mri in test_data:
             
             fake_mri = self.generator(ct)
+            
 
             fid = evaluate.calculate_fid(mri, fake_mri, 
 				input_shape=(self.flags.crop_size, self.flags.crop_size, 3))
