@@ -18,7 +18,7 @@ def main(flags):
   # load and evaluate the model
 
   # get model path
-  path = "/grand/EVITA/ct-mri/pcxgan/models/" + flags.name
+  path = "/grand/EVITA/ct-mri/pcxgan/models/" + flags.name + '_d'
 
   model = kr.models.load_model(path)
   evaluate.model_evaluate(flags, model, (x_test, y_test))
