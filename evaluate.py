@@ -117,7 +117,7 @@ def predict_p2p(model_path, modelname, ct):
   return generated
 
 
-def model_evaluate(flags, generator, test_data, epoch=0):
+def pix2pix_evaluate(flags, generator, test_data, epoch=0):
 
 
         results = []
@@ -151,3 +151,36 @@ def model_evaluate(flags, generator, test_data, epoch=0):
         log_file = os.path.join(results_dir, filename)
         np.savetxt(log_file, [results], fmt='%.6f', header="fid, mse, mae, cs, psnr,ssim", delimiter=",")
 
+
+def pcxgan_evaluate(flags, decoder, test_data, epoch=0):
+  results = []
+  
+  for ct, mri, label in test_data:
+
+    # Sample latent from a normal distribution.
+    latent_vector = tf.random.normal(
+      shape=(flags.batch_size, flags.latent_dim), mean=0.0, stddev=2.0
+    )
+    fake_image = decoder([latent_vector, label, ct])
+    
+    mri = (mri + 1.0) / 2.0
+    fake_mri = (fake_mri + 1.0) / 2.0
+    
+    fid = calculate_fid(mri, fake_image,
+                                  input_shape=(
+                                    flags.crop_size,
+                                    flags.crop_size, 3))
+    mse, mae, cs, psnr, ssim = get_metrics(mri, fake_image)
+    
+    results.append([fid, mse, mae, cs, psnr, ssim])
+    print("metrics: {}{}{}{}{}".format(fid, mse, mae, cs, psnr, ssim))
+  
+
+  results = np.array(results, dtype=object).mean(axis=0)
+  
+  filename = "results_{}_{}.log".format(epoch, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+  results_dir = os.path.join(flags.result_logs, flags.name)
+  if not os.path.exists(results_dir):
+    os.makedirs(results_dir)
+  log_file = os.path.join(results_dir, filename)
+  np.savetxt(log_file, [results], fmt='%.6f', header="fid, mse, mae, cs, psnr,ssim", delimiter=",")
