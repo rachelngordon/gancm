@@ -1,13 +1,13 @@
 from flags import Flags
 import numpy as np
-import p2p.modules as modules
+import pcxgan.modules as modules
 import tensorflow.keras as kr
 import evaluate
 
 def main(flags):
 
 
-  test_data_path = f"/grand/EVITA/ct-mri/data/CV/norm_mask_neg1pos1_fold{flags.test_fold}.npz"
+  test_data_path = f"/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold{flags.test_fold}.npz"
 	
 
   data_test = np.load(test_data_path)
