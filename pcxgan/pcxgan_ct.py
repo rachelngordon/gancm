@@ -230,6 +230,9 @@ class PCxGAN_ct(kr.Model):
 				shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=2.0
 			)
 			fake_image = self.decoder([latent_vector, label, ct])
+
+			mri = (mri + 1.0) / 2.0
+			fake_image = (fake_image + 1.0) / 2.0
 			
 			fid = evaluate.calculate_fid(mri, fake_image,
 																	 input_shape=(

@@ -15,6 +15,11 @@ for ct, mri in test_dataset:
 '''
 
 # get pcxgan generated images
+
+test_data_path = "/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold5"
+
+test_data = data_loader.DataGenerator_Ready(flags, test_data_path, if_train=False).load()
+
 test_dataset = data_loader.DataGenerator_Ready(flags, flags.test_data_path).load()
 
 model_path = "/media/aisec-102/DATA3/rachel/pcxgan/models/PCxGAN_fold1245_d"
