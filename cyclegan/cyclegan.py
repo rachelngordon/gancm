@@ -162,7 +162,7 @@ class CycleGAN(kr.Model):
         #self.discriminator_mri.trainable = False
         #self.discriminator_ct.trainable = False
 
-        with tf.GradientTape() as tape:
+        with tf.GradientTape(persistent=True) as tape:
             generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct = self.combined_model([ct, mri__])
     
             ssim_loss_mri = self.ssim_loss_coeff * loss.SSIMLoss(mri__, generated_mri)
