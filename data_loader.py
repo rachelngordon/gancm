@@ -137,7 +137,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
     
     self.data_path = data_path
     self.batch_size = flags.batch_size
-    x, y, z = self.load_data(self.data_path, if_train=if_train)
+    x, y, z = self.load_data(flags, self.data_path, if_train=if_train)
     self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
     self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
     self.dataset = self.dataset.map(
@@ -146,13 +146,16 @@ class DataGenerator_Ready(kr.utils.Sequence):
     
 	
 	
-  def load_data(self, data_path, if_train=True):
+  def load_data(self, flags, data_path, if_train=True):
 		
     if if_train:
       
-      for i in [1,2,3,4]:
+      folds = list(range(1,6))
+      folds.remove(flags.test_fold)
+      
+      for i in folds:
         path = f"{data_path}{i}.npz"
-        if i == 1:
+        if i == folds[0]:
           data = np.load(path)
           x, y, z = data['arr_0'], data['arr_1'], data['arr_2']
         else:
