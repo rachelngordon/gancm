@@ -121,7 +121,7 @@ class CycleGAN(kr.Model):
             loss_real_mri = self.discriminator_loss(True, pred_real_mri)
             total_loss_mri = self.disc_loss_coeff * (loss_fake_mri + loss_real_mri)
         
-        # with tf.GradientTape() as ct_gradient_tape:
+        with tf.GradientTape() as ct_gradient_tape:
             pred_fake_ct = self.discriminator_ct([real_ct, fake_ct]) 
             pred_real_ct = self.discriminator_ct([real_ct, real_ct])
             loss_fake_ct = self.discriminator_loss(False, pred_fake_ct)
@@ -136,22 +136,22 @@ class CycleGAN(kr.Model):
             self.discriminator_ct.trainable_variables 
             )
         
-        gradients_ = gradient_tape.gradient(
+        gradients_mri = gradient_tape.gradient(
             total_loss, dis_trainable) 
 
         self.mri_discriminator_optimizer.apply_gradients(
-            zip(gradients_, dis_trainable)
+            zip(gradients_mri, dis_trainable)
         )
 
 
-        """
+
         gradients_ct = gradient_tape.gradient(
             total_loss_ct, self.discriminator_ct.trainable_variables) 
 
         self.ct_discriminator_optimizer.apply_gradients(
             zip(gradients_ct, self.discriminator_ct.trainable_variables)
         )
-        """
+
         
 
         return total_loss_mri, total_loss_ct
@@ -181,7 +181,7 @@ class CycleGAN(kr.Model):
             total_loss = total_loss_mri+total_loss_ct
 
         
-        """
+
         mri_g_variables = (self.generator_mri.trainable_variables)
         mri_g_gradients = tape.gradient(total_loss_mri, mri_g_variables)
         self.mri_g_optimizer.apply_gradients(zip(mri_g_gradients , mri_g_variables))
@@ -189,14 +189,13 @@ class CycleGAN(kr.Model):
         ct_g_variables = (self.generator_ct.trainable_variables)
         ct_g_gradients = tape.gradient(total_loss_ct, ct_g_variables)
         self.ct_g_optimizer.apply_gradients(zip(ct_g_gradients , ct_g_variables))
-        """
+
             
         
         #g_trainable  = (self.combined_model.trainable_variables)
         #mri_g_variables = (self.generator_mri.trainable_variables)
-        g_gradients = tape.gradient(total_loss, self.combined_model.trainable_variables)
-
-        self.mri_g_optimizer.apply_gradients(zip(g_gradients , self.combined_model.trainable_variables))
+        #g_gradients = tape.gradient(total_loss, self.combined_model.trainable_variables)
+        #self.mri_g_optimizer.apply_gradients(zip(g_gradients , self.combined_model.trainable_variables))
 
 
         losses__ = (ssim_loss_mri, mae_loss_mri, cycle_loss_mri, identity_loss_mri,
