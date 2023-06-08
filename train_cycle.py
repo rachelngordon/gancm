@@ -10,8 +10,8 @@ import numpy as np
 
 def main(flags):
 
-  data_path = "/media/aisec-102/DATA31/rachel/data/CV/normalized_neg1pos1_fold"
-  test_data_path = f"/media/aisec-102/DATA31/rachel/data/CV/normalized_neg1pos1_fold{flags.test_fold}.npz"
+  data_path = "/media/aisec-102/DATA3/rachel/data/CV/normalized_neg1pos1_fold"
+  test_data_path = f"/media/aisec-102/DATA3/rachel/data/CV/normalized_neg1pos1_fold{flags.test_fold}.npz"
 	
   folds = list(range(1,6))
   folds.remove(flags.test_fold)
