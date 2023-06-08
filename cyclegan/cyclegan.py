@@ -114,14 +114,14 @@ class CycleGAN(kr.Model):
         fake_mri = self.generator_mri(real_ct)
         fake_ct = self.generator_ct(real_mri)
 
-        with tf.GradientTape() as gradient_tape:
+        with tf.GradientTape(persistent=True) as gradient_tape:
             pred_fake_mri = self.discriminator_mri([real_mri, fake_mri])  
             pred_real_mri = self.discriminator_mri([real_mri, real_mri])  
             loss_fake_mri = self.discriminator_loss(False, pred_fake_mri)
             loss_real_mri = self.discriminator_loss(True, pred_real_mri)
             total_loss_mri = self.disc_loss_coeff * (loss_fake_mri + loss_real_mri)
         
-        with tf.GradientTape() as ct_gradient_tape:
+        with tf.GradientTape(persistent=True) as ct_gradient_tape:
             pred_fake_ct = self.discriminator_ct([real_ct, fake_ct]) 
             pred_real_ct = self.discriminator_ct([real_ct, real_ct])
             loss_fake_ct = self.discriminator_loss(False, pred_fake_ct)
