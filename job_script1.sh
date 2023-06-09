@@ -11,7 +11,7 @@
 # Clear
 echo running on a single node
 
-SCRIPT='/grand/EVITA/ct-mri/pcxgan/exp_pcx_eq.py'
+SCRIPT='/grand/EVITA/ct-mri/pcxgan/polaris_exp/pcx_eq.py'
 CFG='$1'
 
 # Execute the script on the current node
