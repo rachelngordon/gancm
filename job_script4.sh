@@ -1,12 +1,4 @@
 #!/bin/bash
-#PBS -q preemptable    # Specify the queue you want to use
-#PBS -l select=1:system=polaris   # Request one node
-#PBS -l place=scatter
-#PBS -l walltime=72:00:00 # Set the maximum wall time for your job
-#PBS -l filesystems=home:grand  # Select filesystem
-#PBS -N p2p_not_equalized        # Specify a name for your job
-#PBS -o output_p2p_no_eq.log      # Redirect stdout to this file
-#PBS -e error_p2p_no_eq.log       # Redirect stderr to this file
 
 # Clear
 echo running on a single node
