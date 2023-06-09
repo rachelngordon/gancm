@@ -14,7 +14,7 @@ class Residual(kr.layers.Layer):
                  use_1x1conv=False, 
                  strides=1):
         super().__init__()
-        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
+        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
         self.conv1 = kr.layers.Conv2D(
             num_channels, padding='same', kernel_size=3, strides=strides, use_bias=False,
             kernel_initializer = kr.initializers.GlorotNormal())
@@ -44,7 +44,7 @@ class ResidualT(kr.layers.Layer):
                  strides=2):
         super().__init__()
         
-        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
+        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
 
         self.conv1 = kr.layers.Conv2DTranspose(
             num_channels, padding='same', kernel_size=4, strides=strides,
@@ -106,7 +106,7 @@ class EncoderModule(kr.Model):
         
         super().__init__(**kwargs)
 
-        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
+        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=500)
 
         #define encoder
         self.encoder = kr.models.Sequential()

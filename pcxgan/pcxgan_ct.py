@@ -66,7 +66,7 @@ class PCxGAN_ct(kr.Model):
 			self.disc_loss_tracker,
 			self.gen_loss_tracker,
 			self.feat_loss_tracker,
-			self.vgg_loss_tracker,
+			#self.vgg_loss_tracker,
 			self.kl_loss_tracker,
 			self.ssim_loss_tracker,
 			self.mae_loss_tracker
