@@ -78,7 +78,7 @@ class GaussianSampler(kr.layers.Layer):
 	def call(self, inputs):
 		means, variance = inputs
 		epsilon = tf.random.normal(
-			shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=1.0
+			shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=1.0, seed=1234
 		)
 		samples = means + tf.exp(0.5 * variance) * epsilon
 		return samples
@@ -88,7 +88,7 @@ class DownsampleModule(kr.layers.Layer):
 	def __init__(self, channels, filter_size, apply_norm=True, batch_norm=False, apply_dropout=False,
 							 apply_activation=True, **kwargs):
 		super().__init__(**kwargs)
-		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
+		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=123)
 		self.block = kr.Sequential()
 		self.strides = 2
 		self.apply_activation = apply_activation
@@ -122,7 +122,7 @@ class UpsampleModule(kr.layers.Layer):
 	def __init__(self, channels, filter_size, batch_norm=True, dropout=True,
 							 apply_activation=True, **kwargs):
 		super().__init__(**kwargs)
-		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02)
+		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=500)
 		self.block = kr.Sequential()
 		self.strides = 2
 		self.apply_activation = apply_activation
@@ -130,7 +130,7 @@ class UpsampleModule(kr.layers.Layer):
 		# self.block.add(kr.layers.UpSampling2D((2, 2)))
 		
 		self.block.add(kr.layers.Conv2DTranspose(channels, filter_size, strides=self.strides, padding='same',
-																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
+																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02, seed=432),
 																						 kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
 																						 activity_regularizer=kr.regularizers.l2(1e-5)))
 		
@@ -289,7 +289,7 @@ class GanMonitor(kr.callbacks.Callback):
 	def infer(self):
 
 		latent_vector = tf.random.normal(
-			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0
+			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0, seed=9785
 		)
 
 		if self.my_strategy:

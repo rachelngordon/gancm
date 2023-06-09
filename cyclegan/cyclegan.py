@@ -27,7 +27,7 @@ class CycleGAN(kr.Model):
         self.batch_size = self.flags.batch_size
 
         self.ssim_loss_coeff = self.flags.ssim_loss_coeff
-        self.mae_loss_coeff = self.flags.mae_loss_coeff
+        self.mae_loss_coeff = 0.5 * self.flags.mae_loss_coeff
         self.disc_loss_coeff = self.flags.disc_loss_coeff
         self.cycle_loss_coeff = self.flags.cycle_loss_coeff
         self.identity_loss_coeff = self.flags.identity_loss_coeff

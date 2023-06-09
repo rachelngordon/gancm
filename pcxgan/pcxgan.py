@@ -65,7 +65,7 @@ class PCxGAN(kr.Model):
 			self.disc_loss_tracker,
 			self.gen_loss_tracker,
 			self.feat_loss_tracker,
-			self.vgg_loss_tracker,
+			#self.vgg_loss_tracker,
 			self.kl_loss_tracker,
 			self.ssim_loss_tracker,
 			self.mae_loss_tracker
@@ -125,13 +125,13 @@ class PCxGAN(kr.Model):
 			# Compute generator losses.
 			g_loss = loss.generator_loss(pred)
 			kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
-			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(image, fake_image)
+			#vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(image, fake_image)
 			feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
 				real_d_output, fake_d_output
 			)
 			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(image, fake_image)
 			mae_loss = self.mae_loss_coeff * self.mae_loss(image, fake_image)
-			total_loss = g_loss + kl_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
+			total_loss = g_loss + kl_loss + feature_loss + ssim_loss + mae_loss
 		
 		all_trainable_variables = (
 				self.combined_model.trainable_variables +
@@ -144,7 +144,7 @@ class PCxGAN(kr.Model):
 			zip(gradients, all_trainable_variables)
 		)
 		
-		return total_loss, feature_loss, vgg_loss, kl_loss, ssim_loss, mae_loss
+		return total_loss, feature_loss, kl_loss, ssim_loss, mae_loss
 	
 	def train_step(self, data):
 		ct, mri, labels = data
@@ -157,7 +157,7 @@ class PCxGAN(kr.Model):
 		discriminator_loss = self.train_discriminator(
 			latent_vector, ct, mri, labels
 		)
-		(generator_loss, feature_loss, vgg_loss, kl_loss, ssim_loss, mae_loss) = self.train_generator(
+		(generator_loss, feature_loss, kl_loss, ssim_loss, mae_loss) = self.train_generator(
 			latent_vector, ct, labels, mri, mean, variance
 		)
 		
@@ -165,7 +165,7 @@ class PCxGAN(kr.Model):
 		self.disc_loss_tracker.update_state(discriminator_loss)
 		self.gen_loss_tracker.update_state(generator_loss)
 		self.feat_loss_tracker.update_state(feature_loss)
-		self.vgg_loss_tracker.update_state(vgg_loss)
+		#self.vgg_loss_tracker.update_state(vgg_loss)
 		self.kl_loss_tracker.update_state(kl_loss)
 		self.ssim_loss_tracker.update_state(ssim_loss)
 		self.mae_loss_tracker.update_state(mae_loss)
@@ -194,18 +194,18 @@ class PCxGAN(kr.Model):
 		g_loss = loss.generator_loss(pred)
 		
 		kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
-		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
+		#vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
 		feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
 			real_d_output, fake_d_output)
 		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
 		mae_loss = self.mae_loss_coeff * self.mae_loss(mri, fake_images)
-		total_generator_loss = g_loss + kl_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
+		total_generator_loss = g_loss + kl_loss + feature_loss + ssim_loss + mae_loss
 		
 		# Report progress.
 		self.disc_loss_tracker.update_state(total_discriminator_loss)
 		self.gen_loss_tracker.update_state(total_generator_loss)
 		self.feat_loss_tracker.update_state(feature_loss)
-		self.vgg_loss_tracker.update_state(vgg_loss)
+		#self.vgg_loss_tracker.update_state(vgg_loss)
 		self.kl_loss_tracker.update_state(kl_loss)
 		self.ssim_loss_tracker.update_state(ssim_loss)
 		self.mae_loss_tracker.update_state(mae_loss)
@@ -269,7 +269,7 @@ class PCxGAN(kr.Model):
 		hist_df = pd.DataFrame(hist) 
 		hist_df.to_csv(exp_path + '/hist.csv')
 		
-		losses = ['disc', 'gen', 'feat', 'vgg', 'kl', 'ssim', 'mae']
+		losses = ['disc', 'gen', 'feat', 'kl', 'ssim', 'mae']
 		
 		# plot losses
 		for loss in losses:

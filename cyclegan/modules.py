@@ -44,7 +44,7 @@ class ResidualT(kr.layers.Layer):
                  strides=2):
         super().__init__()
         
-        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
+        gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=123)
 
         self.conv1 = kr.layers.Conv2DTranspose(
             num_channels, padding='same', kernel_size=4, strides=strides,

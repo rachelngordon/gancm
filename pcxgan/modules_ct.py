@@ -81,7 +81,7 @@ class GaussianSampler(kr.layers.Layer):
 	def call(self, inputs):
 		means, variance = inputs
 		epsilon = tf.random.normal(
-			shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=1.0
+			shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=1.0, seed=1234
 		)
 		samples = means + tf.exp(0.5 * variance) * epsilon
 		return samples
@@ -129,7 +129,7 @@ class UpsampleModule(kr.layers.Layer):
 		# self.block.add(kr.layers.UpSampling2D((2, 2)))
 		
 		self.block.add(kr.layers.Conv2DTranspose(channels, filter_size, strides=self.strides, padding='same',
-																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02),
+																						 kernel_initializer=kr.initializers.RandomNormal(stddev=0.02, seed=123),
 																						 kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
 																						 activity_regularizer=kr.regularizers.l2(1e-5)))
 		
@@ -278,7 +278,7 @@ class GanMonitor(kr.callbacks.Callback):
 	
 	def infer(self):
 		latent_vector = tf.random.normal(
-			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0
+			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0, seed=500
 		)
 		return self.model.predict([latent_vector, self.val_images[2], self.val_images[0]])
 	
