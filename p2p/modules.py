@@ -211,8 +211,7 @@ class Discriminator(kr.Model):
 class P2PMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags, my_strategy=False):
 
-		self.val_images = val_dataset
-		self.my_strategy = my_strategy
+		self.val_images = next(iter(val_dataset))
 		self.n_samples = 3
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
@@ -224,20 +223,7 @@ class P2PMonitor(kr.callbacks.Callback):
 			os.makedirs(self.sample_dir)
 
 	def infer(self):
-		if self.my_strategy:
-			#@tf.function
-			def inferx(c):
-				return self.model(c)
-				
-			all_replicas = self.my_strategy.experimental_local_results(self.val_images)
-			self.val_images = all_replicas[0]
-			predictions = inferx(self.val_images[0])
-			#print(f"\n{self.val_images[0].shape}")
-			#values = self.my_strategy.experimental_local_results(predictions)
-			return predictions
-		else:
-			
-			return self.model(self.val_images[0])
+		return self.model(self.val_images[0])
 
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:
