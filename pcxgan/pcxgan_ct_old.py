@@ -125,7 +125,7 @@ class PCxGAN_ct(kr.Model):
 			pred = fake_d_output[-1]
 			
 			# Compute generator losses.
-			g_loss = loss.generator_loss(pred)
+			g_loss = self.generator_loss_coeff * loss.generator_loss(pred)
 			kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
 			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(image, fake_image)
 			feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
@@ -147,7 +147,7 @@ class PCxGAN_ct(kr.Model):
 			zip(gradients, all_trainable_variables)
 		)
 		
-		return total_loss, feature_loss, vgg_loss, kl_loss, ssim_loss, mae_loss
+		return total_loss, feature_loss, kl_loss, vgg_loss, ssim_loss, mae_loss
 	
 	def train_step(self, data):
 		ct, mri, labels = data
@@ -160,7 +160,7 @@ class PCxGAN_ct(kr.Model):
 		discriminator_loss = self.train_discriminator(
 			latent_vector, ct, mri, labels
 		)
-		(generator_loss, feature_loss, vgg_loss, kl_loss, ssim_loss, mae_loss) = self.train_generator(
+		(generator_loss, feature_loss, kl_loss, vgg_loss, ssim_loss, mae_loss) = self.train_generator(
 			latent_vector, ct, labels, mri, mean, variance
 		)
 		
@@ -271,7 +271,7 @@ class PCxGAN_ct(kr.Model):
 		hist_df = pd.DataFrame(hist) 
 		hist_df.to_csv(exp_path + '/hist.csv')
 		
-		losses = ['disc', 'gen', 'feat', 'vgg', 'kl', 'ssim', 'mae']
+		losses = ['disc', 'gen', 'feat', 'kl', 'vgg', 'ssim', 'mae']
 		
 		# plot losses
 		for loss in losses:
@@ -280,4 +280,5 @@ class PCxGAN_ct(kr.Model):
 			plt.plot(hist['val_' + loss + '_loss'])
 			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
 			plt.savefig(exp_path + '/' + loss + '_loss.png')
+
 
