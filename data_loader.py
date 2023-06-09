@@ -80,8 +80,7 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 		# create dataset
 		self.dataset = tf.data.Dataset.from_tensor_slices((x, y))
 		self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
-		#self.dataset = self.dataset.cache().map(
-			#lambda x, y: self.resize(x, y, resize_size=flags.crop_size), num_parallel_calls=tf.data.AUTOTUNE)
+		
 	
 	def load_data(self, flags, data_path, if_train):
 
