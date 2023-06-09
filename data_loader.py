@@ -66,14 +66,16 @@ class DataGenerator_Ready(kr.utils.Sequence):
 
 # data generator for pix2pix (normalized paired data) and cross validation with test fold ready
 class DataGenerator_PairedReady(kr.utils.Sequence):
-	def __init__(self, flags, data_path, **kwargs):
+
+	def __init__(self, flags, data_path, if_train = True, **kwargs):
+		
 		super().__init__(**kwargs)
 
 		self.batch_size = flags.batch_size
 		self.data_path = data_path
 
 		# load data
-		x, y = self.load_data(flags)
+		x, y = self.load_data(flags, self.data_path, if_train=if_train)
 
 		# create dataset
 		self.dataset = tf.data.Dataset.from_tensor_slices((x, y))
@@ -130,6 +132,7 @@ class DataGenerator(kr.utils.Sequence):
 	def __init__(self, flags, return_labels=True, is_train=True, test_idx=[], **kwargs):
 		
 		super().__init__(**kwargs)
+
 		self.test_idx = test_idx
 		x, y, z = self.load_data(flags, is_train, return_labels)
 		self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
