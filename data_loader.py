@@ -37,7 +37,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
       folds.remove(flags.test_fold)
       
       for i in folds:
-        path = f"{data_path}{i}.npz"
+        path = f"{data_path}{i}"
         if i == folds[0]:
           data = np.load(path)
           x, y, z = data['arr_0'], data['arr_1'], data['arr_2']
@@ -51,7 +51,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
 
 	# load test fold
     else: 
-        path = f"{data_path}.npz"
+        path = f"{data_path}"
         data = np.load(path)
         x, y, z = data['arr_0'], data['arr_1'], data['arr_2']
         return x, y, z
@@ -93,7 +93,7 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 			
 			for i in folds:
 
-				path = f"{data_path}{i}.npz"
+				path = f"{data_path}{i}"
 
 				if i == folds[0]:
 					data = np.load(path)
@@ -108,7 +108,7 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 		
 		# load test fold
 		else: 
-			path = f"{data_path}.npz"
+			path = f"{data_path}"
 			data = np.load(path)
 			x, y = data['arr_0'], data['arr_1']
 			

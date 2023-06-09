@@ -10,9 +10,13 @@ import tensorflow.keras as kr
 
 
 def main(flags):
+  
+  data_path = "/media/aisec-102/DATA3/rachel/data/mask_data/norm_mask_neg1pos1_fold.npz"
+  test_data_path = f"/media/aisec-102/DATA3/rachel/data/mask_data/norm_mask_neg1pos1_fold{flags.test_fold}.npz"
 
-  data_path = "/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold"
-  test_data_path = f"/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold{flags.test_fold}"
+  # load data on polaris
+  #data_path = "/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold"
+  #test_data_path = f"/grand/EVITA/ct-mri/data/mask_data/norm_mask_neg1pos1_fold{flags.test_fold}"
 
 
   train_data = data_loader.DataGenerator_Ready(flags, data_path, if_train=True).load()
