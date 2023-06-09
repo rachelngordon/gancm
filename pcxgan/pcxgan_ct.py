@@ -2,7 +2,7 @@
 import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
-from . import modules_ct as modules
+import modules_ct as modules
 import loss
 import evaluate
 from datetime import datetime
