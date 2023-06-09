@@ -203,13 +203,13 @@ class Pix2Pix(kr.Model):
 
         results = []
         
-        num_batches = len(test_data[0]//self.batch_size)
+        #num_batches = len(test_data[0]//self.batch_size)
 
-        for i in range(0, num_batches, self.batch_size):
-            ct, mri = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size]
+        #for i in range(0, num_batches, self.batch_size):
+            #ct, mri = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size]
 
 
-        #for ct, mri in test_data:
+        for ct, mri in test_data:
             
             fake_mri = self.generator(ct)
             
