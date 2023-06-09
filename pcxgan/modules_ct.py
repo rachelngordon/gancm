@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 import data_loader
 import flags
-#import tensorflow_addons as tfa
+import tensorflow_addons as tfa
 
 
 class SPADE(kr.layers.Layer):
@@ -91,6 +91,7 @@ class DownsampleModule(kr.layers.Layer):
 	def __init__(self, channels, filter_size, apply_norm=True, batch_norm=False, apply_dropout=False,
 							 apply_activation=True, **kwargs):
 		super().__init__(**kwargs)
+		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
 		self.block = kr.Sequential()
 		self.strides = 2
 		self.apply_activation = apply_activation
@@ -106,7 +107,7 @@ class DownsampleModule(kr.layers.Layer):
 
 		
 		if apply_norm:
-			self.block.add(kr.layers.GroupNormalization(groups=channels))
+			self.block.add(tfa.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
 		if batch_norm:
 			self.block.add(kr.layers.BatchNormalization())
 		if self.apply_activation:
