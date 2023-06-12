@@ -3,8 +3,9 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 train_cycle.py --exp_name cy_fold2345_eq --test_fold 1 --epochs 1000 --batch_size 1 --equalized True", 0),
-    ("python3 train_cycle.py --exp_name cy_fold2345_no_eq --test_fold 1 --epochs 1000 --batch_size 1 --equalized False", 1), 
+    ("python3 train_cycle.py --exp_name cy_fold2345_eq --test_fold 1 --epochs 1000 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/eq_paired/norm_neg1pos1_fold'", 0),
+    ("python3 train_cycle.py --exp_name cy_fold2345_no_eq --test_fold 1 --epochs 1000 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/no_eq_paired/norm_neg1pos1_fold'", 1), 
+    ("python3 train_cycle.py --exp_name cy_fold2345_avg_eq --test_fold 1 --epochs 1000 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/avg_eq_paired/norm_neg1pos1_fold'", 2)
     ]
 
 # Function to run a command on a GPU

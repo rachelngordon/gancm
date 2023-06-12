@@ -11,21 +11,8 @@ import tensorflow.keras as kr
 
 def main(flags):
 
-    #data_path = "/media/aisec-102/DATA3/rachel/data/CV/eq_mask/norm_mask_neg1pos1_fold"
-    #test_data_path = f"/media/aisec-102/DATA3/rachel/data/CV/eq_mask/norm_mask_neg1pos1_fold{flags.test_fold}"
-
-    #data_path = "/grand/EVITA/ct-mri/data/CV/eq_mask/norm_mask_neg1pos1_fold"
-    #test_data_path = f"/grand/EVITA/ct-mri/data/CV/eq_mask/norm_mask_neg1pos1_fold{flags.test_fold}"
-
-    #data_path = "/media/aisec-102/DATA3/rachel/data/CV/no_eq_mask/no_eq_mask_neg1pos1_fold"
-    #test_data_path = f"/media/aisec-102/DATA3/rachel/data/CV/no_eq_mask/no_eq_mask_neg1pos1_fold{flags.test_fold}"
-
-    #data_path = "/grand/EVITA/ct-mri/data/CV/no_eq_mask/no_eq_mask_neg1pos1_fold"
-    #test_data_path = f"/grand/EVITA/ct-mri/data/CV/no_eq_mask/no_eq_mask_neg1pos1_fold{flags.test_fold}"
-
-
-
   # pass path to data in flags
+
   train_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=True).load()
   test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
 
