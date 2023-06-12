@@ -13,9 +13,7 @@ class Flags():
     parser.add_argument('--name', type=str, default='pcxgan_flags', help='name of the experiment. It decides where to store samples and models')
     parser.add_argument('--exp_name', type=str, default='pcxgan_flags', help='name of the experiment. It decides where to store samples and models')
     parser.add_argument('--gpu_ids', type=str, default='1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
-    parser.add_argument('--equalized', type=bool, default=True, help='use equalized data or not')
     parser.add_argument('--data_path', type=str, default='/media/aisec-102/DATA31/rachel/PCGAN/data/folds1234.npz', help='Data .npz file' )# CT_MRI-512-Updated
-    parser.add_argument('--test_data_path', type=str, default='/media/aisec-102/DATA31/Bibo2/Project/CT2MRI/dataset/CV/fold5.npz', help='Data .npz file' )
     parser.add_argument('--test_fold', type=int, default=5, help='fold to be left out of trainings' )
     parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
     parser.add_argument('--sample_dir', type=str, default='./training_samples', help='samples are saved here')
