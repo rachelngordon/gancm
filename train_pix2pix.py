@@ -7,18 +7,18 @@ import data_loader
 def main(flags):
 
   if flags.equalized == True:
-    #data_path = "/media/aisec-102/DATA3/rachel/data/CV/eq_paired/normalized_neg1pos1_fold"
-    #test_data_path = f"/media/aisec-102/DATA3/rachel/data/CV/eq_paired/normalized_neg1pos1_fold{flags.test_fold}"
+    data_path = "/media/aisec-102/DATA3/rachel/data/CV/eq_paired/normalized_neg1pos1_fold"
+    test_data_path = f"/media/aisec-102/DATA3/rachel/data/CV/eq_paired/normalized_neg1pos1_fold{flags.test_fold}"
 
-    data_path = "/grand/EVITA/ct-mri/data/CV/eq_paired/normalized_neg1pos1_fold"
-    test_data_path = f"/grand/EVITA/ct-mri/data/CV/eq_paired/normalized_neg1pos1_fold{flags.test_fold}"
+    #data_path = "/grand/EVITA/ct-mri/data/CV/eq_paired/normalized_neg1pos1_fold"
+    #test_data_path = f"/grand/EVITA/ct-mri/data/CV/eq_paired/normalized_neg1pos1_fold{flags.test_fold}"
   else:
-    #data_path = "/media/aisec-102/DATA3/rachel/data/CV/no_eq_paired/no_eq_neg1pos1_fold"
-    #test_data_path = f"/media/aisec-102/DATA3/rachel/data/CV/no_eq_paired/no_eq_neg1pos1_fold{flags.test_fold}"
+    data_path = "/media/aisec-102/DATA3/rachel/data/CV/no_eq_paired/no_eq_neg1pos1_fold"
+    test_data_path = f"/media/aisec-102/DATA3/rachel/data/CV/no_eq_paired/no_eq_neg1pos1_fold{flags.test_fold}"
 
 
-    data_path = "/grand/EVITA/ct-mri/data/CV/no_eq_paired/no_eq_neg1pos1_fold"
-    test_data_path = f"/grand/EVITA/ct-mri/data/CV/no_eq_paired/no_eq_neg1pos1_fold{flags.test_fold}"
+    #data_path = "/grand/EVITA/ct-mri/data/CV/no_eq_paired/no_eq_neg1pos1_fold"
+    #test_data_path = f"/grand/EVITA/ct-mri/data/CV/no_eq_paired/no_eq_neg1pos1_fold{flags.test_fold}"
 
 
 
