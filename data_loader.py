@@ -109,7 +109,7 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 		
 		# load test fold
 		else: 
-			path = f"{data_path}.npz"
+			path = f"{data_path}{flags.test_fold}.npz"
 			data = np.load(path)
 			x, y = data['arr_0'], data['arr_1']
 			
