@@ -1,20 +1,26 @@
-#!/bin/bash
+#!/usr/bin/env python3
+
+import subprocess
+import sys
+import os
 
 # Clear
-echo running on a single node
+print("running on a single node")
 
-SCRIPT='/grand/EVITA/ct-mri/pcxgan/polaris_exp/pcx_eq.py'
-CFG='$1'
+script_path = '/grand/EVITA/ct-mri/pcxgan/polaris_exp/pcx_eq.py'
+cfg = sys.argv[1]
 
-# Execute the script on the current node
-$SCRIPT $1 1 0 $(hostname) $PBS_NODEFILE
+# Execute the script using the Python interpreter
+subprocess.call(['python3', script_path, cfg, '1', '0', os.environ['HOSTNAME'], os.environ['PBS_NODEFILE']])
 
 # Remove existing files and directories
-rm -rf ~/nodefile_return/*
-mkdir -p ~/nodefile_return
+return_dir = os.path.expanduser('~/nodefile_return')
+os.makedirs(return_dir, exist_ok=True)
+file_path = f"{return_dir}/{os.environ['PBS_JOBID']}_node{os.environ['HOSTNAME']}"
+if os.path.exists(file_path):
+    os.remove(file_path)
 
 # Staying alive...
-file_path="$HOME/nodefile_return/${PBS_JOBID}_node$(hostname)"
-while [ ! -f "$file_path" ]; do
-    sleep 60  # Adjust the delay time as needed
-done
+while not os.path.isfile(file_path):
+    time.sleep(60)  # Adjust the delay time as needed
+
