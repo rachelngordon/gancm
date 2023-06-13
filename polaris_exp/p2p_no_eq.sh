@@ -1,4 +1,4 @@
 #!/bin/bash
 module load conda
 conda activate
-python /grand/EVITA/ct-mri/pcxgan/polari_exp/p2p_no_eq.py
+python /grand/EVITA/ct-mri/pcxgan/polaris_exp/p2p_no_eq.py
