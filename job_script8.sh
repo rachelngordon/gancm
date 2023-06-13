@@ -3,7 +3,7 @@
 # Clear
 echo running on a single node
 
-SCRIPT='/grand/EVITA/ct-mri/pcxgan/polaris_exp/cy_no_eq.py'
+SCRIPT='/grand/EVITA/ct-mri/pcxgan/polaris_exp/cycle_no_eq.py'
 CFG='$1'
 
 # Execute the script on the current node
