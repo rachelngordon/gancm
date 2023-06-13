@@ -3,10 +3,10 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1234_avg_eq --test_fold 5 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/avg_eq_mask/norm_mask_neg1pos1_fold'", 0),
-    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1235_avg_eq --test_fold 4 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/avg_eq_mask/norm_mask_neg1pos1_fold'", 1), 
-    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1245_avg_eq --test_fold 3 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/avg_eq_mask/norm_mask_neg1pos1_fold'", 2),
-    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1345_avg_eq --test_fold 2 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/avg_eq_mask/norm_mask_neg1pos1_fold'", 3)
+    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1234_avg_eq --test_fold 5 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_mask/norm_mask_neg1pos1_fold'", 0),
+    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1235_avg_eq --test_fold 4 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_mask/norm_mask_neg1pos1_fold'", 1), 
+    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1245_avg_eq --test_fold 3 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_mask/norm_mask_neg1pos1_fold'", 2),
+    ("python3 train_pcxgan_ct.py --exp_name pcx_fold1345_avg_eq --test_fold 2 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_mask/norm_mask_neg1pos1_fold'", 3)
 ]
 
 # Function to run a command on a GPU
