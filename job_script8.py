@@ -3,11 +3,12 @@
 import subprocess
 import sys
 import os
+import time
 
 # Clear
 print("running on a single node")
 
-script_path = '/grand/EVITA/ct-mri/pcxgan/polaris_exp/pcx_eq.py'
+script_path = '/grand/EVITA/ct-mri/pcxgan/polaris_exp/cycle_no_eq.py'
 cfg = sys.argv[1]
 
 # Execute the script using the Python interpreter
@@ -23,4 +24,3 @@ if os.path.exists(file_path):
 # Staying alive...
 while not os.path.isfile(file_path):
     time.sleep(60)  # Adjust the delay time as needed
-
