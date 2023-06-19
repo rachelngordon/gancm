@@ -92,31 +92,24 @@ class DownsampleModule(kr.layers.Layer):
 							 apply_activation=True, **kwargs):
 		super().__init__(**kwargs)
 		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
-		self.block = kr.Sequential()
-		self.strides = 2
-		self.apply_activation = apply_activation
-		self.block.add(
-			kr.layers.Conv2D(
+		self.block = kr.layers.Conv2D(
 				channels,
 				filter_size,
-				strides=self.strides,
+				strides=2,
 				padding="same",
 				use_bias=False
 			)
-		)
+		self.apply_norm = apply_norm
 
-		
-		if apply_norm:
-			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
-		if batch_norm:
-			self.block.add(kr.layers.BatchNormalization())
-		if self.apply_activation:
-			self.block.add(kr.layers.LeakyReLU(0.2))
-		if apply_dropout:
-			self.block.add(kr.layers.Dropout(0.5))
+		self.norm = kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init)
+		self.activation = kr.layers.LeakyReLU(0.2)
 	
 	def call(self, inputs__):
-		return self.block(inputs__)
+		x = self.block(inputs__)
+		if self.apply_norm == True:
+			x = self.norm(x)
+		x = self.activation(x)
+		return x
 
 
 class UpsampleModule(kr.layers.Layer):
