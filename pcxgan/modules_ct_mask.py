@@ -93,11 +93,12 @@ class DownsampleModule(kr.layers.Layer):
 		super().__init__(**kwargs)
 		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
 		self.block = kr.layers.Conv2D(
-				channels,
-				filter_size,
-				strides=2,
+				filters = channels,
+				kernel_size = filter_size,
+				strides=(2,2),
 				padding="same",
-				use_bias=False
+				use_bias=False,
+				activation=None,
 			)
 		self.apply_norm = apply_norm
 
