@@ -30,12 +30,12 @@ class PCxGAN_ct(kr.Model):
 		self.batch_size = flags.batch_size
 		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
 
-		self.feature_loss_coeff = 1
+		self.feature_loss_coeff = 4
 		#self.vgg_feature_loss_coeff = flags.vgg_feature_loss_coeff
-		self.kl_divergence_loss_coeff = 1000
+		self.kl_divergence_loss_coeff = 2000
 		#self.generator_loss_coeff = flags.generator_loss_coeff
 		self.ssim_loss_coeff = flags.ssim_loss_coeff
-		self.mae_loss_coeff = 1.5 * flags.mae_loss_coeff
+		self.mae_loss_coeff = 7.5 * flags.mae_loss_coeff
 		
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
