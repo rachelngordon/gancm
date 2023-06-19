@@ -1,7 +1,7 @@
-from pcxgan.pcxgan_ct import PCxGAN_ct
+from pcxgan.pcxgan_ct_mask import PCxGAN_ct
 from flags import Flags
 import data_loader
-import pcxgan.modules_ct as modules
+import pcxgan.modules_ct_mask as modules
 import numpy as np
 import math
 import tensorflow as tf
