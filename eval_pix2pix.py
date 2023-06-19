@@ -1,6 +1,6 @@
 from flags import Flags
 import numpy as np
-import modules
+from p2p import modules
 import tensorflow.keras as kr
 import evaluate
 import data_loader
