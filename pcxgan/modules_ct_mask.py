@@ -145,7 +145,7 @@ class UpsampleModule(kr.layers.Layer):
 		return self.block(inputs_)
 
 
-class Encoder(kr.Model):
+class Encoder(kr.layers.Layer):
 	def __init__(self, flags, **kwargs):
 		super().__init__(**kwargs)
 		self.image_shape = (flags.crop_size, flags.crop_size, 1)
