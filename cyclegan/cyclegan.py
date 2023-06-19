@@ -312,6 +312,9 @@ class CycleGAN(kr.Model):
             
             fake_mri = self.generator_mri(ct)
 
+            mri = (mri + 1.0) / 2.0
+            fake_mri = (fake_mri + 1.0) / 2.0
+
             fid = evaluate.calculate_fid(mri, fake_mri, 
 				input_shape=(self.flags.crop_size, self.flags.crop_size, 3))
 

@@ -212,6 +212,9 @@ class Pix2Pix(kr.Model):
         for ct, mri in test_data:
             
             fake_mri = self.generator(ct)
+
+            mri = (mri + 1.0) / 2.0
+            fake_mri = (fake_mri + 1.0) / 2.0
             
 
             fid = evaluate.calculate_fid(mri, fake_mri, 

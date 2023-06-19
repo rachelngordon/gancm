@@ -131,6 +131,9 @@ def pix2pix_evaluate(flags, generator, test_data, epoch=0):
         for ct, mri in test_data:
             
             fake_mri = generator(ct)
+
+            mri = (mri + 1.0) / 2.0
+            fake_mri = (fake_mri + 1.0) / 2.0
             
 
             fid = calculate_fid(mri, fake_mri, 
