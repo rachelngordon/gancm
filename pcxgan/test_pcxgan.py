@@ -153,7 +153,7 @@ class PCxGAN_ct(kr.Model):
 		ct, mri, labels = data
 
 		# Obtain the learned moments of the real image distribution.
-		mean, variance = self.encoder(mri)
+		mean, variance = self.encoder([mri])
 		
 		# Sample a latent from the distribution defined by the learned moments.
 		latent_vector = self.sampler([mean, variance])
