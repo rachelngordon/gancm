@@ -122,20 +122,19 @@ def pix2pix_evaluate(flags, generator, test_data, epoch=0):
 
         results = []
         
-        num_batches = len(test_data[0]//flags.batch_size)
+        #num_batches = len(test_data[0]//self.batch_size)
 
-        for i in range(0, num_batches, flags.batch_size):
-            ct, mri = test_data[0][i:i+flags.batch_size], test_data[1][i:i+flags.batch_size]
+        #for i in range(0, num_batches, self.batch_size):
+            #ct, mri = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size]
 
 
-        #for ct, mri in test_data:
+        for ct, mri in test_data:
             
             fake_mri = generator(ct)
+            
 
-            mri = (mri + 1.0) / 2.0
-            fake_mri = (fake_mri + 1.0) / 2.0
-
-            fid = calculate_fid(mri, fake_mri, input_shape=(flags.crop_size, flags.crop_size, 3))
+            fid = calculate_fid(mri, fake_mri, 
+				    input_shape=(flags.crop_size, flags.crop_size, 3))
 
             mse, mae, cs, psnr, ssim = get_metrics(mri, fake_mri)
 
@@ -150,6 +149,9 @@ def pix2pix_evaluate(flags, generator, test_data, epoch=0):
             os.makedirs(results_dir)
         log_file = os.path.join(results_dir, filename)
         np.savetxt(log_file, [results], fmt='%.6f', header="fid, mse, mae, cs, psnr,ssim", delimiter=",")
+
+
+
 
 
 def pcxgan_evaluate(flags, decoder, test_data, epoch=0):
