@@ -17,7 +17,7 @@ def main(flags):
   path = "/grand/EVITA/ct-mri/pcxgan/models/" + flags.name
 
   model = kr.models.load_model(path)
-  evaluate.pix2pix_evaluate(test_data)
+  evaluate.pix2pix_evaluate(flags, model, test_data)
   
   
 if __name__ == '__main__':
