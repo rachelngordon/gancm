@@ -34,7 +34,7 @@ class PCxGAN_ct(kr.Model):
 		self.vgg_feature_loss_coeff = flags.vgg_feature_loss_coeff
 		self.kl_divergence_loss_coeff = 2000
 		#self.generator_loss_coeff = flags.generator_loss_coeff
-		self.ssim_loss_coeff = 45 #flags.ssim_loss_coeff
+		self.ssim_loss_coeff = 60 #flags.ssim_loss_coeff
 		#self.mae_loss_coeff = 7.5 * flags.mae_loss_coeff
 		
 		self.discriminator = modules.Discriminator(self.flags)
