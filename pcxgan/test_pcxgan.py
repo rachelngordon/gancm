@@ -147,7 +147,7 @@ class PCxGAN_ct(kr.Model):
 			zip(gradients, all_trainable_variables)
 		)
 		
-		return total_loss, feature_loss, kl_loss, ssim_loss, mae_loss
+		return feature_loss, kl_loss, ssim_loss, mae_loss
 	
 	def train_step(self, data):
 		ct, mri, labels = data
@@ -202,7 +202,7 @@ class PCxGAN_ct(kr.Model):
 			real_d_output, fake_d_output)
 		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
 		mae_loss = self.mae_loss_coeff * self.mae_loss(mri, fake_images)
-		total_generator_loss = kl_loss + feature_loss + ssim_loss + mae_loss
+		#total_generator_loss = kl_loss + feature_loss + ssim_loss + mae_loss
 		
 		# Report progress.
 		self.disc_loss_tracker.update_state(total_discriminator_loss)
