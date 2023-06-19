@@ -97,8 +97,11 @@ class DownsampleModule(kr.layers.Layer):
 				kernel_size = filter_size,
 				strides=(2,2),
 				padding="same",
-				use_bias=False,
+				#use_bias=False,
 				activation=None,
+				kernel_initializer=kr.initializers.RandomNormal(stddev=0.02, seed=123),
+				kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
+				activity_regularizer=kr.regularizers.l2(1e-5)
 			)
 		self.apply_norm = apply_norm
 
