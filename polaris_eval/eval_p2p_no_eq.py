@@ -3,10 +3,10 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 /grand/EVITA/ct-mri/pcxgan/p2p/eval_pix2pix.py --exp_name p2p_fold1234_no_eq --test_fold 5 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold'", 0),
-    ("python3 /grand/EVITA/ct-mri/pcxgan/p2p/eval_pix2pix.py --exp_name p2p_fold1235_no_eq --test_fold 4 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold'", 1), 
-    ("python3 /grand/EVITA/ct-mri/pcxgan/p2p/eval_pix2pix.py --exp_name p2p_fold1245_no_eq --test_fold 3 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold'", 2),
-    ("python3 /grand/EVITA/ct-mri/pcxgan/p2p/eval_pix2pix.py --exp_name p2p_fold1345_no_eq --test_fold 2 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold'", 3)
+    ("python3 /grand/EVITA/ct-mri/pcxgan/eval_pix2pix.py --exp_name p2p_fold1234_no_eq --test_fold 5 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold'", 0),
+    ("python3 /grand/EVITA/ct-mri/pcxgan/eval_pix2pix.py --exp_name p2p_fold1235_no_eq --test_fold 4 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold'", 1), 
+    ("python3 /grand/EVITA/ct-mri/pcxgan/eval_pix2pix.py --exp_name p2p_fold1245_no_eq --test_fold 3 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold'", 2),
+    ("python3 /grand/EVITA/ct-mri/pcxgan/eval_pix2pix.py --exp_name p2p_fold1345_no_eq --test_fold 2 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold'", 3)
 ]
 
 # Function to run a command on a GPU

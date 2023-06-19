@@ -1,9 +1,9 @@
-from ..flags import Flags
+from flags import Flags
 import numpy as np
 import modules
 import tensorflow.keras as kr
-from . import evaluate
-from . import data_loader
+import evaluate
+import data_loader
 
 def main(flags):
 
