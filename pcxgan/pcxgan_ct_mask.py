@@ -136,6 +136,7 @@ class PCxGAN_ct(kr.Model):
 			total_loss = g_loss + kl_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
 		
 		all_trainable_variables = (
+				total_loss, 
 				self.combined_model.trainable_variables +
 				self.encoder.trainable_variables
 		)
