@@ -118,9 +118,31 @@ class PCxGAN_mask(kr.Model):
 		
 		self.discriminator.trainable = False
 
-		with tf.GradientTape() as tape:
+
+		with tf.GradientTape(persistent=True) as en_tape:
 			
 			mean, variance = self.encoder(image)
+
+			
+			# Compute generator losses.
+			kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
+
+		
+		en_trainable_variables = (
+				self.encoder.trainable_variables
+		)
+		
+		en_gradients = en_tape.gradient(kl_loss, en_trainable_variables)
+
+		self.generator_optimizer.apply_gradients(
+			zip(en_gradients, en_trainable_variables)
+		)
+		
+
+
+
+		with tf.GradientTape(persistent=True) as tape:
+
 
 			real_d_output = self.discriminator([segmentation_map, image])
 			fake_d_output, fake_image = self.combined_model(
@@ -131,19 +153,17 @@ class PCxGAN_mask(kr.Model):
 			
 			# Compute generator losses.
 			g_loss = self.generator_loss_coeff * loss.generator_loss(pred)
-			kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
 			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(image, fake_image)
 			feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
 				real_d_output, fake_d_output
 			)
 			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(image, fake_image)
 			mae_loss = self.mae_loss_coeff * self.mae_loss(image, fake_image)
-			total_loss = g_loss + kl_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
+			total_loss = g_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
 
 		
 		all_trainable_variables = (
-				self.combined_model.trainable_variables +
-				self.encoder.trainable_variables
+				self.combined_model.trainable_variables
 		)
 		
 		gradients = tape.gradient(total_loss, all_trainable_variables)
