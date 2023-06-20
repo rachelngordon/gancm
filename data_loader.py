@@ -20,7 +20,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
     
 	# create dataset
     self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
-    self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
+    self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration = not if_train)
     self.dataset = self.dataset.map(
     lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
     

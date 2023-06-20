@@ -258,6 +258,7 @@ class GanMonitor(kr.callbacks.Callback):
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
+		self.flags = flags
 		
 		if not os.path.exists(self.checkpoints_path):
 			os.makedirs(self.checkpoints_path)
@@ -271,7 +272,10 @@ class GanMonitor(kr.callbacks.Callback):
 		latent_vector = tf.random.normal(
 			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0, seed=500
 		)
-		return self.model.predict([latent_vector, self.val_images[2], self.val_images[0]])
+		indices = np.random.permutation(self.flags.batch_size)
+		n_masks = self.val_images[2].numpy()[indices]
+		n_cts = self.val_images[0].numpy()[indices]
+		return self.model.predict([latent_vector, tf.cast(n_masks, tf.float64), tf.cast(n_cts, tf.float64)])
 	
 	def save_models(self):
 		# e_name = "encoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
