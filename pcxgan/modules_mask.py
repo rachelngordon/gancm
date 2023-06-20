@@ -273,9 +273,10 @@ class GanMonitor(kr.callbacks.Callback):
 			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0, seed=500
 		)
 		indices = np.random.permutation(self.flags.batch_size)
-		n_masks = self.val_images[2].numpy()[indices]
-		n_cts = self.val_images[0].numpy()[indices]
-		return self.model.predict([latent_vector, tf.cast(n_masks, tf.float64), tf.cast(n_cts, tf.float64)])
+		self.n_masks = self.val_images[2].numpy()[indices]
+		self.n_cts = self.val_images[0].numpy()[indices]
+		self.n_mris = self.val_images[1].numpy()[indices]
+		return self.model.predict([latent_vector, tf.cast(self.n_masks, tf.float64), tf.cast(self.n_cts, tf.float64)])
 	
 	def save_models(self):
 		# e_name = "encoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
@@ -292,10 +293,10 @@ class GanMonitor(kr.callbacks.Callback):
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
 				for row in range(grid_row):
 					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((self.val_images[0][row].numpy().squeeze()) , cmap='gray')
+					ax[0].imshow((self.n_cts[row].numpy().squeeze()) , cmap='gray')
 					ax[0].axis("off")
 					ax[0].set_title("CT", fontsize=20)
-					ax[1].imshow((self.val_images[1][row].numpy().squeeze()), cmap='gray')
+					ax[1].imshow((self.n_mris[row].numpy().squeeze()), cmap='gray')
 					ax[1].axis("off")
 					ax[1].set_title("Ground Truth", fontsize=20)
 					ax[2].imshow((generated_images[row].squeeze()), cmap='gray')
