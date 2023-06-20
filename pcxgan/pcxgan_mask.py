@@ -294,8 +294,8 @@ class PCxGAN_ct(kr.Model):
 		for loss in losses:
 			plt.figure()
 			plt.plot(hist[loss + '_loss'])
-			plt.plot(hist['val_' + loss + '_loss'])
-			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
+			#plt.plot(hist['val_' + loss + '_loss'])
+			#plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
 			plt.savefig(exp_path + '/' + loss + '_loss.png')
 
 
