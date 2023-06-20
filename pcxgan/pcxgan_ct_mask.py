@@ -144,6 +144,12 @@ class PCxGAN_ct(kr.Model):
 		
 
 		gradients = tape.gradient(total_loss, all_trainable_variables)
+
+		# Check if gradients are None for any loss component
+		for grad in gradients:
+			if grad is None:
+				print("Gradient not computed for a loss component.")
+				
 		
 		self.generator_optimizer.apply_gradients(
 			zip(gradients, all_trainable_variables)
