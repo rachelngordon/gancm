@@ -31,8 +31,8 @@ class PCxGAN_mask(kr.Model):
 		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
 
 		self.feature_loss_coeff = 0 #flags.feature_loss_coeff
-		self.vgg_feature_loss_coeff = 0.3 * flags.vgg_feature_loss_coeff
-		self.kl_divergence_loss_coeff = 1000 * flags.kl_divergence_loss_coeff
+		self.vgg_feature_loss_coeff = flags.vgg_feature_loss_coeff
+		self.kl_divergence_loss_coeff = flags.kl_divergence_loss_coeff
 		self.generator_loss_coeff = flags.generator_loss_coeff
 		self.ssim_loss_coeff = flags.ssim_loss_coeff
 		self.mae_loss_coeff = 0 #1.5 * flags.mae_loss_coeff

@@ -29,7 +29,7 @@ def kl_divergence_loss(mean, variance):
 
 def generator_loss(y):
 	y = (y + 1.0) / 2.0
-	return -tf.reduce_mean(y)
+	return tf.reduce_mean(y)
 
 
 class FeatureMatchingLoss(kr.losses.Loss):
