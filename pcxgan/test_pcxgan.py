@@ -1,4 +1,4 @@
-# PCGAN
+# PCxGAN
 import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
@@ -12,7 +12,7 @@ from  matplotlib import pyplot as plt
 from datetime import datetime
 
 
-class PCxGAN_ct(kr.Model):
+class PCxGAN_mask(kr.Model):
 	def __init__(
 			self,
 			flags,
@@ -113,30 +113,21 @@ class PCxGAN_ct(kr.Model):
 		)
 		return total_loss
 	
+	
 	def train_generator(self, latent_vector, segmentation_map, labels, image):
 		
 		self.discriminator.trainable = False
-		with tf.GradientTape() as tape:
-			# Obtain the learned moments of the real image distribution.
-			mean, variance = self.encoder(image)
-		
-			# Sample a latent from the distribution defined by the learned moments.
-			#latent_vector = self.sampler([mean, variance])
 
-			real_d_output = self.discriminator([segmentation_map, image])  # check
+		with tf.GradientTape() as tape:
+			
+			mean, variance = self.encoder(image)
+
+			real_d_output = self.discriminator([segmentation_map, image])
 			fake_d_output, fake_image = self.combined_model(
 				[latent_vector, labels, segmentation_map]
 			)
 			pred = fake_d_output[-1]
 
-			# Explicitly watch the tensors involved in the losses
-			tape.watch(pred)
-			tape.watch(image)
-			tape.watch(fake_image)
-			tape.watch(mean)
-			tape.watch(variance)
-			tape.watch(real_d_output)
-			tape.watch(fake_d_output)
 			
 			# Compute generator losses.
 			g_loss = self.generator_loss_coeff * loss.generator_loss(pred)
@@ -155,20 +146,15 @@ class PCxGAN_ct(kr.Model):
 				self.encoder.trainable_variables
 		)
 		
-
 		gradients = tape.gradient(total_loss, all_trainable_variables)
 
-		for gradient, variable in zip(gradients, all_trainable_variables):
-			if gradient is not None:
-				tf.summary.histogram(variable.name + '/gradient', gradient)
-
-
-	
 		self.generator_optimizer.apply_gradients(
 			zip(gradients, all_trainable_variables)
 		)
 		
+
 		return total_loss, feature_loss, kl_loss, vgg_loss, ssim_loss, mae_loss
+	
 	
 	def train_step(self, data):
 		ct, mri, labels = data
