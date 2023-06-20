@@ -255,7 +255,11 @@ class Discriminator(kr.Model):
 class GanMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags):
 		self.val_images = next(iter(val_dataset))
-		self.n_samples = 3
+		if flags.batch_size > 3:
+			self.n_samples = 3
+		else:
+			self.n_samples = 1
+			self.val_images = val_dataset
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
@@ -269,10 +273,12 @@ class GanMonitor(kr.callbacks.Callback):
 	# self.save_models(self.checkpoints_path)
 	# self.model.model_evaluate(val_dataset)
 	
-	def infer(self):
+	def infer(self, images=None):
 		latent_vector = tf.random.normal(
 			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0, seed=500
 		)
+		if images:
+			self.val_images=images
 		indices = np.random.permutation(self.flags.batch_size)
 		self.n_masks = self.val_images[2].numpy()[indices]
 		self.n_cts = self.val_images[0].numpy()[indices]
@@ -288,7 +294,9 @@ class GanMonitor(kr.callbacks.Callback):
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:
 			self.save_models()
-			generated_images = self.infer()
+			if self.n_samples == 1:
+				images = next(iter(self.val_images))
+			generated_images = self.infer(images = images)
 			for s_ in range(self.n_samples):
 				grid_row = min(generated_images.shape[0], 3)
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
