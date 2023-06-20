@@ -107,7 +107,8 @@ class DownsampleModule(kr.layers.Layer):
 
 		
 		if apply_norm:
-			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			#self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			self.block.add(kr.layers.BatchNormalization())
 		if batch_norm:
 			self.block.add(kr.layers.BatchNormalization())
 		if self.apply_activation:
