@@ -20,7 +20,7 @@ def main(flags):
   model = PCxGAN_ct(flags)
 
   # Retrieve the conv2d_6 layer and its kernel
-  conv2d_6_layer = model.get_layer('conv2d_6')
+  conv2d_6_layer = model.get_layer('encoder')
   conv2d_6_kernel = conv2d_6_layer.kernel
 
   # Print the trainable attribute of conv2d_6_kernel
