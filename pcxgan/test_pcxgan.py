@@ -32,8 +32,8 @@ class PCxGAN_mask(kr.Model):
 
 		self.feature_loss_coeff = 0 #flags.feature_loss_coeff
 		self.vgg_feature_loss_coeff = flags.vgg_feature_loss_coeff
-		self.kl_divergence_loss_coeff = flags.kl_divergence_loss_coeff
-		self.generator_loss_coeff = flags.generator_loss_coeff
+		self.kl_divergence_loss_coeff = 50*flags.kl_divergence_loss_coeff
+		self.generator_loss_coeff = 0 #flags.generator_loss_coeff
 		self.ssim_loss_coeff = flags.ssim_loss_coeff
 		self.mae_loss_coeff = 0 #1.5 * flags.mae_loss_coeff
 		
@@ -51,8 +51,7 @@ class PCxGAN_mask(kr.Model):
 		self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
 		self.mae_loss_tracker = tf.keras.metrics.Mean(name="mae_loss")
 		
-		self.en_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1,
-																									beta_2=self.flags.gen_beta_2)
+		self.en_optimizer = kr.optimizers.Adam()
 		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1,
 																									beta_2=self.flags.gen_beta_2)
 		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1,
