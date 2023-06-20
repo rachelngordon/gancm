@@ -9,6 +9,7 @@ import os
 from datetime import datetime
 import data_loader
 import flags
+import random
 #import tensorflow_addons as tfa
 
 
@@ -292,14 +293,15 @@ class GanMonitor(kr.callbacks.Callback):
 				grid_row = min(generated_images.shape[0], 3)
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
 				for row in range(grid_row):
+					r = random.randrange(self.flags.batch_size)
 					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((self.n_cts[row].squeeze()) , cmap='gray')
+					ax[0].imshow((self.n_cts[r].squeeze()) , cmap='gray')
 					ax[0].axis("off")
 					ax[0].set_title("CT", fontsize=20)
-					ax[1].imshow((self.n_mris[row].squeeze()), cmap='gray')
+					ax[1].imshow((self.n_mris[r].squeeze()), cmap='gray')
 					ax[1].axis("off")
 					ax[1].set_title("Ground Truth", fontsize=20)
-					ax[2].imshow((generated_images[row].squeeze()), cmap='gray')
+					ax[2].imshow((generated_images[r].squeeze()), cmap='gray')
 					ax[2].axis("off")
 					ax[2].set_title("Generated", fontsize=20)
 				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))

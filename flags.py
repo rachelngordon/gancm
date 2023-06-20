@@ -39,7 +39,7 @@ class Flags():
     parser.add_argument('--generator_loss_coeff', type=float, default=0.05 , help='' )
     parser.add_argument('--identity_loss_coeff', type=float, default=5 , help='' )
     parser.add_argument('--cycle_loss_coeff', type=float, default=10 , help='' )
-    parser.add_argument('--ssim_loss_coeff', type=float, default=10, help='' )
+    parser.add_argument('--ssim_loss_coeff', type=float, default=2, help='' )
     parser.add_argument('--mae_loss_coeff', type=float, default=10.0 , help='' )
     parser.add_argument('--disc_loss_coeff', type=float, default=0.5, help='' )
     parser.add_argument('--gen_lr', type=float, default=2e-4 , help='' )
