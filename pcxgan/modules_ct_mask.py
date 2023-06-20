@@ -107,12 +107,12 @@ class DownsampleModule(kr.layers.Layer):
 
 		
 		if apply_norm:
-			#self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
-			self.block.add(kr.layers.BatchNormalization())
+			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
 		if batch_norm:
 			self.block.add(kr.layers.BatchNormalization())
 		if self.apply_activation:
-			self.block.add(kr.layers.LeakyReLU(0.2))
+			#self.block.add(kr.layers.LeakyReLU(0.2))
+			self.block.add(kr.layers.ReLU(0.2))
 		if apply_dropout:
 			self.block.add(kr.layers.Dropout(0.5))
 	
