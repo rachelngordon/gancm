@@ -171,7 +171,7 @@ class PCxGAN_ct(kr.Model):
 		mean, variance = self.encoder(mri)
 
 		# Retrieve the conv2d_6 layer and its kernel
-		conv2d_6_layer = self.encoder.get_layer('encoder')
+		conv2d_6_layer = self.encoder.get_layer('downsample_module_4')
 		conv2d_6_kernel = conv2d_6_layer.kernel
 
 		# Print the trainable attribute of conv2d_6_kernel
