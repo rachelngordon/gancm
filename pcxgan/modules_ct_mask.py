@@ -105,13 +105,13 @@ class DownsampleModule(kr.layers.Layer):
 			)
 		self.apply_norm = apply_norm
 
-		#self.norm = kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init)
+		self.norm = kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init)
 		self.activation = kr.layers.LeakyReLU(0.2)
 	
 	def call(self, inputs__):
 		x = self.block(inputs__)
-		#if self.apply_norm == True:
-			#x = self.norm(x)
+		if self.apply_norm == True:
+			x = self.norm(x)
 		x = self.activation(x)
 		return x
 
@@ -217,7 +217,7 @@ class Encoder(kr.layers.Layer):
 	
 	def call(self, input_, **kwargs):
 		print(input_[0].shape)
-		x = self.downsample1(input_[0])
+		x = self.downsample1(input_)
 		x = self.downsample2(x)
 		x = self.downsample3(x)
 		x = self.downsample4(x)
