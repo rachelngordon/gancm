@@ -1,4 +1,4 @@
-from pcxgan.test_pcxgan import PCxGAN_mask
+from pcxgan.pcxgan_mask import PCxGAN_mask
 from flags import Flags
 import data_loader
 import pcxgan.modules_mask as modules
