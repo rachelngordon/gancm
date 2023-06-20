@@ -51,6 +51,8 @@ class PCxGAN_mask(kr.Model):
 		self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
 		self.mae_loss_tracker = tf.keras.metrics.Mean(name="mae_loss")
 		
+		self.en_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1,
+																									beta_2=self.flags.gen_beta_2)
 		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1,
 																									beta_2=self.flags.gen_beta_2)
 		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1,
@@ -134,7 +136,7 @@ class PCxGAN_mask(kr.Model):
 		
 		en_gradients = en_tape.gradient(kl_loss, en_trainable_variables)
 
-		self.generator_optimizer.apply_gradients(
+		self.en_optimizer.apply_gradients(
 			zip(en_gradients, en_trainable_variables)
 		)
 		
