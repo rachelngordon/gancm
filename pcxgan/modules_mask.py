@@ -277,7 +277,7 @@ class GanMonitor(kr.callbacks.Callback):
 		latent_vector = tf.random.normal(
 			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0, seed=500
 		)
-		if images:
+		if images is not None:
 			self.val_images=images
 		indices = np.random.permutation(self.flags.batch_size)
 		self.n_masks = self.val_images[2].numpy()[indices]
