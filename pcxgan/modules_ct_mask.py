@@ -149,66 +149,11 @@ class Encoder(kr.layers.Layer):
 		self.latent_dim = flags.latent_dim
 		n_filters = flags.e_n_filters
 		filter_size = flags.e_filter_size
-		self.downsample1 = kr.layers.Conv2D(
-				filters = n_filters,
-				kernel_size = filter_size,
-				strides=(2,2),
-				padding="same",
-				#use_bias=False,
-				kernel_initializer=kr.initializers.RandomNormal(stddev=0.02, seed=123),
-				kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-				activity_regularizer=kr.regularizers.l2(1e-5),
-				activation = "relu"
-			)
-		self.downsample2 = kr.layers.Conv2D(
-				filters = 2*n_filters,
-				kernel_size = filter_size,
-				strides=(2,2),
-				padding="same",
-				#use_bias=False,
-				kernel_initializer=kr.initializers.RandomNormal(stddev=0.02, seed=123),
-				kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-				activity_regularizer=kr.regularizers.l2(1e-5),
-				activation = "relu"
-			)
-		self.downsample3 = kr.layers.Conv2D(
-				filters = 4*n_filters,
-				kernel_size = filter_size,
-				strides=(2,2),
-				padding="same",
-				#use_bias=False,
-				kernel_initializer=kr.initializers.RandomNormal(stddev=0.02, seed=123),
-				kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-				activity_regularizer=kr.regularizers.l2(1e-5),
-				activation = "relu"
-			)
-		self.downsample4 = kr.layers.Conv2D(
-				filters = 8*n_filters,
-				kernel_size = filter_size,
-				strides=(2,2),
-				padding="same",
-				#use_bias=False,
-				kernel_initializer=kr.initializers.RandomNormal(stddev=0.02, seed=123),
-				kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-				activity_regularizer=kr.regularizers.l2(1e-5),
-				activation = "relu"
-			)
-		self.downsample5 = kr.layers.Conv2D(
-				filters = 8*n_filters,
-				kernel_size = filter_size,
-				strides=(2,2),
-				padding="same",
-				#use_bias=False,
-				kernel_initializer=kr.initializers.RandomNormal(stddev=0.02, seed=123),
-				kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-				activity_regularizer=kr.regularizers.l2(1e-5),
-				activation = "relu"
-			)
-		#self.downsample1 = DownsampleModule(n_filters, filter_size=filter_size, apply_norm=False)
-		#self.downsample2 = DownsampleModule(2 * n_filters, filter_size)
-		#self.downsample3 = DownsampleModule(4 * n_filters, filter_size)
-		#self.downsample4 = DownsampleModule(8 * n_filters, filter_size)
-		#self.downsample5 = DownsampleModule(8 * n_filters, filter_size)
+		self.downsample1 = DownsampleModule(n_filters, filter_size=filter_size, apply_norm=False)
+		self.downsample2 = DownsampleModule(2 * n_filters, filter_size)
+		self.downsample3 = DownsampleModule(4 * n_filters, filter_size)
+		self.downsample4 = DownsampleModule(8 * n_filters, filter_size)
+		self.downsample5 = DownsampleModule(8 * n_filters, filter_size)
 		# self.downsample6 = DownsampleModule(8 * n_filters, filter_size)
 		
 		self.flatten = kr.layers.Flatten()
