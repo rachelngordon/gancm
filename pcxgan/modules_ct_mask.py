@@ -111,8 +111,7 @@ class DownsampleModule(kr.layers.Layer):
 		if batch_norm:
 			self.block.add(kr.layers.BatchNormalization())
 		if self.apply_activation:
-			#self.block.add(kr.layers.LeakyReLU(0.2))
-			self.block.add(kr.layers.ReLU(0.2))
+			self.block.add(kr.layers.LeakyReLU(0.2))
 		if apply_dropout:
 			self.block.add(kr.layers.Dropout(0.5))
 	
@@ -165,6 +164,11 @@ class Encoder(kr.Model):
 		self.variance = kr.layers.Dense(self.latent_dim)
 	
 	def call(self, input_, **kwargs):
+		print(self.downsample1.trainable)
+		print(self.downsample2.trainable)
+		print(self.downsample3.trainable)
+		print(self.downsample4.trainable)
+		print(self.downsample5.trainable)
 		x = self.downsample1(input_)
 		x = self.downsample2(x)
 		x = self.downsample3(x)
