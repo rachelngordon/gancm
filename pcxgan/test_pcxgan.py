@@ -30,12 +30,12 @@ class PCxGAN_mask(kr.Model):
 		self.batch_size = flags.batch_size
 		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
 
-		self.feature_loss_coeff = flags.feature_loss_coeff
-		self.vgg_feature_loss_coeff = flags.vgg_feature_loss_coeff
-		self.kl_divergence_loss_coeff = flags.kl_divergence_loss_coeff
+		self.feature_loss_coeff = 0 #flags.feature_loss_coeff
+		self.vgg_feature_loss_coeff = 0.3 * flags.vgg_feature_loss_coeff
+		self.kl_divergence_loss_coeff = 1000 * flags.kl_divergence_loss_coeff
 		self.generator_loss_coeff = flags.generator_loss_coeff
 		self.ssim_loss_coeff = flags.ssim_loss_coeff
-		self.mae_loss_coeff = 1.5 * flags.mae_loss_coeff
+		self.mae_loss_coeff = 0 #1.5 * flags.mae_loss_coeff
 		
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
@@ -153,7 +153,7 @@ class PCxGAN_mask(kr.Model):
 		)
 		
 
-		return total_loss, feature_loss, kl_loss, vgg_loss, ssim_loss, mae_loss
+		return g_loss, feature_loss, kl_loss, vgg_loss, ssim_loss, mae_loss
 	
 	
 	def train_step(self, data):
@@ -168,13 +168,13 @@ class PCxGAN_mask(kr.Model):
 		discriminator_loss = self.train_discriminator(
 			latent_vector, ct, mri, labels
 		)
-		(generator_loss, feature_loss, kl_loss, vgg_loss, ssim_loss, mae_loss) = self.train_generator(
+		(g_loss, feature_loss, kl_loss, vgg_loss, ssim_loss, mae_loss) = self.train_generator(
 			latent_vector, ct, labels, mri
 		)
 		
 		# Report progress.
 		self.disc_loss_tracker.update_state(discriminator_loss)
-		self.gen_loss_tracker.update_state(generator_loss)
+		self.gen_loss_tracker.update_state(g_loss)
 		self.feat_loss_tracker.update_state(feature_loss)
 		self.vgg_loss_tracker.update_state(vgg_loss)
 		self.kl_loss_tracker.update_state(kl_loss)
