@@ -141,15 +141,17 @@ class PCxGAN_ct(kr.Model):
 		)
 
 		print(self.encoder.trainable_variables)
+
+		# Explicitly watch the tensors involved in the losses
+		tape.watch(latent_vector)
+		tape.watch(segmentation_map)
+		tape.watch(image)
+		tape.watch(mean)
+		tape.watch(variance)
 		
 
 		gradients = tape.gradient(total_loss, all_trainable_variables)
 
-		# Check if gradients are None for any loss component
-		for grad in gradients:
-			if grad is None:
-				print("Gradient not computed for a loss component.")
-				
 		
 		self.generator_optimizer.apply_gradients(
 			zip(gradients, all_trainable_variables)
