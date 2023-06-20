@@ -19,13 +19,6 @@ def main(flags):
   #Build and train the model
   model = PCxGAN_ct(flags)
 
-  # Retrieve the conv2d_6 layer and its kernel
-  conv2d_6_layer = model.get_layer('encoder')
-  conv2d_6_kernel = conv2d_6_layer.kernel
-
-  # Print the trainable attribute of conv2d_6_kernel
-  print(conv2d_6_kernel.trainable)
-
 
 
   model.compile()
