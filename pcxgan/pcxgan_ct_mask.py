@@ -143,11 +143,12 @@ class PCxGAN_ct(kr.Model):
 		print(self.encoder.trainable_variables)
 
 		# Explicitly watch the tensors involved in the losses
-		tape.watch(latent_vector)
-		tape.watch(segmentation_map)
+		tape.watch(pred)
 		tape.watch(image)
-		tape.watch(mean)
+		tape.watch(fake_image)
 		tape.watch(variance)
+		tape.watch(real_d_output)
+		tape.watch(fake_d_output)
 		
 
 		gradients = tape.gradient(total_loss, all_trainable_variables)
