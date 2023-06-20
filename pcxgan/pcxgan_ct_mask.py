@@ -118,11 +118,20 @@ class PCxGAN_ct(kr.Model):
 		self.discriminator.trainable = False
 		with tf.GradientTape() as tape:
 
+
 			real_d_output = self.discriminator([segmentation_map, image])  # check
 			fake_d_output, fake_image = self.combined_model(
 				[latent_vector, labels, segmentation_map]
 			)
 			pred = fake_d_output[-1]
+
+			# Explicitly watch the tensors involved in the losses
+			tape.watch(pred)
+			tape.watch(image)
+			tape.watch(fake_image)
+			tape.watch(variance)
+			tape.watch(real_d_output)
+			tape.watch(fake_d_output)
 			
 			# Compute generator losses.
 			g_loss = self.generator_loss_coeff * loss.generator_loss(pred)
@@ -134,6 +143,7 @@ class PCxGAN_ct(kr.Model):
 			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(image, fake_image)
 			mae_loss = self.mae_loss_coeff * self.mae_loss(image, fake_image)
 			total_loss = g_loss + kl_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
+
 		
 		all_trainable_variables = (
 				self.combined_model.trainable_variables +
@@ -141,19 +151,15 @@ class PCxGAN_ct(kr.Model):
 		)
 
 		print(self.encoder.trainable_variables)
-
-		# Explicitly watch the tensors involved in the losses
-		tape.watch(pred)
-		tape.watch(image)
-		tape.watch(fake_image)
-		tape.watch(variance)
-		tape.watch(real_d_output)
-		tape.watch(fake_d_output)
 		
 
 		gradients = tape.gradient(total_loss, all_trainable_variables)
 
-		
+		# Check if gradients are None for any loss component
+		for component, grad in gradients.items():
+			if grad is None:
+				print(f"Gradient not computed for {component}.")
+	
 		self.generator_optimizer.apply_gradients(
 			zip(gradients, all_trainable_variables)
 		)
