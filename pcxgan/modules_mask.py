@@ -1,6 +1,5 @@
 import tensorflow.keras as kr
 import tensorflow as tf
-#from tensorflow_addons.layers import InstanceNormalization
 import matplotlib
 import numpy as np
 
@@ -25,8 +24,6 @@ class SPADE(kr.layers.Layer):
 		self.resize_shape = input_shape[1:3]
 	
 	def call(self, input_tensor, raw_mask, raw_ct):
-		# mask = tf.image.resize(raw_mask, self.resize_shape, method="nearest")
-		# ct = tf.image.resize(raw_ct, self.resize_shape, method="nearest")
 		merge = kr.layers.concatenate([raw_mask, raw_ct])
 		mask = tf.image.resize(merge, self.resize_shape, method="nearest")
 		x = self.conv(mask)
@@ -88,13 +85,11 @@ class GaussianSampler(kr.layers.Layer):
 
 
 class DownsampleModule(kr.layers.Layer):
-	def __init__(self, channels, filter_size, apply_norm=True, batch_norm=False, apply_dropout=False,
-							 apply_activation=True, **kwargs):
+	def __init__(self, channels, filter_size, apply_norm=True, **kwargs):
 		super().__init__(**kwargs)
 		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
 		self.block = kr.Sequential()
 		self.strides = 2
-		self.apply_activation = apply_activation
 		self.block.add(
 			kr.layers.Conv2D(
 				channels,
@@ -105,15 +100,10 @@ class DownsampleModule(kr.layers.Layer):
 			)
 		)
 
-		
 		if apply_norm:
 			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
-		if batch_norm:
-			self.block.add(kr.layers.BatchNormalization())
-		if self.apply_activation:
-			self.block.add(kr.layers.LeakyReLU(0.2))
-		if apply_dropout:
-			self.block.add(kr.layers.Dropout(0.5))
+
+		self.block.add(kr.layers.LeakyReLU(0.2))
 	
 	def call(self, inputs__):
 		return self.block(inputs__)

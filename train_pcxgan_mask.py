@@ -1,7 +1,7 @@
-from pcxgan.test_pcxgan import PCxGAN_ct
+from pcxgan.test_pcxgan import PCxGAN_mask
 from flags import Flags
 import data_loader
-import pcxgan.modules_ct_mask as modules
+import pcxgan.modules_mask as modules
 import numpy as np
 import math
 import tensorflow as tf
@@ -17,7 +17,7 @@ def main(flags):
   test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
 
   #Build and train the model
-  model = PCxGAN_ct(flags)
+  model = PCxGAN_mask(flags)
   model.compile()
   history = model.fit(
     train_data,
