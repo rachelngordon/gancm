@@ -169,6 +169,13 @@ class PCxGAN_ct(kr.Model):
 
 		# Obtain the learned moments of the real image distribution.
 		mean, variance = self.encoder(mri)
+
+		# Retrieve the conv2d_6 layer and its kernel
+		conv2d_6_layer = self.encoder.get_layer('encoder')
+		conv2d_6_kernel = conv2d_6_layer.kernel
+
+		# Print the trainable attribute of conv2d_6_kernel
+		print(conv2d_6_kernel.trainable)
 		
 		# Sample a latent from the distribution defined by the learned moments.
 		latent_vector = self.sampler([mean, variance])
