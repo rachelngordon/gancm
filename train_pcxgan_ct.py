@@ -19,7 +19,7 @@ def main(flags):
   #Build and train the model
   model = PCxGAN_ct(flags)
 
-
+  print(model.encoder.trainable)
 
   model.compile()
   history = model.fit(

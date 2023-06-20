@@ -165,7 +165,6 @@ class Encoder(kr.Model):
 		self.variance = kr.layers.Dense(self.latent_dim)
 	
 	def call(self, input_, **kwargs):
-		print(self.downsample1.trainable)
 		x = self.downsample1(input_)
 		x = self.downsample2(x)
 		x = self.downsample3(x)
