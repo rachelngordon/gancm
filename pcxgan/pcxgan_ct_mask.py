@@ -129,6 +129,7 @@ class PCxGAN_ct(kr.Model):
 			tape.watch(pred)
 			tape.watch(image)
 			tape.watch(fake_image)
+			tape.watch(mean)
 			tape.watch(variance)
 			tape.watch(real_d_output)
 			tape.watch(fake_d_output)
@@ -153,10 +154,11 @@ class PCxGAN_ct(kr.Model):
 
 		gradients = tape.gradient(total_loss, all_trainable_variables)
 
-		# Check if gradients are None for any trainable variable
-		for var, grad in zip(all_trainable_variables, gradients):
-			if grad is None:
-				print(f"Gradient not computed for variable: {var.name}")
+		for gradient, variable in zip(gradients, all_trainable_variables):
+			if gradient is not None:
+				tf.summary.histogram(variable.name + '/gradient', gradient)
+
+
 	
 		self.generator_optimizer.apply_gradients(
 			zip(gradients, all_trainable_variables)
