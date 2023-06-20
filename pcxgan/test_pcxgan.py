@@ -31,7 +31,7 @@ class PCxGAN_mask(kr.Model):
 		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
 
 		self.feature_loss_coeff = 0 #flags.feature_loss_coeff
-		self.vgg_feature_loss_coeff = flags.vgg_feature_loss_coeff
+		self.vgg_feature_loss_coeff = 1 #flags.vgg_feature_loss_coeff
 		self.kl_divergence_loss_coeff = 50*flags.kl_divergence_loss_coeff
 		self.generator_loss_coeff = 0 #flags.generator_loss_coeff
 		self.ssim_loss_coeff = flags.ssim_loss_coeff
@@ -306,8 +306,8 @@ class PCxGAN_mask(kr.Model):
 		for loss in losses:
 			plt.figure()
 			plt.plot(hist[loss + '_loss'])
-			plt.plot(hist['val_' + loss + '_loss'])
-			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
+			#plt.plot(hist['val_' + loss + '_loss'])
+			#plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
 			plt.savefig(exp_path + '/' + loss + '_loss.png')
 
 
