@@ -6,6 +6,8 @@ import numpy as np
 import math
 import tensorflow as tf
 import tensorflow.keras as kr
+import time
+
 
 
 
@@ -15,6 +17,11 @@ def main(flags):
 
   train_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=True).load()
   test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
+
+
+  # Start the timer
+  start_time = time.time()
+
 
   #Build and train the model
   model = PCxGAN_mask(flags)
@@ -28,9 +35,23 @@ def main(flags):
     callbacks=[modules.GanMonitor(test_data, flags)],
   )
   
-  
-  #model.save_model()
-  #model.model_evaluate(test_data)
+  end_time = time.time()
+
+  # Calculate the training duration
+  training_duration = end_time - start_time
+
+  # Print the training time
+  print("Training time: {:.2f} seconds".format(training_duration))
+
+  # Save the training time to a file
+  filename = flags.exp_name + "_train_time.txt"
+  with open(filename, "w") as file:
+      file.write("Training time: {:.2f} seconds".format(training_duration))
+      print("Training time saved to", filename)
+
+
+  model.save_model()
+  model.model_evaluate(test_data)
   model.plot_losses(history.history)
   
   
