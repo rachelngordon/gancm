@@ -149,8 +149,6 @@ class PCxGAN_ct(kr.Model):
 				self.combined_model.trainable_variables +
 				self.encoder.trainable_variables
 		)
-
-		print(self.encoder.trainable_variables)
 		
 
 		gradients = tape.gradient(total_loss, all_trainable_variables)
