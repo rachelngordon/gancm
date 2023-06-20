@@ -92,28 +92,31 @@ class DownsampleModule(kr.layers.Layer):
 							 apply_activation=True, **kwargs):
 		super().__init__(**kwargs)
 		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
-		self.block = kr.layers.Conv2D(
-				filters = channels,
-				kernel_size = filter_size,
-				strides=(2,2),
+		self.block = kr.Sequential()
+		self.strides = 2
+		self.apply_activation = apply_activation
+		self.block.add(
+			kr.layers.Conv2D(
+				channels,
+				filter_size,
+				strides=self.strides,
 				padding="same",
-				#use_bias=False,
-				activation=None,
-				kernel_initializer=kr.initializers.RandomNormal(stddev=0.02, seed=123),
-				kernel_regularizer=kr.regularizers.l1_l2(l1=1e-5, l2=1e-5),
-				activity_regularizer=kr.regularizers.l2(1e-5)
+				use_bias=False
 			)
-		self.apply_norm = apply_norm
+		)
 
-		self.norm = kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init)
-		self.activation = kr.layers.LeakyReLU(0.2)
+		
+		if apply_norm:
+			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+		if batch_norm:
+			self.block.add(kr.layers.BatchNormalization())
+		if self.apply_activation:
+			self.block.add(kr.layers.LeakyReLU(0.2))
+		if apply_dropout:
+			self.block.add(kr.layers.Dropout(0.5))
 	
 	def call(self, inputs__):
-		x = self.block(inputs__)
-		if self.apply_norm == True:
-			x = self.norm(x)
-		x = self.activation(x)
-		return x
+		return self.block(inputs__)
 
 
 class UpsampleModule(kr.layers.Layer):
@@ -142,7 +145,7 @@ class UpsampleModule(kr.layers.Layer):
 		return self.block(inputs_)
 
 
-class Encoder(kr.layers.Layer):
+class Encoder(kr.Model):
 	def __init__(self, flags, **kwargs):
 		super().__init__(**kwargs)
 		self.image_shape = (flags.crop_size, flags.crop_size, 1)
@@ -161,7 +164,6 @@ class Encoder(kr.layers.Layer):
 		self.variance = kr.layers.Dense(self.latent_dim)
 	
 	def call(self, input_, **kwargs):
-		print(input_[0].shape)
 		x = self.downsample1(input_)
 		x = self.downsample2(x)
 		x = self.downsample3(x)
@@ -308,4 +310,3 @@ class GanMonitor(kr.callbacks.Callback):
 				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
 				sample_file = os.path.join(self.sample_dir, filename)
 				plt.savefig(sample_file)
-
