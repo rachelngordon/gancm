@@ -255,6 +255,7 @@ class Discriminator(kr.Model):
 class GanMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags):
 
+		# get batch dataset if batch size is larger than 3
 		if flags.batch_size > 3:
 			self.n_samples = 3
 			self.val_images = next(iter(val_dataset))
@@ -264,9 +265,12 @@ class GanMonitor(kr.callbacks.Callback):
 
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
+		self.hist_path = os.path.join(flags.hist_path, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
+		self.losses = {'disc_loss': [], 'kl_loss': [], 'vgg_loss': [], 'ssim_loss': []} 
 		self.flags = flags
 		
+		# create directories if needed
 		if not os.path.exists(self.checkpoints_path):
 			os.makedirs(self.checkpoints_path)
 		if not os.path.exists(self.sample_dir):
@@ -280,6 +284,7 @@ class GanMonitor(kr.callbacks.Callback):
 			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0, seed=500
 		)
 
+		# get random images if the batch size is larger than 3
 		if batch:
 			self.val_images=self.batch_images
 
@@ -287,6 +292,7 @@ class GanMonitor(kr.callbacks.Callback):
 			self.n_masks = self.val_images[2].numpy()[indices]
 			self.n_cts = self.val_images[0].numpy()[indices]
 			self.n_mris = self.val_images[1].numpy()[indices]
+
 		else:
 			self.n_masks = self.val_images[2]
 			self.n_cts = self.val_images[0]
@@ -296,18 +302,24 @@ class GanMonitor(kr.callbacks.Callback):
 		return self.model.predict([latent_vector, tf.cast(self.n_masks, tf.float64), tf.cast(self.n_cts, tf.float64)])
 	
 	def save_models(self):
-		# e_name = "encoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+		e_name = "encoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
 		d_name = "decoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-		# self.model.encoder.save(os.path.join(self.checkpoints_path, e_name))
+		self.model.encoder.save(os.path.join(self.checkpoints_path, e_name))
 		self.model.decoder.save(os.path.join(self.checkpoints_path, d_name))
 	
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:
+
 			self.save_models()
-			self.model.plot_losses
-			if self.n_samples == 1:
+			
+			# get predicted images
+			if self.n_samples == 3:
 				self.batch_images = next(iter(self.val_images))
-			generated_images = self.infer()
+				generated_images = self.infer(batch=True)
+			else:
+				generated_images = self.infer()
+			
+			# plot training samples
 			for s_ in range(self.n_samples):
 				grid_row = min(generated_images.shape[0], 3)
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
@@ -326,3 +338,22 @@ class GanMonitor(kr.callbacks.Callback):
 				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
 				sample_file = os.path.join(self.sample_dir, filename)
 				plt.savefig(sample_file)
+
+
+				self.losses['disc_loss'].append(logs['disc_loss']) 
+				self.losses['kl_loss'].append(logs['kl_loss']) 
+				self.losses['vgg_loss'].append(logs['vgg_loss']) 
+				self.losses['ssim_loss'].append(logs['ssim_loss']) 
+
+				# Plot losses
+				plt.figure()
+				plt.plot(self.losses['disc_loss'], label='Discriminator Loss')
+				plt.plot(self.losses['kl_loss'], label='KL Loss')
+				plt.plot(self.losses['vgg_loss'], label='VGG Loss')
+				plt.plot(self.losses['ssim_loss'], label='SSIM Loss')
+				plt.xlabel('Epoch')
+				plt.ylabel('Loss')
+				plt.legend()
+				plt.title('PCxGAN Losses')
+				plt.savefig(os.path.join(self.checkpoints_path, 'losses.png'))
+				plt.close()
