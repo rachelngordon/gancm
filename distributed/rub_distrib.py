@@ -9,7 +9,7 @@ script = '/media/aisec-102/DATA3/rachel/pcxgan/distrib_cyclegan.py'
 #config = '<your_config>'
 
 # Define the flags to be passed to the script
-flags = "--exp_name cycle_distrib_test --test_fold 5 --epochs 1000 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_mask_neg1pos1_fold'"
+flags = "--exp_name cycle_avg_eq_1234 --test_fold 5 --epochs 1000 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_mask_neg1pos1_fold'"
 
 
 # Read the list of worker nodes
