@@ -257,13 +257,13 @@ class GanMonitor(kr.callbacks.Callback):
 
 		# get batch dataset if batch size is larger than 3
 		if flags.batch_size > 3:
-			print(self.n_samples)
 			self.n_samples = 3
 			self.val_images = next(iter(val_dataset))
-		else:
 			print(self.n_samples)
+		else:
 			self.n_samples = 1
 			self.val_images = val_dataset
+			print(self.n_samples)
 
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
