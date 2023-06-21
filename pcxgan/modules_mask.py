@@ -254,11 +254,10 @@ class Discriminator(kr.Model):
 
 class GanMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags):
-		self.val_images = next(iter(val_dataset))
-		self.n_samples = 3
 
 		if flags.batch_size > 3:
 			self.n_samples = 3
+			self.val_images = next(iter(val_dataset))
 		else:
 			self.n_samples = 1
 			self.val_images = val_dataset
@@ -305,6 +304,7 @@ class GanMonitor(kr.callbacks.Callback):
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:
 			self.save_models()
+			self.model.plot_losses
 			if self.n_samples == 1:
 				self.batch_images = next(iter(self.val_images))
 			generated_images = self.infer()
