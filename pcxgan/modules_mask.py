@@ -285,7 +285,7 @@ class GanMonitor(kr.callbacks.Callback):
 		)
 
 		# get random images if the batch size is larger than 3
-		if batch:
+		if batch == True:
 			self.val_images=self.batch_images
 
 			indices = np.random.permutation(self.flags.batch_size)
