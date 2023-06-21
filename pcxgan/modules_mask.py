@@ -276,6 +276,8 @@ class GanMonitor(kr.callbacks.Callback):
 			os.makedirs(self.checkpoints_path)
 		if not os.path.exists(self.sample_dir):
 			os.makedirs(self.sample_dir)
+		if not os.path.exists(self.hist_path):
+			os.makedirs(self.hist_path)
 	
 	# self.save_models(self.checkpoints_path)
 	# self.model.model_evaluate(val_dataset)
