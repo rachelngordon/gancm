@@ -10,7 +10,7 @@ from datetime import datetime
 import data_loader
 import flags
 import random
-#import tensorflow_addons as tfa
+import tensorflow_addons as tfa
 
 
 class SPADE(kr.layers.Layer):
@@ -25,8 +25,8 @@ class SPADE(kr.layers.Layer):
 		self.resize_shape = input_shape[1:3]
 	
 	def call(self, input_tensor, raw_ct):
-		ct = tf.image.resize(raw_ct, self.resize_shape, method="nearest")
-		x = self.conv(ct)
+		mask = tf.image.resize(raw_ct, self.resize_shape, method="nearest")
+		x = self.conv(mask)
 		gamma = self.conv_gamma(x)
 		beta = self.conv_beta(x)
 		mean, var = tf.nn.moments(input_tensor, axes=(0, 1, 2), keepdims=True)
@@ -101,7 +101,7 @@ class DownsampleModule(kr.layers.Layer):
 		)
 
 		if apply_norm:
-			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			self.block.add(tfa.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
 
 		self.block.add(kr.layers.LeakyReLU(0.2))
 	
@@ -198,7 +198,7 @@ class Decoder(kr.Model):
 		#m = kr.layers.Input(shape=self.mask_shape)
 		l = kr.layers.Input(shape=self.latent_dim)
 		c = kr.layers.Input(shape=self.image_shape)
-		return kr.Model(inputs=[l, c], outputs=self.call([l, c]))
+		return kr.Model(inputs=[l, m, c], outputs=self.call([l, c]))
 	
 	def call(self, inputs_, **kwargs):
 		latent, ct = inputs_
@@ -216,7 +216,7 @@ class Decoder(kr.Model):
 		x = self.upsample5(x)
 		x = self.resblock6(x, ct)
 		x = self.upsample6(x)
-		# x = self.resblock7(x, ct)
+		# x = self.resblock7(x, mask)
 		# x = self.upsample7(x)
 		x = self.activation(x)
 		return self.out_image(x)
@@ -253,55 +253,72 @@ class Discriminator(kr.Model):
 
 class GanMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags):
+
 		self.val_images = next(iter(val_dataset))
-		self.n_samples = 3
-		'''
+
 		if flags.batch_size > 3:
 			self.n_samples = 3
 		else:
 			self.n_samples = 1
-			self.val_images = val_dataset
-		'''
+
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
+		self.hist_path = os.path.join(flags.hist_path, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
+		self.losses = {'disc_loss': [], 'kl_loss': [], 'vgg_loss': [], 'ssim_loss': []} 
 		self.flags = flags
 		
+		# create directories if needed
 		if not os.path.exists(self.checkpoints_path):
 			os.makedirs(self.checkpoints_path)
 		if not os.path.exists(self.sample_dir):
 			os.makedirs(self.sample_dir)
+		if not os.path.exists(self.hist_path):
+			os.makedirs(self.hist_path)
 	
 	# self.save_models(self.checkpoints_path)
 	# self.model.model_evaluate(val_dataset)
 	
-	def infer(self):
+	def infer(self, batch=False):
 		latent_vector = tf.random.normal(
 			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0, seed=500
 		)
-		'''
-		if images is not None:
-			self.val_images=images
-		indices = np.random.permutation(self.flags.batch_size)
-		self.n_masks = self.val_images[2].numpy()[indices]
-		self.n_cts = self.val_images[0].numpy()[indices]
-		self.n_mris = self.val_images[1].numpy()[indices]
-		'''
-		print(self.val_images[2].shape)
-		return self.model.predict([latent_vector, tf.cast(self.val_images[2], tf.float64), tf.cast(self.val_images[0], tf.float64)])
+
+		# get random images if the batch size is larger than 3
+		if batch == True:
+			self.val_images=self.batch_images
+
+			indices = np.random.permutation(self.flags.batch_size)
+			#self.n_masks = self.val_images[2].numpy()[indices]
+			self.n_cts = self.val_images[0].numpy()[indices]
+			self.n_mris = self.val_images[1].numpy()[indices]
+
+		else:
+			#self.n_masks = self.val_images[2]
+			self.n_cts = self.val_images[0]
+			self.n_mris = self.val_images[1]
+
+		return self.model.predict([latent_vector, tf.cast(self.n_cts, tf.float64)])
 	
-	def save_models(self):
-		# e_name = "encoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-		d_name = "decoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-		# self.model.encoder.save(os.path.join(self.checkpoints_path, e_name))
+	def save_models(self, epoch):
+		e_name = f"encoder_epoch_{epoch}"
+		d_name = f"decoder_epoch_{epoch}"
+		self.model.encoder.save(os.path.join(self.checkpoints_path, e_name))
 		self.model.decoder.save(os.path.join(self.checkpoints_path, d_name))
 	
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:
-			self.save_models()
-			#if self.n_samples == 1:
-				#images = next(iter(self.val_images))
-			generated_images = self.infer()
+
+			#self.save_models(epoch)
+			
+			# get predicted images
+			if self.n_samples == 3:
+				self.batch_images = next(iter(self.val_images))
+				generated_images = self.infer(batch=True)
+			else:
+				generated_images = self.infer()
+			
+			# plot training samples
 			for s_ in range(self.n_samples):
 				grid_row = min(generated_images.shape[0], 3)
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
@@ -320,3 +337,22 @@ class GanMonitor(kr.callbacks.Callback):
 				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
 				sample_file = os.path.join(self.sample_dir, filename)
 				plt.savefig(sample_file)
+
+
+				self.losses['disc_loss'].append(logs['disc_loss']) 
+				self.losses['kl_loss'].append(logs['kl_loss']) 
+				self.losses['vgg_loss'].append(logs['vgg_loss']) 
+				self.losses['ssim_loss'].append(logs['ssim_loss']) 
+
+				# Plot losses
+				plt.figure()
+				plt.plot(self.losses['disc_loss'], label='Discriminator Loss')
+				plt.plot(self.losses['kl_loss'], label='KL Loss')
+				plt.plot(self.losses['vgg_loss'], label='VGG Loss')
+				plt.plot(self.losses['ssim_loss'], label='SSIM Loss')
+				plt.xlabel('Epoch')
+				plt.ylabel('Loss')
+				plt.legend()
+				plt.title('PCxGAN Losses')
+				plt.savefig(os.path.join(self.hist_path, 'losses.png'))
+				plt.close()
