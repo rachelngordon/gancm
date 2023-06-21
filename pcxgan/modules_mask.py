@@ -259,10 +259,8 @@ class GanMonitor(kr.callbacks.Callback):
 
 		if flags.batch_size > 3:
 			self.n_samples = 3
-			print(self.n_samples)
 		else:
 			self.n_samples = 1
-			print(self.n_samples)
 
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
@@ -289,7 +287,6 @@ class GanMonitor(kr.callbacks.Callback):
 
 		# get random images if the batch size is larger than 3
 		if batch == True:
-			print(self.n_samples)
 			self.val_images=self.batch_images
 
 			indices = np.random.permutation(self.flags.batch_size)
@@ -298,12 +295,10 @@ class GanMonitor(kr.callbacks.Callback):
 			self.n_mris = self.val_images[1].numpy()[indices]
 
 		else:
-			print(self.n_samples)
 			self.n_masks = self.val_images[2]
 			self.n_cts = self.val_images[0]
 			self.n_mris = self.val_images[1]
 
-		print(self.val_images[2].shape)
 		return self.model.predict([latent_vector, tf.cast(self.n_masks, tf.float64), tf.cast(self.n_cts, tf.float64)])
 	
 	def save_models(self, epoch):
@@ -319,11 +314,9 @@ class GanMonitor(kr.callbacks.Callback):
 			
 			# get predicted images
 			if self.n_samples == 3:
-				print(self.n_samples)
 				self.batch_images = next(iter(self.val_images))
 				generated_images = self.infer(batch=True)
 			else:
-				print(self.n_samples)
 				generated_images = self.infer()
 			
 			# plot training samples
