@@ -18,10 +18,11 @@ with open(os.environ['PBS_NODEFILE'], 'r') as f:
 # Define the function to execute the script on each worker node
 def execute_script(rank, num_nodes, node_file):
     # Construct the SSH command
-    ssh_command = f'ssh {nodes[rank]} {script} {args.config} {num_nodes} {rank} {nodes[0]} {node_file}'
+    ssh_command = f'ssh {nodes[rank]} "module load conda && conda activate && {script} {args.config} {num_nodes} {rank} {nodes[0]} {node_file}"'
 
     # Execute the SSH command
     os.system(ssh_command)
+
 
 # Define the number of worker nodes
 num_nodes = len(nodes)
