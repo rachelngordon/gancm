@@ -304,16 +304,16 @@ class GanMonitor(kr.callbacks.Callback):
 		print(self.val_images[2].shape)
 		return self.model.predict([latent_vector, tf.cast(self.n_masks, tf.float64), tf.cast(self.n_cts, tf.float64)])
 	
-	def save_models(self):
-		e_name = "encoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-		d_name = "decoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+	def save_models(self, epoch):
+		e_name = f"encoder_epoch_{epoch}"
+		d_name = f"decoder_epoch_{epoch}"
 		self.model.encoder.save(os.path.join(self.checkpoints_path, e_name))
 		self.model.decoder.save(os.path.join(self.checkpoints_path, d_name))
 	
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:
 
-			self.save_models()
+			#self.save_models(epoch)
 			
 			# get predicted images
 			if self.n_samples == 3:
@@ -360,5 +360,5 @@ class GanMonitor(kr.callbacks.Callback):
 				plt.ylabel('Loss')
 				plt.legend()
 				plt.title('PCxGAN Losses')
-				plt.savefig(os.path.join(self.checkpoints_path, 'losses.png'))
+				plt.savefig(os.path.join(self.hist_path, 'losses.png'))
 				plt.close()
