@@ -256,13 +256,13 @@ class GanMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags):
 		self.val_images = next(iter(val_dataset))
 		self.n_samples = 3
-		'''
+
 		if flags.batch_size > 3:
 			self.n_samples = 3
 		else:
 			self.n_samples = 1
 			self.val_images = val_dataset
-		'''
+
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
@@ -276,20 +276,25 @@ class GanMonitor(kr.callbacks.Callback):
 	# self.save_models(self.checkpoints_path)
 	# self.model.model_evaluate(val_dataset)
 	
-	def infer(self):
+	def infer(self, batch=False):
 		latent_vector = tf.random.normal(
 			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0, seed=500
 		)
-		'''
-		if images is not None:
-			self.val_images=images
-		indices = np.random.permutation(self.flags.batch_size)
-		self.n_masks = self.val_images[2].numpy()[indices]
-		self.n_cts = self.val_images[0].numpy()[indices]
-		self.n_mris = self.val_images[1].numpy()[indices]
-		'''
+
+		if batch:
+			self.val_images=self.batch_images
+
+			indices = np.random.permutation(self.flags.batch_size)
+			self.n_masks = self.val_images[2].numpy()[indices]
+			self.n_cts = self.val_images[0].numpy()[indices]
+			self.n_mris = self.val_images[1].numpy()[indices]
+		else:
+			self.n_masks = self.val_images[2]
+			self.n_cts = self.val_images[0]
+			self.n_mris = self.val_images[1]
+
 		print(self.val_images[2].shape)
-		return self.model.predict([latent_vector, tf.cast(self.val_images[2], tf.float64), tf.cast(self.val_images[0], tf.float64)])
+		return self.model.predict([latent_vector, tf.cast(self.n_masks, tf.float64), tf.cast(self.n_cts, tf.float64)])
 	
 	def save_models(self):
 		# e_name = "encoder_{}".format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
@@ -300,8 +305,8 @@ class GanMonitor(kr.callbacks.Callback):
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:
 			self.save_models()
-			#if self.n_samples == 1:
-				#images = next(iter(self.val_images))
+			if self.n_samples == 1:
+				self.batch_images = next(iter(self.val_images))
 			generated_images = self.infer()
 			for s_ in range(self.n_samples):
 				grid_row = min(generated_images.shape[0], 3)
