@@ -7,15 +7,17 @@ import data_loader
 import cyclegan.modules as modules
 import numpy as np
 
+
 def main(flags):
 
-  # Define the configuration argument (replace with your actual configuration)
-  #config = '<your_config>'
+  # Read the list of worker nodes from the PBS_NODEFILE
+  with open(os.environ['PBS_NODEFILE'], 'r') as f:
+      nodes = f.read().splitlines()
 
   # Set the environment variables for distributed TensorFlow
   os.environ['TF_CONFIG'] = json.dumps({
       'cluster': {
-          'worker': ['worker1:12345', 'worker2:12345', 'worker3:12345', 'worker4:12345']
+          'worker': nodes
       },
       'task': {'type': 'worker', 'index': int(os.environ.get('OMPI_COMM_WORLD_RANK', 0))}
   })
@@ -23,8 +25,8 @@ def main(flags):
   # Create a TensorFlow distribution strategy
   strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
 
-  # Define the function to build and train your TensorFlow model
-  def build_and_train_model():
+
+  def build_and_train_model(rank, num_nodes, train_fold, test_fold, flags):
 
       # Build and compile your TensorFlow model here
       model = CycleGAN(flags)
@@ -32,8 +34,8 @@ def main(flags):
     
 
       # Define the training data and parameters
-      train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True).load()
-      test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
+      train_data = data_loader.DataGenerator_Distrib(flags, flags.data_path, if_train=True).load()
+      test_data = data_loader.DataGenerator_Distrib(flags, flags.data_path, if_train=False).load()
 
       # Create an instance of the tf.distribute.MultiWorkerMirroredStrategy
       strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
@@ -50,8 +52,29 @@ def main(flags):
             callbacks=[modules.CycleMonitor(test_data, flags)],
           )
 
-  # Call the function to build and train your TensorFlow model
-  build_and_train_model()
+      
+      # Save the model
+      model.save_model(flags)
+
+      # Evaluate the model on test data
+      model.model_evaluate(test_data)
+
+      # Plot the losses
+      model.plot_losses(history.history)
+
+
+
+  # get training folds and remove test fold
+  train_folds = list(range(1,6))
+  train_folds.remove(flags.test_fold)
+
+  num_nodes = 4
+  
+
+  # Execute the script on each worker node in parallel with one fold per node for training
+  for rank, train_fold in enumerate(train_folds):
+     build_and_train_model(rank, num_nodes, train_fold, flags.test_fold, flags)
+
 
 
 if __name__ == '__main__':
