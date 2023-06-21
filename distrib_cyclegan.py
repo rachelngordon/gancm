@@ -6,6 +6,7 @@ from flags import Flags
 import data_loader
 import cyclegan.modules as modules
 import numpy as np
+import time
 
 
 def main(flags):
@@ -40,6 +41,9 @@ def main(flags):
       # Create an instance of the tf.distribute.MultiWorkerMirroredStrategy
       strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
 
+      # Start the timer
+      start_time = time.time()
+
       # Open a strategy scope to distribute the model and training
       with strategy.scope():
           # Train your model with the distributed strategy
@@ -51,6 +55,21 @@ def main(flags):
             batch_size = flags.batch_size,
             callbacks=[modules.CycleMonitor(test_data, flags)],
           )
+
+      end_time = time.time()
+      
+      # Calculate the training duration
+      training_duration = end_time - start_time
+      
+      # Print the training time
+      print("Training time: {:.2f} seconds".format(training_duration))
+      
+      # Save the training time to a file
+      filename = './training_time/' + flags.exp_name + "_train_time.txt"
+      
+      with open(filename, "w") as file:
+        file.write("Training time: {:.2f} seconds".format(training_duration))
+        print("Training time saved to", filename)
 
       
       # Save the model
