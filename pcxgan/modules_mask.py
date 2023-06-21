@@ -255,14 +255,13 @@ class Discriminator(kr.Model):
 class GanMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags):
 
-		# get batch dataset if batch size is larger than 3
+		self.val_images = next(iter(val_dataset))
+
 		if flags.batch_size > 3:
 			self.n_samples = 3
-			self.val_images = next(iter(val_dataset))
 			print(self.n_samples)
 		else:
 			self.n_samples = 1
-			self.val_images = val_dataset
 			print(self.n_samples)
 
 		self.epoch_interval = flags.epoch_interval
