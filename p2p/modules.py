@@ -212,15 +212,19 @@ class P2PMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags, my_strategy=False):
 
 		self.val_images = next(iter(val_dataset))
-		self.n_samples = 3
+		self.n_samples = 1
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
+		self.hist_path = os.path.join(flags.hist_path, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
+		self.losses = {'disc_loss': [], 'gen_loss': [], 'feat_loss': [], 'vgg_loss': [], 'ssim_loss': [], 'mae_loss': []} 
 
 		if not os.path.exists(self.checkpoints_path):
 			os.makedirs(self.checkpoints_path)
 		if not os.path.exists(self.sample_dir):
 			os.makedirs(self.sample_dir)
+		if not os.path.exists(self.hist_path):
+			os.makedirs(self.hist_path)
 
 	def infer(self):
 		return self.model(self.val_images[0])
@@ -239,13 +243,44 @@ class P2PMonitor(kr.callbacks.Callback):
 					ax[0].set_title("CT", fontsize=20)
 					ax[1].imshow((self.val_images[1][row].numpy().squeeze() + 1) / 2, cmap='gray')
 					ax[1].axis("off")
-					ax[1].set_title("Ground Truth", fontsize=20)
+					ax[1].set_title("rMRI", fontsize=20)
 					ax[2].imshow((generated_images[row].numpy().squeeze() + 1) / 2, cmap='gray')
 					ax[2].axis("off")
-					ax[2].set_title("Generated", fontsize=20)
+					ax[2].set_title("Pix2Pix sMRI", fontsize=20)
 				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
 				sample_file = os.path.join(self.sample_dir, filename)
 				plt.savefig(sample_file)
 				#plt.show()
+
+
+				self.losses['disc_loss'].append(logs['disc_loss']) 
+				self.losses['gen_loss'].append(logs['gen_loss']) 
+				self.losses['feat_loss'].append(logs['feat_loss'])
+				self.losses['vgg_loss'].append(logs['vgg_loss']) 
+				self.losses['ssim_loss'].append(logs['ssim_loss']) 
+				self.losses['mae_loss'].append(logs['mae_loss']) 
+
+				# Plot losses
+				plt.figure()
+				plt.plot(self.losses['disc_loss'], label='Discriminator Loss')
+				plt.plot(self.losses['gen_loss'], label='Generator Loss')
+				plt.plot(self.losses['vgg_loss'], label='VGG Loss')
+				plt.plot(self.losses['feat_loss'], label='Feature Loss')
+				plt.plot(self.losses['ssim_loss'], label='SSIM Loss')
+				plt.plot(self.losses['mae_loss'], label='MAE Loss')
+				plt.xlabel('Epoch')
+				plt.ylabel('Loss')
+				plt.legend()
+				plt.title('Pix2Pix Losses')
+				plt.savefig(os.path.join(self.hist_path, 'losses.png'))
+				plt.close()
+                                
+
+				for loss in self.losses.keys():
+					plt.figure()
+					plt.plot(self.losses[loss])
+					plt.title(loss)
+					plt.savefig(self.hist_path + loss + '_loss.png')
+					plt.close()
 
 

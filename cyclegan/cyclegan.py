@@ -134,13 +134,6 @@ class CycleGAN(kr.Model):
             loss_real_ct = self.discriminator_loss(True, pred_real_ct)
             total_loss_ct = self.disc_loss_coeff * (loss_fake_ct + loss_real_ct)
 
-        #total_loss = total_loss_ct + total_loss_mri
-
-
-        #dis_trainable  =(
-            #self.discriminator_mri.trainable_variables +
-            #self.discriminator_ct.trainable_variables 
-            #)
         
         gradients_mri = gradient_tape.gradient(
             total_loss_mri, self.discriminator_mri.trainable_variables) 

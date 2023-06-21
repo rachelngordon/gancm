@@ -331,10 +331,10 @@ class GanMonitor(kr.callbacks.Callback):
 					ax[0].set_title("CT", fontsize=20)
 					ax[1].imshow((self.val_images[1][r]), cmap='gray')
 					ax[1].axis("off")
-					ax[1].set_title("Ground Truth", fontsize=20)
+					ax[1].set_title("rMRI", fontsize=20)
 					ax[2].imshow((generated_images[r]), cmap='gray')
 					ax[2].axis("off")
-					ax[2].set_title("Generated", fontsize=20)
+					ax[2].set_title("PCxGAN sMRI", fontsize=20)
 				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
 				sample_file = os.path.join(self.sample_dir, filename)
 				plt.savefig(sample_file)
@@ -357,3 +357,11 @@ class GanMonitor(kr.callbacks.Callback):
 				plt.title('PCxGAN Losses')
 				plt.savefig(os.path.join(self.hist_path, 'losses.png'))
 				plt.close()
+
+
+				for loss in self.losses.keys():
+					plt.figure()
+					plt.plot(self.losses[loss])
+					plt.title(loss)
+					plt.savefig(self.hist_path + loss + '_loss.png')
+					plt.close()
