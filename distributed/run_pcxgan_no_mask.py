@@ -1,16 +1,15 @@
 import os
 import time
 import tensorflow as tf
+import argparse
 
 # Define the script to be executed on each worker node
-script = '/media/aisec-102/DATA3/rachel/pcxgan/distrib_cyclegan.py'
+script = '/media/aisec-102/DATA3/rachel/pcxgan/distributed/distrib_pcxgan_no_mask.py'
 
-# Define the configuration argument (replace with your actual configuration)
-#config = '<your_config>'
-
-# Define the flags to be passed to the script
-flags = "--exp_name cycle_avg_eq_1234 --test_fold 5 --epochs 1000 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_mask_neg1pos1_fold'"
-
+# Parse command-line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', type=str, help='Path to the config file')
+args = parser.parse_args()
 
 # Read the list of worker nodes
 with open(os.environ['PBS_NODEFILE'], 'r') as f:
@@ -19,7 +18,7 @@ with open(os.environ['PBS_NODEFILE'], 'r') as f:
 # Define the function to execute the script on each worker node
 def execute_script(rank, num_nodes, node_file):
     # Construct the SSH command
-    ssh_command = f'ssh {nodes[rank]} {script} {flags} {num_nodes} {rank} {nodes[0]} {node_file}'
+    ssh_command = f'ssh {nodes[rank]} {script} {args.config} {num_nodes} {rank} {nodes[0]} {node_file}'
 
     # Execute the SSH command
     os.system(ssh_command)

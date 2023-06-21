@@ -4,8 +4,42 @@ import numpy as np
 import math
 import cv2
 
-# data generator for distributed training of pcxgan
+# data generator for distributed training of cyclegan and pix2pix (or pcxgan with no mask)
 class DataGenerator_Distrib(kr.utils.Sequence):
+  def __init__(self, flags, data_path, if_train, fold, **kwargs):
+    
+    super().__init__(**kwargs)
+
+    
+    self.data_path = data_path + str(fold) + '.npz'
+    self.batch_size = flags.batch_size
+    
+	# load data
+    x, y = self.load_data(flags, self.data_path)
+    
+	# create dataset
+    self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
+    self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration = not if_train)
+    self.dataset = self.dataset.map(x, y, num_parallel_calls=tf.data.AUTOTUNE)
+    
+	
+	
+  def load_data(self, flags, data_path):
+      
+      data = np.load(data_path)
+      x, y = data['arr_0'], data['arr_1']
+
+      return x, y
+    
+  def __getitem__(self, idx):
+    return self.dataset.batch(self.batch_size, drop_remainder=True)
+  
+  def load(self):
+      return self.dataset.batch(self.batch_size, drop_remainder=True)
+  
+
+# data generator for distributed training of pcxgan with mask
+class DataGenerator_DistribMask(kr.utils.Sequence):
   def __init__(self, flags, data_path, if_train, fold, **kwargs):
     
     super().__init__(**kwargs)
@@ -38,6 +72,7 @@ class DataGenerator_Distrib(kr.utils.Sequence):
   def load(self):
       return self.dataset.batch(self.batch_size, drop_remainder=True)
   
+
 
 # data generator for pcxgan (normalized mask data) and cross validation with test fold ready
 class DataGenerator_Ready(kr.utils.Sequence):

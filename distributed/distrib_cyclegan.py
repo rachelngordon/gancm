@@ -1,10 +1,10 @@
 import os
 import tensorflow as tf
 import json
-from cyclegan.cyclegan import CycleGAN
-from flags import Flags
-import data_loader
-import cyclegan.modules as modules
+from ..cyclegan.cyclegan import CycleGAN
+from ..flags import Flags
+from .. import data_loader
+from ..cyclegan import modules
 import numpy as np
 import time
 
@@ -65,7 +65,7 @@ def main(flags):
       print("Training time: {:.2f} seconds".format(training_duration))
       
       # Save the training time to a file
-      filename = './training_time/' + flags.exp_name + "_train_time.txt"
+      filename = '/grand/EVITA/ct-mri/pcxgan/training_time/' + flags.exp_name + "_train_time.txt"
       
       with open(filename, "w") as file:
         file.write("Training time: {:.2f} seconds".format(training_duration))
