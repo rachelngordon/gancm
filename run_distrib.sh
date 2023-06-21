@@ -1,4 +1,4 @@
 #!/bin/bash
 module load conda
 conda activate
-python3 /grand/EVITA/ct-mri/pcxgan/distributed/run_distrib.py
+python3 /grand/EVITA/ct-mri/pcxgan/run_distrib.py
