@@ -257,9 +257,11 @@ class GanMonitor(kr.callbacks.Callback):
 
 		# get batch dataset if batch size is larger than 3
 		if flags.batch_size > 3:
+			print(self.n_samples)
 			self.n_samples = 3
 			self.val_images = next(iter(val_dataset))
 		else:
+			print(self.n_samples)
 			self.n_samples = 1
 			self.val_images = val_dataset
 
@@ -286,6 +288,7 @@ class GanMonitor(kr.callbacks.Callback):
 
 		# get random images if the batch size is larger than 3
 		if batch == True:
+			print(self.n_samples)
 			self.val_images=self.batch_images
 
 			indices = np.random.permutation(self.flags.batch_size)
@@ -294,6 +297,7 @@ class GanMonitor(kr.callbacks.Callback):
 			self.n_mris = self.val_images[1].numpy()[indices]
 
 		else:
+			print(self.n_samples)
 			self.n_masks = self.val_images[2]
 			self.n_cts = self.val_images[0]
 			self.n_mris = self.val_images[1]
@@ -314,9 +318,11 @@ class GanMonitor(kr.callbacks.Callback):
 			
 			# get predicted images
 			if self.n_samples == 3:
+				print(self.n_samples)
 				self.batch_images = next(iter(self.val_images))
 				generated_images = self.infer(batch=True)
 			else:
+				print(self.n_samples)
 				generated_images = self.infer()
 			
 			# plot training samples
