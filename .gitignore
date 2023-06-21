@@ -10,3 +10,4 @@ __pycache__/
 generated_test/
 history/
 training_samples/
+training_time/
