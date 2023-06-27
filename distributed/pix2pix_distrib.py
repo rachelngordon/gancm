@@ -3,7 +3,7 @@ import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
 from . import modules_distrib as modules
-import loss_distrib as loss
+from . import loss_distrib as loss
 import evaluate
 import os
 import pandas as pd
