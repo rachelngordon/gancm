@@ -1,5 +1,0 @@
-exp_name: "cycle_no_eq_1234"
-test_fold: 5
-epochs: 1000 
-batch_size: 1 
-data_path: "/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold"

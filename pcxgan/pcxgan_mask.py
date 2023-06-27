@@ -30,12 +30,9 @@ class PCxGAN_mask(kr.Model):
 		self.batch_size = flags.batch_size
 		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
 
-		#self.feature_loss_coeff = 0 #flags.feature_loss_coeff
 		self.vgg_feature_loss_coeff = 1 #flags.vgg_feature_loss_coeff
 		self.kl_divergence_loss_coeff = 50*flags.kl_divergence_loss_coeff
-		#self.generator_loss_coeff = 0 #flags.generator_loss_coeff
 		self.ssim_loss_coeff = flags.ssim_loss_coeff
-		#self.mae_loss_coeff = 0 #1.5 * flags.mae_loss_coeff
 		
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
@@ -44,12 +41,9 @@ class PCxGAN_mask(kr.Model):
 		self.patch_size, self.combined_model = self.build_combined_model()
 		
 		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
-		#self.gen_loss_tracker = tf.keras.metrics.Mean(name="gen_loss")
-		#self.feat_loss_tracker = tf.keras.metrics.Mean(name="feat_loss")
 		self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
 		self.kl_loss_tracker = tf.keras.metrics.Mean(name="kl_loss")
 		self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
-		#self.mae_loss_tracker = tf.keras.metrics.Mean(name="mae_loss")
 		
 		self.en_optimizer = kr.optimizers.Adam()
 		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1,
@@ -65,12 +59,9 @@ class PCxGAN_mask(kr.Model):
 	def metrics(self):
 		return [
 			self.disc_loss_tracker,
-			#self.gen_loss_tracker,
-			#self.feat_loss_tracker,
 			self.vgg_loss_tracker,
 			self.kl_loss_tracker,
-			self.ssim_loss_tracker,
-			#self.mae_loss_tracker
+			self.ssim_loss_tracker
 		]
 	
 	def build_combined_model(self):
@@ -153,12 +144,8 @@ class PCxGAN_mask(kr.Model):
 
 			
 			# Compute generator losses.
-			#g_loss = self.generator_loss_coeff * loss.generator_loss(pred)
 			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(image, fake_image)
-			#feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
-				#real_d_output, fake_d_output)
 			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(image, fake_image)
-			#mae_loss = self.mae_loss_coeff * self.mae_loss(image, fake_image)
 			total_loss = vgg_loss + ssim_loss
 
 		
@@ -194,12 +181,9 @@ class PCxGAN_mask(kr.Model):
 		
 		# Report progress.
 		self.disc_loss_tracker.update_state(discriminator_loss)
-		#self.gen_loss_tracker.update_state(g_loss)
-		#self.feat_loss_tracker.update_state(feature_loss)
 		self.vgg_loss_tracker.update_state(vgg_loss)
 		self.kl_loss_tracker.update_state(kl_loss)
 		self.ssim_loss_tracker.update_state(ssim_loss)
-		#self.mae_loss_tracker.update_state(mae_loss)
 
 		results = {m.name: m.result() for m in self.metrics}
 		return results
@@ -222,24 +206,17 @@ class PCxGAN_mask(kr.Model):
 			[latent_vector, labels, ct]
 		)
 		pred = fake_d_output[-1]
-		#g_loss = loss.generator_loss(pred)
 		
 		kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
 		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
-		#feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
-			#real_d_output, fake_d_output)
 		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
-		#mae_loss = self.mae_loss_coeff * self.mae_loss(mri, fake_images)
-		total_generator_loss = kl_loss + vgg_loss + ssim_loss
+		#total_generator_loss = kl_loss + vgg_loss + ssim_loss
 		
 		# Report progress.
 		self.disc_loss_tracker.update_state(total_discriminator_loss)
-		#self.gen_loss_tracker.update_state(g_loss)
-		#self.feat_loss_tracker.update_state(feature_loss)
 		self.vgg_loss_tracker.update_state(vgg_loss)
 		self.kl_loss_tracker.update_state(kl_loss)
 		self.ssim_loss_tracker.update_state(ssim_loss)
-		#self.mae_loss_tracker.update_state(mae_loss)
 
 		results = {m.name: m.result() for m in self.metrics}
 		return results
@@ -307,7 +284,7 @@ class PCxGAN_mask(kr.Model):
 			plt.plot(hist[loss + '_loss'])
 			plt.plot(hist['val_' + loss + '_loss'])
 			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
-			plt.savefig(exp_path + '/' + loss + '_loss.png')
+			plt.savefig(exp_path + '/pcxgan_' + loss + '_loss.png')
 
 
 

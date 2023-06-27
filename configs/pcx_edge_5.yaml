@@ -1,5 +1,0 @@
-exp_name: "pcx_edge_avg_eq_1234"
-test_fold: 5
-epochs: 1000 
-batch_size: 1 
-data_path: "/grand/EVITA/ct-mri/data/CV/avg_eq_edge/norm_neg1pos1_fold"

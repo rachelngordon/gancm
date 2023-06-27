@@ -3,6 +3,7 @@ from flags import Flags
 import numpy as np
 import p2p.modules as modules
 import data_loader
+import time
 
 def main(flags):
 
@@ -11,7 +12,7 @@ def main(flags):
   test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
 
-
+  start_time = time.time()
   
   #Build and train the model
   model = Pix2Pix(flags)
@@ -24,6 +25,20 @@ def main(flags):
     batch_size = flags.batch_size,
     callbacks=[modules.P2PMonitor(test_data, flags)],
   )
+
+  end_time = time.time()
+
+  # Calculate the training duration
+  training_duration = end_time - start_time
+
+  # Print the training time
+  print("Training time: {:.2f} seconds".format(training_duration))
+
+  # Save the training time to a file
+  filename = '/grand/EVITA/ct-mri/exp_results/training_time/' + flags.exp_name + "_train_time.txt"
+  with open(filename, "w") as file:
+      file.write("Training time: {:.2f} seconds".format(training_duration))
+      print("Training time saved to", filename)
   
   
   model.save_model(flags)

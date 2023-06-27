@@ -1,5 +1,0 @@
-exp_name: "pcx_no_mask_avg_eq_1245"
-test_fold: 3
-epochs: 1000 
-batch_size: 1 
-data_path: "/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold"
