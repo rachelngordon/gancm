@@ -94,7 +94,7 @@ with strategy.scope():
                 pred_real = self.discriminator([ct, real_mri])[-1]  
                 loss_fake = self.discriminator_loss(False, pred_fake)
                 loss_real = self.discriminator_loss(True, pred_real)
-                total_loss = self.disc_loss_coeff * (loss_fake + loss_real)
+                total_loss = self.disc_loss_coeff * (loss_fake + loss_real) * (1. / self.global_batch_size)
 
             self.discriminator.trainable = True
             gradients = gradient_tape.gradient(
@@ -118,13 +118,13 @@ with strategy.scope():
                 pred = fake_d_output[-1]
                 
                 # Compute generator loss
-                g_loss = self.generator_loss_coeff*loss.generator_loss(pred)
-                vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri__, fake_mri)
+                g_loss = self.generator_loss_coeff*loss.generator_loss(pred) * (1. / self.global_batch_size)
+                vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri__, fake_mri) * (1. / self.global_batch_size)
                 feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
                     real_d_output, fake_d_output
-                )
-                ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri__, fake_mri)
-                mae_loss = self.mae_loss_coeff * self.mae_loss(mri__, fake_mri)
+                ) * (1. / self.global_batch_size)
+                ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri__, fake_mri) * (1. / self.global_batch_size)
+                mae_loss = self.mae_loss_coeff * self.mae_loss(mri__, fake_mri) * (1. / self.global_batch_size)
                 total_loss = g_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
                 
             all_trainable_variables = (
@@ -171,18 +171,18 @@ with strategy.scope():
             pred_real = self.discriminator([ct, mri])[-1]  
             loss_fake = self.discriminator_loss(False, pred_fake)
             loss_real = self.discriminator_loss(True, pred_real)
-            total_discriminator_loss = self.disc_loss_coeff * (loss_fake + loss_real)
+            total_discriminator_loss = self.disc_loss_coeff * (loss_fake + loss_real) * (1. / self.global_batch_size)
 
             real_d_output = self.discriminator([fake_mri, mri])
             fake_d_output, fake_image = self.combined_model([ct, mri])
             pred = fake_d_output[-1]
-            g_loss = self.generator_loss_coeff*loss.generator_loss(pred)
+            g_loss = self.generator_loss_coeff*loss.generator_loss(pred) * (1. / self.global_batch_size)
             
-            vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
+            vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image) * (1. / self.global_batch_size)
             feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
-                real_d_output, fake_d_output)
-            ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
-            mae_loss = self.mae_loss_coeff * self.mae_loss(mri, fake_mri)
+                real_d_output, fake_d_output) * (1. / self.global_batch_size)
+            ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image) * (1. / self.global_batch_size)
+            mae_loss = self.mae_loss_coeff * self.mae_loss(mri, fake_mri) * (1. / self.global_batch_size)
             total_generator_loss = g_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
 
             # Report progress.
