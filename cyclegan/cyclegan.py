@@ -27,7 +27,6 @@ class CycleGAN(kr.Model):
         self.batch_size = self.flags.batch_size
 
         self.ssim_loss_coeff = self.flags.ssim_loss_coeff
-        self.mae_loss_coeff = 0.5 * self.flags.mae_loss_coeff
         self.vgg_loss_coeff = self.flags.vgg_feature_loss_coeff
         self.disc_loss_coeff = self.flags.disc_loss_coeff
         self.cycle_loss_coeff = self.flags.cycle_loss_coeff
@@ -55,14 +54,12 @@ class CycleGAN(kr.Model):
         # MRI trackers.
         self.disc_loss_mri_tracker  = tf.keras.metrics.Mean(name="D_MRI")
         self.ssim_loss_mri_tracker= tf.keras.metrics.Mean(name="SSIM_MRI")
-        self.mae_loss_mri_tracker= tf.keras.metrics.Mean(name="MAE_MRI")
         self.vgg_loss_mri_tracker = tf.keras.metrics.Mean(name="VGG_MRI")
         self.cycle_loss_mri_tracker= tf.keras.metrics.Mean(name="Cy_MRI")
         self.identity_loss_mri_tracker= tf.keras.metrics.Mean(name="Id_MRI")
         #CT trackers
         self.disc_loss_ct_tracker= tf.keras.metrics.Mean(name="D_CT")
         self.ssim_loss_ct_tracker= tf.keras.metrics.Mean(name="SSIM_CT")
-        self.mae_loss_ct_tracker= tf.keras.metrics.Mean(name="MAE_CT")
         self.vgg_loss_ct_tracker = tf.keras.metrics.Mean(name="VGG_CT")
         self.cycle_loss_ct_tracker= tf.keras.metrics.Mean(name="Cy_CT")
         self.identity_loss_ct_tracker= tf.keras.metrics.Mean(name="Id_CT")
@@ -72,13 +69,11 @@ class CycleGAN(kr.Model):
     def metrics(self):
         return [self.disc_loss_mri_tracker,
             self.ssim_loss_mri_tracker,
-            self.mae_loss_mri_tracker,
             self.vgg_loss_mri_tracker,
             self.cycle_loss_mri_tracker,
             self.identity_loss_mri_tracker,
             self.disc_loss_ct_tracker,
             self.ssim_loss_ct_tracker,
-            self.mae_loss_ct_tracker,
             self.vgg_loss_ct_tracker,
             self.cycle_loss_ct_tracker,
             self.identity_loss_ct_tracker]
@@ -165,23 +160,21 @@ class CycleGAN(kr.Model):
             generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct = self.combined_model([ct, mri__])
     
             ssim_loss_mri = self.ssim_loss_coeff * loss.SSIMLoss(mri__, generated_mri)
-            mae_loss_mri = self.mae_loss_coeff * loss.mae(mri__, generated_mri)
             vgg_loss_mri = self.vgg_loss_coeff * self.vgg_loss(mri__, generated_mri)
             cycle_loss_mri = self.cycle_loss_coeff * loss.mae(mri__, cycled_mri)
             cycle_loss_ct = self.cycle_loss_coeff * loss.mae(ct, cycled_ct)
             identity_loss_mri = self.identity_loss_coeff * loss.mae(mri__, id_mri)
-            total_loss_mri = ssim_loss_mri + mae_loss_mri + vgg_loss_mri + cycle_loss_mri + cycle_loss_ct + identity_loss_mri
+            total_loss_mri = ssim_loss_mri + vgg_loss_mri + cycle_loss_mri + cycle_loss_ct + identity_loss_mri
 
         with tf.GradientTape(persistent=True) as ct_tape:
             generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct = self.combined_model([ct, mri__])
 
             ssim_loss_ct = self.ssim_loss_coeff * loss.SSIMLoss(ct, generated_ct)
-            mae_loss_ct = self.mae_loss_coeff * loss.mae(ct, generated_ct)
             vgg_loss_ct = self.vgg_loss_coeff * self.vgg_loss(ct, generated_ct)
             cycle_loss_mri = self.cycle_loss_coeff * loss.mae(mri__, cycled_mri)
             cycle_loss_ct = self.cycle_loss_coeff * loss.mae(ct, cycled_ct)
             identity_loss_ct = self.identity_loss_coeff * loss.mae(ct, id_ct)
-            total_loss_ct = ssim_loss_ct + mae_loss_ct + vgg_loss_ct + cycle_loss_ct + cycle_loss_mri + identity_loss_ct
+            total_loss_ct = ssim_loss_ct + vgg_loss_ct + cycle_loss_ct + cycle_loss_mri + identity_loss_ct
 
         
 
@@ -201,8 +194,8 @@ class CycleGAN(kr.Model):
         #self.mri_g_optimizer.apply_gradients(zip(g_gradients , self.combined_model.trainable_variables))
 
 
-        losses__ = (ssim_loss_mri, mae_loss_mri, vgg_loss_mri, cycle_loss_mri, identity_loss_mri,
-                    ssim_loss_ct, mae_loss_ct, vgg_loss_ct, cycle_loss_ct, identity_loss_ct)
+        losses__ = (ssim_loss_mri, vgg_loss_mri, cycle_loss_mri, identity_loss_mri,
+                    ssim_loss_ct, vgg_loss_ct, cycle_loss_ct, identity_loss_ct)
 
         return losses__ 
 
@@ -213,19 +206,17 @@ class CycleGAN(kr.Model):
 
         total_loss_mri, total_loss_ct = self.train_discriminator(ct, mri)
         losses = self.train_generator(ct, mri)
-        (ssim_loss_mri, mae_loss_mri, vgg_loss_mri, cycle_loss_mri, identity_loss_mri, ssim_loss_ct, mae_loss_ct, vgg_loss_ct, cycle_loss_ct, identity_loss_ct) = losses
+        (ssim_loss_mri, vgg_loss_mri, cycle_loss_mri, identity_loss_mri, ssim_loss_ct, vgg_loss_ct, cycle_loss_ct, identity_loss_ct) = losses
 
         # MRI trackers.
         self.disc_loss_mri_tracker.update_state(total_loss_mri)
         self.ssim_loss_mri_tracker.update_state(ssim_loss_mri)
-        self.mae_loss_mri_tracker.update_state(mae_loss_mri)
         self.vgg_loss_mri_tracker.update_state(vgg_loss_mri)
         self.cycle_loss_mri_tracker.update_state(cycle_loss_mri)
         self.identity_loss_mri_tracker.update_state(identity_loss_mri)
         #CT trackers
         self.disc_loss_ct_tracker.update_state(total_loss_ct)
         self.ssim_loss_ct_tracker.update_state(ssim_loss_ct)
-        self.mae_loss_ct_tracker.update_state(mae_loss_ct)
         self.vgg_loss_ct_tracker.update_state(vgg_loss_ct)
         self.cycle_loss_ct_tracker.update_state(cycle_loss_ct)
         self.identity_loss_ct_tracker.update_state(identity_loss_ct)
@@ -259,10 +250,8 @@ class CycleGAN(kr.Model):
 
         generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct = self.combined_model([ct, mri])
         ssim_loss_mri = self.ssim_loss_coeff * loss.SSIMLoss(mri, generated_mri)
-        mae_loss_mri = self.mae_loss_coeff * loss.mae(mri, generated_mri)
         vgg_loss_mri = self.vgg_loss_coeff * self.vgg_loss(mri, generated_mri)
         ssim_loss_ct = self.ssim_loss_coeff * loss.SSIMLoss(ct, generated_ct)
-        mae_loss_ct = self.mae_loss_coeff * loss.mae(ct, generated_ct)
         vgg_loss_ct = self.vgg_loss_coeff * self.vgg_loss(ct, generated_ct)
         cycle_loss_mri = self.cycle_loss_coeff * loss.mae(mri, cycled_mri)
         cycle_loss_ct = self.cycle_loss_coeff * loss.mae(ct, cycled_ct)
@@ -272,14 +261,12 @@ class CycleGAN(kr.Model):
         # MRI trackers.
         self.disc_loss_mri_tracker.update_state(total_loss_mri)
         self.ssim_loss_mri_tracker.update_state(ssim_loss_mri)
-        self.mae_loss_mri_tracker.update_state(mae_loss_mri)
         self.vgg_loss_mri_tracker.update_state(vgg_loss_mri)
         self.cycle_loss_mri_tracker.update_state(cycle_loss_mri)
         self.identity_loss_mri_tracker.update_state(identity_loss_mri)
         #CT trackers
         self.disc_loss_ct_tracker.update_state(total_loss_ct)
         self.ssim_loss_ct_tracker.update_state(ssim_loss_ct)
-        self.mae_loss_ct_tracker.update_state(mae_loss_ct)
         self.vgg_loss_ct_tracker.update_state(vgg_loss_ct)
         self.cycle_loss_ct_tracker.update_state(cycle_loss_ct)
         self.identity_loss_ct_tracker.update_state(identity_loss_ct)
@@ -351,7 +338,7 @@ class CycleGAN(kr.Model):
         hist_df = pd.DataFrame(hist) 
         hist_df.to_csv(exp_path + '/cyclegan_hist.csv')
 
-        losses = ["D_MRI", "SSIM_MRI", "MAE_MRI", "VGG_MRI", "Cy_MRI", "Id_MRI", "D_CT", "SSIM_CT", "MAE_CT", "VGG_CT", "Cy_CT", "Id_CT"]
+        losses = ["D_MRI", "SSIM_MRI", "VGG_MRI", "Cy_MRI", "Id_MRI", "D_CT", "SSIM_CT", "VGG_CT", "Cy_CT", "Id_CT"]
 
         # plot losses
         for loss in losses:

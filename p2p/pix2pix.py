@@ -25,11 +25,8 @@ class Pix2Pix(kr.Model):
         self.image_size = self.flags.crop_size
         self.batch_size = self.flags.batch_size
 
-        self.feature_loss_coeff = self.flags.feature_loss_coeff
         self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
-        self.generator_loss_coeff = self.flags.generator_loss_coeff
         self.ssim_loss_coeff = self.flags.ssim_loss_coeff
-        self.mae_loss_coeff = self.flags.mae_loss_coeff
         self.disc_loss_coeff = self.flags.disc_loss_coeff
 
         self.discriminator = modules.Discriminator(flags)
@@ -41,25 +38,18 @@ class Pix2Pix(kr.Model):
         self.discriminator_loss = loss.DiscriminatorLoss()
         self.feature_matching_loss = loss.FeatureMatchingLoss()
         self.vgg_loss = loss.VGGFeatureMatchingLoss()
-        self.mae_loss = loss.MAE()
 
         self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
-        self.gen_loss_tracker = tf.keras.metrics.Mean(name="gen_loss")
-        self.feat_loss_tracker = tf.keras.metrics.Mean(name="feat_loss")
         self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
         self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
-        self.mae_loss_tracker = tf.keras.metrics.Mean(name="mae_loss")
 
 
     @property
     def metrics(self):
         return [
             self.disc_loss_tracker,
-            self.gen_loss_tracker,
-            self.feat_loss_tracker,
             self.vgg_loss_tracker,
-            self.ssim_loss_tracker,
-            self.mae_loss_tracker]
+            self.ssim_loss_tracker]
 
 
     def build_combined_model(self):
@@ -115,14 +105,9 @@ class Pix2Pix(kr.Model):
             pred = fake_d_output[-1]
             
             # Compute generator loss
-            g_loss = self.generator_loss_coeff*loss.generator_loss(pred)
             vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri__, fake_mri)
-            feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
-                real_d_output, fake_d_output
-            )
             ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri__, fake_mri)
-            mae_loss = self.mae_loss_coeff * self.mae_loss(mri__, fake_mri)
-            total_loss = g_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
+            total_loss = vgg_loss + ssim_loss
             
         all_trainable_variables = (
             self.combined_model.trainable_variables
@@ -134,7 +119,7 @@ class Pix2Pix(kr.Model):
             zip(gradients, all_trainable_variables)
         )
 
-        return total_loss, vgg_loss, feature_loss, ssim_loss, mae_loss
+        return vgg_loss, ssim_loss
 
 
     def train_step(self, data):
@@ -142,15 +127,12 @@ class Pix2Pix(kr.Model):
         ct, mri = data
         
         discriminator_loss = self.train_discriminator(ct, mri)
-        (generator_loss, vgg_loss, feature_loss, ssim_loss, mae_loss) = self.train_generator(ct, mri)
+        (vgg_loss, ssim_loss) = self.train_generator(ct, mri)
 
         # Report progress.
         self.disc_loss_tracker.update_state(discriminator_loss)
-        self.gen_loss_tracker.update_state(generator_loss)
-        self.feat_loss_tracker.update_state(feature_loss)
         self.vgg_loss_tracker.update_state(vgg_loss)
         self.ssim_loss_tracker.update_state(ssim_loss)
-        self.mae_loss_tracker.update_state(mae_loss)
 
 
         results = {m.name: m.result() for m in self.metrics}
@@ -173,22 +155,15 @@ class Pix2Pix(kr.Model):
         real_d_output = self.discriminator([fake_mri, mri])
         fake_d_output, fake_image = self.combined_model([ct, mri])
         pred = fake_d_output[-1]
-        g_loss = self.generator_loss_coeff*loss.generator_loss(pred)
         
         vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
-        feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
-            real_d_output, fake_d_output)
         ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
-        mae_loss = self.mae_loss_coeff * self.mae_loss(mri, fake_mri)
-        total_generator_loss = g_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
+        total_generator_loss = vgg_loss + ssim_loss
 
         # Report progress.
         self.disc_loss_tracker.update_state(total_discriminator_loss)
-        self.gen_loss_tracker.update_state(total_generator_loss)
-        self.feat_loss_tracker.update_state(feature_loss)
         self.vgg_loss_tracker.update_state(vgg_loss)
         self.ssim_loss_tracker.update_state(ssim_loss)
-        self.mae_loss_tracker.update_state(mae_loss)
 
         results = {m.name: m.result() for m in self.metrics}
 
@@ -251,7 +226,7 @@ class Pix2Pix(kr.Model):
         hist_df = pd.DataFrame(hist) 
         hist_df.to_csv(exp_path + '/hist.csv')
 
-        losses = ['disc', 'gen', 'feat', 'vgg', 'ssim', 'mae']
+        losses = ['disc', 'vgg', 'ssim']
 
         # plot losses
         for loss in losses:
