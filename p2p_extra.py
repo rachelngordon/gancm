@@ -4,7 +4,9 @@ import multiprocessing
 # Define the command lines and GPU IDs
 command_lines = [
     ("python3 ~/pcxgan/train_pix2pix.py --exp_name p2p_eq_1234 --test_fold 5 --epochs 500 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/eq_paired/norm_neg1pos1_fold'", 0),
-    ("python3 ~/pcxgan/train_pix2pix.py --exp_name p2p_no_eq_1234 --test_fold 5 --epochs 500 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold'", 1)
+    ("python3 ~/pcxgan/train_pix2pix.py --exp_name p2p_no_eq_1234 --test_fold 5 --epochs 500 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_paired/norm_neg1pos1_fold'", 1),
+    ("python3 ~/pcxgan/train_pcxgan_mask.py --exp_name pcx_seg_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/eq_mask/norm_mask_neg1pos1_fold'", 2),
+    ("python3 ~/pcxgan/train_pcxgan_mask.py --exp_name pcx_seg_no_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/no_eq_mask/norm_mask_neg1pos1_fold'", 3)
 ]
 
 # Function to run a command on a GPU
