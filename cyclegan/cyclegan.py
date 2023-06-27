@@ -328,7 +328,15 @@ class CycleGAN(kr.Model):
 
     def save_model(self, flags):
         # model_path = '/media/aisec1/DATA3/rachel/pcxgan/models/Pix2Pix_test'
-        self.generator_mri.save(self.flags.model_path)
+        exp_path = self.flags.model_path + self.experiment_name
+        
+        if not os.path.exists(exp_path):
+            os.makedirs(exp_path) 
+
+        self.generator_mri.save(exp_path + '/g_mri')
+        self.generator_ct.save(exp_path + '/g_ct')
+        self.discriminator_mri.save(exp_path + '/d_mri')
+        self.discriminator_ct.save(exp_path + '/d_ct')
 
 
     def plot_losses(self, hist):
