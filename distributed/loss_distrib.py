@@ -39,7 +39,7 @@ with strategy.scope():
     class FeatureMatchingLoss(kr.losses.Loss):
         def __init__(self, **kwargs):
                 super().__init__(**kwargs)
-                self.mae = kr.losses.MeanAbsoluteError()
+                self.mae = kr.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
         def call(self, y_true, y_pred):
                 loss = 0
@@ -67,7 +67,7 @@ with strategy.scope():
                 vgg = kr.applications.VGG19(include_top=False, weights="imagenet")
                 layer_outputs = [vgg.get_layer(x).output for x in self.encoder_layers]
                 self.vgg_model = kr.Model(vgg.input, layer_outputs, name="VGG")
-                self.mae = kr.losses.MeanAbsoluteError()
+                self.mae = kr.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
         def call(self, y_true, y_pred):
                 y_true = (y_true + 1.0) / 2.0
@@ -89,7 +89,7 @@ with strategy.scope():
     class DiscriminatorLoss(kr.losses.Loss):
         def __init__(self, **kwargs):
                 super().__init__(**kwargs)
-                self.hinge_loss = kr.losses.Hinge()
+                self.hinge_loss = kr.losses.Hinge(reduction=tf.keras.losses.Reduction.NONE)
 
         def call(self, is_real, y_pred):
                 label = 1.0 if is_real else -1.0
@@ -98,7 +98,7 @@ with strategy.scope():
     class MAE(kr.losses.Loss):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
-            self.mae = kr.losses.MeanAbsoluteError()
+            self.mae = kr.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
         def call(self, y_true, y_pred):
             y_true = (y_true + 1.0) / 2.0
