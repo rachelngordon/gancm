@@ -15,11 +15,11 @@ class Flags():
     parser.add_argument('--gpu_ids', type=str, default='1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
     parser.add_argument('--data_path', type=str, default='/media/aisec-102/DATA31/rachel/PCGAN/data/folds1234.npz', help='Data .npz file' )# CT_MRI-512-Updated
     parser.add_argument('--test_fold', type=int, default=5, help='fold to be left out of trainings' )
-    parser.add_argument('--checkpoints_dir', type=str, default='/grand/EVITA/ct-mri/pcxgan/checkpoints', help='models are saved here')
-    parser.add_argument('--sample_dir', type=str, default='/grand/EVITA/ct-mri/pcxgan/training_samples', help='samples are saved here')
-    parser.add_argument('--result_logs', type=str, default='/grand/EVITA/ct-mri/pcxgan/results' , help='Logs are stored here' )
-    parser.add_argument('--model_path', type=str, default='/grand/EVITA/ct-mri/pcxgan/models/' , help='Model is stored here' )
-    parser.add_argument('--hist_path', type=str, default='/grand/EVITA/ct-mri/pcxgan/history/' , help='Model is stored here' )
+    parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
+    parser.add_argument('--sample_dir', type=str, default='./training_samples', help='samples are saved here')
+    parser.add_argument('--result_logs', type=str, default='./results' , help='Logs are stored here' )
+    parser.add_argument('--model_path', type=str, default='./models/' , help='Model is stored here' )
+    parser.add_argument('--hist_path', type=str, default='./history/' , help='Model is stored here' )
     parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
     
     # input/output sizes
