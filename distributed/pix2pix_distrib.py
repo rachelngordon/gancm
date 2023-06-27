@@ -12,7 +12,6 @@ from datetime import datetime
 
 strategy = tf.distribute.MirroredStrategy()
 with strategy.scope():
-    
     # Pix2Pix
     class Pix2Pix(kr.Model):
         def __init__(self, flags, strategy, **kwargs):

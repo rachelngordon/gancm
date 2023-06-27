@@ -12,7 +12,7 @@ def main(flags):
     # define the distribution strategy
     strategy = tf.distribute.MirroredStrategy()
 
-    with strategy.scope():
+    with strategy.scope() as s:
 
         train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True).load()
         test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
@@ -21,7 +21,7 @@ def main(flags):
         start_time = time.time()
 
         #Build and train the model
-        model = Pix2Pix(flags, strategy)
+        model = Pix2Pix(flags, s)
         model.compile()
         history = model.fit(
             train_data,
