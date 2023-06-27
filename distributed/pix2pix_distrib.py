@@ -26,7 +26,7 @@ with strategy.scope():
             self.hist_dir = self.flags.hist_path
             self.image_shape = (self.flags.crop_size, self.flags.crop_size, 1)
             self.image_size = self.flags.crop_size
-            self.batch_size = self.flags.batch_size
+            self.batch_size = self.flags.batch_size * strategy.num_replicas_in_sync
 
             self.feature_loss_coeff = self.flags.feature_loss_coeff
             self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
