@@ -220,8 +220,8 @@ class CycleMonitor(kr.callbacks.Callback):
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
 		self.hist_path = os.path.join(flags.hist_path, flags.name)
 		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
-		self.losses = {"D_MRI": [], "SSIM_MRI": [], "MAE_MRI": [], "VGG_MRI": [], "Cy_MRI": [], "Id_MRI": [], "D_CT": [], 
-                 "SSIM_CT": [], "MAE_CT": [], "VGG_CT": [], "Cy_CT": [], "Id_CT": []}
+		self.losses = {"D_MRI": [], "SSIM_MRI": [], "VGG_MRI": [], "Cy_MRI": [], "Id_MRI": [], "D_CT": [], 
+                 "SSIM_CT": [],  "VGG_CT": [], "Cy_CT": [], "Id_CT": []}
 		self.flags = flags
 
 		if not os.path.exists(self.checkpoints_path):
@@ -260,13 +260,11 @@ class CycleMonitor(kr.callbacks.Callback):
 
 				self.losses["D_MRI"].append(logs["D_MRI"]) 
 				self.losses["SSIM_MRI"].append(logs["SSIM_MRI"]) 
-				self.losses["MAE_MRI"].append(logs["MAE_MRI"]) 
 				self.losses["VGG_MRI"].append(logs["VGG_MRI"]) 
 				self.losses["Cy_MRI"].append(logs["Cy_MRI"]) 
 				self.losses["Id_MRI"].append(logs["Id_MRI"]) 
 				self.losses["D_CT"].append(logs["D_CT"]) 
 				self.losses["SSIM_CT"].append(logs["SSIM_CT"]) 
-				self.losses["MAE_CT"].append(logs["MAE_CT"]) 
 				self.losses["VGG_CT"].append(logs["VGG_CT"]) 
 				self.losses["Cy_CT"].append(logs["Cy_CT"]) 
 				self.losses["Id_CT"].append(logs["Id_CT"])  
@@ -276,13 +274,11 @@ class CycleMonitor(kr.callbacks.Callback):
 				plt.figure()
 				plt.plot(self.losses["D_MRI"], label='MRI Discriminator Loss')
 				plt.plot(self.losses["SSIM_MRI"], label='MRI SSIM Loss')
-				plt.plot(self.losses["MAE_MRI"], label='MRI MAE Loss')
 				plt.plot(self.losses["VGG_MRI"], label='MRI VGG Loss')
 				plt.plot(self.losses["Cy_MRI"], label='MRI Cycle Loss')
 				plt.plot(self.losses["Id_MRI"], label='MRI Identity Loss')
 				plt.plot(self.losses["D_CT"], label='CT Discriminator Loss')
 				plt.plot(self.losses["SSIM_CT"], label='CT SSIM Loss')
-				plt.plot(self.losses["MAE_CT"], label='CT MAE Loss')
 				plt.plot(self.losses["VGG_CT"], label='CT VGG Loss')
 				plt.plot(self.losses["Cy_CT"], label='CT Cycle Loss')
 				plt.plot(self.losses["Id_CT"], label='CT Loss')
