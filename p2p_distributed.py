@@ -1,10 +1,10 @@
 
 import tensorflow as tf
 from flags import Flags
-from p2p.pix2pix import Pix2Pix
+from distributed.pix2pix_distrib import Pix2Pix
 import data_loader
 import time
-import p2p.modules as modules
+import distributed.modules_distrib as modules
 
 
 def main(flags):
