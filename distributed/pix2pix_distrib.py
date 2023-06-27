@@ -39,7 +39,7 @@ with strategy.scope():
 
             self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
             self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
-            self.discriminator_loss = loss.DiscriminatorLoss()
+            self.discriminator_loss = loss.DiscriminatorLoss(self.strategy)
             self.vgg_loss = loss.VGGFeatureMatchingLoss()
 
             self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")

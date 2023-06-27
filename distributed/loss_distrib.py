@@ -91,14 +91,17 @@ class VGGFeatureMatchingLoss(kr.losses.Loss):
 
 
 class DiscriminatorLoss(kr.losses.Loss):
-    def __init__(self, **kwargs):
+    def __init__(self, strategy_obj, **kwargs):
+
+        with strategy_obj.scope():
             super().__init__(**kwargs)
             self.hinge_loss = kr.losses.Hinge(reduction=tf.keras.losses.Reduction.NONE)
 
+
     def call(self, is_real, y_pred, strategy_obj):
-            with strategy_obj.scope():
-                label = 1.0 if is_real else -1.0
-                return self.hinge_loss(label, y_pred)
+        with strategy_obj.scope():
+            label = 1.0 if is_real else -1.0
+            return self.hinge_loss(label, y_pred)
 
 class MAE(kr.losses.Loss):
     def __init__(self, **kwargs):
