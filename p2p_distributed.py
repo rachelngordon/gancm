@@ -21,7 +21,7 @@ def main(flags):
         start_time = time.time()
 
         #Build and train the model
-        model = Pix2Pix(flags)
+        model = Pix2Pix(flags, strategy)
         model.compile()
         history = model.fit(
             train_data,

@@ -218,7 +218,7 @@ with strategy.scope():
             self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
             self.hist_path = os.path.join(flags.hist_path, flags.name)
             self.sample_dir = os.path.join(flags.sample_dir, flags.name)
-            self.losses = {'disc_loss': [], 'gen_loss': [], 'feat_loss': [], 'vgg_loss': [], 'ssim_loss': [], 'mae_loss': []} 
+            self.losses = {'disc_loss': [], 'vgg_loss': [], 'ssim_loss': []} 
 
             if not os.path.exists(self.checkpoints_path):
                 os.makedirs(self.checkpoints_path)
@@ -255,20 +255,14 @@ with strategy.scope():
 
 
                     self.losses['disc_loss'].append(logs['disc_loss']) 
-                    self.losses['gen_loss'].append(logs['gen_loss']) 
-                    self.losses['feat_loss'].append(logs['feat_loss'])
                     self.losses['vgg_loss'].append(logs['vgg_loss']) 
                     self.losses['ssim_loss'].append(logs['ssim_loss']) 
-                    self.losses['mae_loss'].append(logs['mae_loss']) 
 
                     # Plot losses
                     plt.figure()
                     plt.plot(self.losses['disc_loss'], label='Discriminator Loss')
-                    plt.plot(self.losses['gen_loss'], label='Generator Loss')
                     plt.plot(self.losses['vgg_loss'], label='VGG Loss')
-                    plt.plot(self.losses['feat_loss'], label='Feature Loss')
                     plt.plot(self.losses['ssim_loss'], label='SSIM Loss')
-                    plt.plot(self.losses['mae_loss'], label='MAE Loss')
                     plt.xlabel('Epoch')
                     plt.ylabel('Loss')
                     plt.legend()

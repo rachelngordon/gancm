@@ -15,11 +15,12 @@ with strategy.scope():
     
     # Pix2Pix
     class Pix2Pix(kr.Model):
-        def __init__(self, flags,**kwargs):
+        def __init__(self, flags, strategy, **kwargs):
 
             super().__init__(**kwargs)
+            
             self.flags = flags
-
+            self.strategy = strategy
             self.experiment_name = self.flags.name
             self.samples_dir = self.flags.sample_dir
             self.models_dir = self.flags.checkpoints_dir
@@ -28,11 +29,8 @@ with strategy.scope():
             self.image_size = self.flags.crop_size
             self.batch_size = self.flags.batch_size * strategy.num_replicas_in_sync
 
-            self.feature_loss_coeff = self.flags.feature_loss_coeff
             self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
-            self.generator_loss_coeff = self.flags.generator_loss_coeff
             self.ssim_loss_coeff = self.flags.ssim_loss_coeff
-            self.mae_loss_coeff = self.flags.mae_loss_coeff
             self.disc_loss_coeff = self.flags.disc_loss_coeff
 
             self.discriminator = modules.Discriminator(flags)
@@ -42,27 +40,19 @@ with strategy.scope():
             self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
             self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
             self.discriminator_loss = loss.DiscriminatorLoss()
-            self.feature_matching_loss = loss.FeatureMatchingLoss()
             self.vgg_loss = loss.VGGFeatureMatchingLoss()
-            self.mae_loss = loss.MAE()
 
             self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
-            self.gen_loss_tracker = tf.keras.metrics.Mean(name="gen_loss")
-            self.feat_loss_tracker = tf.keras.metrics.Mean(name="feat_loss")
             self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
             self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
-            self.mae_loss_tracker = tf.keras.metrics.Mean(name="mae_loss")
 
 
         @property
         def metrics(self):
             return [
                 self.disc_loss_tracker,
-                self.gen_loss_tracker,
-                self.feat_loss_tracker,
                 self.vgg_loss_tracker,
-                self.ssim_loss_tracker,
-                self.mae_loss_tracker]
+                self.ssim_loss_tracker]
 
 
         def build_combined_model(self):
@@ -92,8 +82,8 @@ with strategy.scope():
             with tf.GradientTape() as gradient_tape:
                 pred_fake = self.discriminator([ct, fake_mri])[-1]  
                 pred_real = self.discriminator([ct, real_mri])[-1]  
-                loss_fake = self.discriminator_loss(False, pred_fake)
-                loss_real = self.discriminator_loss(True, pred_real)
+                loss_fake = self.discriminator_loss(False, pred_fake, self.strategy)
+                loss_real = self.discriminator_loss(True, pred_real, self.strategy)
                 total_loss = self.disc_loss_coeff * (loss_fake + loss_real) * (1. / self.global_batch_size)
 
             self.discriminator.trainable = True
@@ -118,14 +108,9 @@ with strategy.scope():
                 pred = fake_d_output[-1]
                 
                 # Compute generator loss
-                g_loss = self.generator_loss_coeff*loss.generator_loss(pred) * (1. / self.global_batch_size)
-                vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri__, fake_mri) * (1. / self.global_batch_size)
-                feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
-                    real_d_output, fake_d_output
-                ) * (1. / self.global_batch_size)
-                ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri__, fake_mri) * (1. / self.global_batch_size)
-                mae_loss = self.mae_loss_coeff * self.mae_loss(mri__, fake_mri) * (1. / self.global_batch_size)
-                total_loss = g_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
+                vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri__, fake_mri, self.strategy) * (1. / self.global_batch_size)
+                ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri__, fake_mri, self.strategy) * (1. / self.global_batch_size)
+                total_loss =  vgg_loss + ssim_loss
                 
             all_trainable_variables = (
                 self.combined_model.trainable_variables
@@ -137,7 +122,7 @@ with strategy.scope():
                 zip(gradients, all_trainable_variables)
             )
 
-            return total_loss, vgg_loss, feature_loss, ssim_loss, mae_loss
+            return vgg_loss, ssim_loss
 
 
         def train_step(self, data):
@@ -145,15 +130,12 @@ with strategy.scope():
             ct, mri = data
             
             discriminator_loss = self.train_discriminator(ct, mri)
-            (generator_loss, vgg_loss, feature_loss, ssim_loss, mae_loss) = self.train_generator(ct, mri)
+            (vgg_loss, ssim_loss) = self.train_generator(ct, mri)
 
             # Report progress.
             self.disc_loss_tracker.update_state(discriminator_loss)
-            self.gen_loss_tracker.update_state(generator_loss)
-            self.feat_loss_tracker.update_state(feature_loss)
             self.vgg_loss_tracker.update_state(vgg_loss)
             self.ssim_loss_tracker.update_state(ssim_loss)
-            self.mae_loss_tracker.update_state(mae_loss)
 
 
             results = {m.name: m.result() for m in self.metrics}
@@ -169,29 +151,22 @@ with strategy.scope():
             # Calculate the losses.
             pred_fake = self.discriminator([ct, fake_mri])[-1]
             pred_real = self.discriminator([ct, mri])[-1]  
-            loss_fake = self.discriminator_loss(False, pred_fake)
-            loss_real = self.discriminator_loss(True, pred_real)
+            loss_fake = self.discriminator_loss(False, pred_fake, self.strategy)
+            loss_real = self.discriminator_loss(True, pred_real, self.strategy)
             total_discriminator_loss = self.disc_loss_coeff * (loss_fake + loss_real) * (1. / self.global_batch_size)
 
             real_d_output = self.discriminator([fake_mri, mri])
             fake_d_output, fake_image = self.combined_model([ct, mri])
             pred = fake_d_output[-1]
-            g_loss = self.generator_loss_coeff*loss.generator_loss(pred) * (1. / self.global_batch_size)
             
-            vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image) * (1. / self.global_batch_size)
-            feature_loss = self.feature_loss_coeff * self.feature_matching_loss(
-                real_d_output, fake_d_output) * (1. / self.global_batch_size)
-            ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image) * (1. / self.global_batch_size)
-            mae_loss = self.mae_loss_coeff * self.mae_loss(mri, fake_mri) * (1. / self.global_batch_size)
-            total_generator_loss = g_loss + vgg_loss + feature_loss + ssim_loss + mae_loss
+            vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image, self.strategy) * (1. / self.global_batch_size)
+            ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image, self.strategy) * (1. / self.global_batch_size)
+            #total_generator_loss = vgg_loss + ssim_loss
 
             # Report progress.
             self.disc_loss_tracker.update_state(total_discriminator_loss)
-            self.gen_loss_tracker.update_state(total_generator_loss)
-            self.feat_loss_tracker.update_state(feature_loss)
             self.vgg_loss_tracker.update_state(vgg_loss)
             self.ssim_loss_tracker.update_state(ssim_loss)
-            self.mae_loss_tracker.update_state(mae_loss)
 
             results = {m.name: m.result() for m in self.metrics}
 
@@ -254,7 +229,7 @@ with strategy.scope():
             hist_df = pd.DataFrame(hist) 
             hist_df.to_csv(exp_path + '/hist.csv')
 
-            losses = ['disc', 'gen', 'feat', 'vgg', 'ssim', 'mae']
+            losses = ['disc', 'vgg', 'ssim']
 
             # plot losses
             for loss in losses:
