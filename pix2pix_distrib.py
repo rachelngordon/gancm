@@ -89,8 +89,8 @@ class Pix2Pix(kr.Model):
 		with tf.GradientTape() as gradient_tape:
 			pred_fake = self.discriminator([ct, fake_mri])[-1]  
 			pred_real = self.discriminator([ct, real_mri])[-1]  
-			loss_fake = self.DiscriminatorLoss(False, pred_fake)
-			loss_real = self.DiscriminatorLoss(True, pred_real)
+			loss_fake = self.DiscriminatorLoss(False, pred_fake) * (1. / self.batch_size)
+			loss_real = self.DiscriminatorLoss(True, pred_real) * (1. / self.batch_size)
 			total_loss = self.disc_loss_coeff * (loss_fake + loss_real)
 
 		self.discriminator.trainable = True
@@ -115,8 +115,8 @@ class Pix2Pix(kr.Model):
 			pred = fake_d_output[-1]
 			
 			# Compute generator loss
-			vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri__, fake_mri, self.vgg_model, self.vgg_weights)
-			ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri__, fake_mri)
+			vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri__, fake_mri, self.vgg_model, self.vgg_weights) * (1. / self.batch_size)
+			ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri__, fake_mri) * (1. / self.batch_size)
 			total_loss = vgg_loss + ssim_loss
 			
 		all_trainable_variables = (
@@ -158,16 +158,16 @@ class Pix2Pix(kr.Model):
 		# Calculate the losses.
 		pred_fake = self.discriminator([ct, fake_mri])[-1]
 		pred_real = self.discriminator([ct, mri])[-1]  
-		loss_fake = self.DiscriminatorLoss(False, pred_fake)
-		loss_real = self.DiscriminatorLoss(True, pred_real)
+		loss_fake = self.DiscriminatorLoss(False, pred_fake) * (1. / self.batch_size)
+		loss_real = self.DiscriminatorLoss(True, pred_real) * (1. / self.batch_size)
 		total_discriminator_loss = self.disc_loss_coeff * (loss_fake + loss_real)
 
 		real_d_output = self.discriminator([fake_mri, mri])
 		fake_d_output, fake_image = self.combined_model([ct, mri])
 		pred = fake_d_output[-1]
 		
-		vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri, fake_image, self.vgg_model, self.vgg_weights)
-		ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri, fake_image)
+		vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri, fake_image, self.vgg_model, self.vgg_weights) * (1. / self.batch_size)
+		ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri, fake_image) * (1. / self.batch_size)
 		#total_generator_loss = vgg_loss + ssim_loss
 
 		# Report progress.
@@ -251,7 +251,7 @@ class Pix2Pix(kr.Model):
 		label = 1.0 if is_real else -1.0
 		h = kr.losses.Hinge(reduction=kr.losses.Reduction.SUM)
 
-		return h(label, y_pred) * (1. / self.batch_size)
+		return h(label, y_pred)
 	
 
 	def VGGFeatureMatchingLoss(self, y_true, y_pred, vgg_model, weights):
@@ -274,10 +274,10 @@ class Pix2Pix(kr.Model):
 		for i in range(len(real_features)):
 				loss += weights[i] * mae(real_features[i], fake_features[i])
 				
-		return loss * (1. / self.batch_size)
+		return loss
 	
 
 	def SSIMLoss(self, y_true, y_pred):
 		y_true = (y_true + 1.0) / 2.0
 		y_pred = (y_pred + 1.0) / 2.0
-		return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0)) * (1. / self.batch_size)
+		return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0))
