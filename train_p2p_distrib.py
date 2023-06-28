@@ -21,9 +21,7 @@ def main(flags):
   with strategy.scope() as s:
     #Build the model
     model = Pix2Pix(flags)
-    feature_matching_loss = loss.FeatureMatchingLoss(reduction=tf.keras.losses.Reduction.NONE)
-    vgg_loss = loss.VGGFeatureMatchingLoss(reduction=tf.keras.losses.Reduction.NONE)
-    model.compile(feature_matching_loss, vgg_loss)
+    model.compile()
 
 
   history = model.fit(

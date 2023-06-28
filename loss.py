@@ -80,6 +80,7 @@ class VGGFeatureMatchingLoss(kr.losses.Loss):
 			for i in range(len(real_features)):
 					loss += self.weights[i] * self.mae(real_features[i], fake_features[i])
 			return loss
+	
 
 
 class DiscriminatorLoss(kr.losses.Loss):
