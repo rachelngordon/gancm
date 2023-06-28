@@ -4,7 +4,7 @@ import modules_distrib as modules
 import data_loader
 import time
 import tensorflow as tf
-import loss
+import tensorflow.keras as kr
 
 def main(flags):
 
@@ -20,7 +20,8 @@ def main(flags):
 
   with strategy.scope() as s:
     #Build the model
-    model = Pix2Pix(flags)
+    vgg = kr.applications.VGG19(include_top=False, weights="imagenet")
+    model = Pix2Pix(flags, vgg)
     model.compile()
 
 
