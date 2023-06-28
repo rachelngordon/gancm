@@ -70,6 +70,13 @@ class Pix2Pix(kr.Model):
 
 
     def compile(self, **kwargs):
+        
+        self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
+        self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
+        self.discriminator_loss = loss.DiscriminatorLoss()
+        self.feature_matching_loss = loss.FeatureMatchingLoss()
+        self.vgg_loss = loss.VGGFeatureMatchingLoss()
+    
         super().compile(**kwargs)
 
 
