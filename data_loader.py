@@ -148,7 +148,7 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 
 		# create dataset
 		self.dataset = tf.data.Dataset.from_tensor_slices((x, y))
-		self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
+		self.dataset.shuffle(buffer_size=64, seed=42, reshuffle_each_iteration=False)
 		
 	
 	def load_data(self, flags, data_path, if_train):

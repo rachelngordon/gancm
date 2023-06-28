@@ -4,6 +4,7 @@ import numpy as np
 import p2p.modules as modules
 import data_loader
 import time
+import tensorflow as tf
 
 def main(flags):
 
@@ -14,9 +15,15 @@ def main(flags):
 
   start_time = time.time()
   
-  #Build and train the model
-  model = Pix2Pix(flags)
-  model.compile()
+  # define the distribution strategy
+  strategy = tf.distribute.MirroredStrategy()
+
+  with strategy.scope() as s:
+    #Build the model
+    model = Pix2Pix(flags)
+    model.compile()
+
+
   history = model.fit(
     train_data,
     validation_data=test_data,
