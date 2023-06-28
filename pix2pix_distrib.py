@@ -13,7 +13,7 @@ from datetime import datetime
 
 # Pix2Pix
 class Pix2Pix(kr.Model):
-	def __init__(self, flags, vgg_model, **kwargs):
+	def __init__(self, flags, vgg_model, vgg_weights, **kwargs):
 
 		super().__init__(**kwargs)
 		self.flags = flags
@@ -34,7 +34,8 @@ class Pix2Pix(kr.Model):
 		self.generator = modules.p2p_generator(flags)
 		self.patch_size, self.combined_model = self.build_combined_model()
 
-		self.vgg = vgg_model
+		self.vgg_model = vgg_model
+		self.vgg_weights = vgg_weights
 
 		'''
 		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
@@ -114,7 +115,7 @@ class Pix2Pix(kr.Model):
 			pred = fake_d_output[-1]
 			
 			# Compute generator loss
-			vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri__, fake_mri)
+			vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri__, fake_mri, self.vgg_model, self.vgg_weights)
 			ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri__, fake_mri)
 			total_loss = vgg_loss + ssim_loss
 			
@@ -165,7 +166,7 @@ class Pix2Pix(kr.Model):
 		fake_d_output, fake_image = self.combined_model([ct, mri])
 		pred = fake_d_output[-1]
 		
-		vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri, fake_image)
+		vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri, fake_image, self.vgg_model, self.vgg_weights)
 		ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri, fake_image)
 		#total_generator_loss = vgg_loss + ssim_loss
 
@@ -253,17 +254,8 @@ class Pix2Pix(kr.Model):
 		return h(label, y_pred)
 	
 
-	def VGGFeatureMatchingLoss(self, y_true, y_pred):
-		encoder_layers = [
-						"block1_conv1",
-						"block2_conv1",
-						"block3_conv1",
-						"block4_conv1",
-						"block5_conv1",
-				]
-		weights = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
-		layer_outputs = [self.vgg.get_layer(x).output for x in encoder_layers]
-		vgg_model = kr.Model(self.vgg.input, layer_outputs, name="VGG")
+	def VGGFeatureMatchingLoss(self, y_true, y_pred, vgg_model, weights):
+		
 		mae = kr.losses.MeanAbsoluteError(reduction=kr.losses.Reduction.SUM)
 		
 		y_true = (y_true + 1.0) / 2.0
