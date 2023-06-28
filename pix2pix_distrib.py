@@ -251,7 +251,7 @@ class Pix2Pix(kr.Model):
 		label = 1.0 if is_real else -1.0
 		h = kr.losses.Hinge(reduction=kr.losses.Reduction.SUM)
 
-		return h(label, y_pred)
+		return h(label, y_pred) * (1. / self.batch_size)
 	
 
 	def VGGFeatureMatchingLoss(self, y_true, y_pred, vgg_model, weights):
@@ -274,10 +274,10 @@ class Pix2Pix(kr.Model):
 		for i in range(len(real_features)):
 				loss += weights[i] * mae(real_features[i], fake_features[i])
 				
-		return loss
+		return loss * (1. / self.batch_size)
 	
 
 	def SSIMLoss(self, y_true, y_pred):
 		y_true = (y_true + 1.0) / 2.0
 		y_pred = (y_pred + 1.0) / 2.0
-		return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0))
+		return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0)) * (1. / self.batch_size)
