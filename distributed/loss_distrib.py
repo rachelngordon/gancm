@@ -3,24 +3,24 @@ import tensorflow.keras as kr
 import numpy as np
 
 def SSIMLoss(y_true, y_pred, strategy_obj):
-    with strategy_obj.scope():
+    with strategy_obj:
         y_true = (y_true + 1.0) / 2.0
         y_pred = (y_pred + 1.0) / 2.0
         return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0), reduction=tf.keras.losses.Reduction.SUM)
 
 def ssim_l2_a_loss(y_true, y_pred, strategy_obj):
-    with strategy_obj.scope():
+    with strategy_obj:
         yy_true = (y_true + 1.0) / 2.0
         yy_pred = (y_pred + 1.0) / 2.0
         return (1 - tf.reduce_mean(tf.image.ssim(yy_true, yy_pred, 1.0), reduction=tf.keras.losses.Reduction.SUM)) + 0.00005*tf.reduce_sum(tf.math.squared_difference(yy_true,yy_pred), reduction=tf.keras.losses.Reduction.SUM)
 
 def l1_l2_loss(y_true, y_pred, strategy_obj):
-    with strategy_obj.scope():
+    with strategy_obj:
         return tf.reduce_mean(tf.abs(y_true - y_pred), reduction=tf.keras.losses.Reduction.SUM) + tf.reduce_mean(tf.math.squared_difference(y_true, y_pred), reduction=tf.keras.losses.Reduction.SUM)
 
 
 def mae(y_true, y_pred, strategy_obj):
-    with strategy_obj.scope():
+    with strategy_obj:
         y_true = (y_true + 1.0) / 2.0
         y_pred = (y_pred + 1.0) / 2.0
         return tf.reduce_mean(tf.abs(y_true - y_pred), reduction=tf.keras.losses.Reduction.SUM) 
@@ -29,11 +29,11 @@ def mae(y_true, y_pred, strategy_obj):
 
 
 def kl_divergence_loss(mean, variance, strategy_obj):
-    with strategy_obj.scope():
+    with strategy_obj:
         return -0.5 * tf.reduce_sum(1 + variance - tf.square(mean) - tf.exp(variance), reduction=tf.keras.losses.Reduction.SUM)
 
 def generator_loss(y, strategy_obj):
-    with strategy_obj.scope():
+    with strategy_obj:
         y = (y + 1.0) / 2.0
         return tf.reduce_mean(y, reduction=tf.keras.losses.Reduction.SUM)
 
@@ -44,7 +44,7 @@ class FeatureMatchingLoss(kr.losses.Loss):
             self.mae = kr.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
     def call(self, y_true, y_pred, strategy_obj):
-            with strategy_obj.scope():
+            with strategy_obj:
                 loss = 0
                 y_true = [(y + 1.0) / 2.0 for y in y_true]
                 y_pred = [(y + 1.0) / 2.0 for y in y_pred]
@@ -73,7 +73,7 @@ class VGGFeatureMatchingLoss(kr.losses.Loss):
             self.mae = kr.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
     def call(self, y_true, y_pred, strategy_obj):
-            with strategy_obj.scope():
+            with strategy_obj:
                 y_true = (y_true + 1.0) / 2.0
                 y_pred = (y_pred + 1.0) / 2.0
                 
@@ -93,13 +93,13 @@ class VGGFeatureMatchingLoss(kr.losses.Loss):
 class DiscriminatorLoss(kr.losses.Loss):
     def __init__(self, strategy_obj, **kwargs):
 
-        with strategy_obj.scope():
+        with strategy_obj:
             super().__init__(**kwargs)
             self.hinge_loss = kr.losses.Hinge(reduction=tf.keras.losses.Reduction.NONE)
 
 
     def call(self, is_real, y_pred, strategy_obj):
-        with strategy_obj.scope():
+        with strategy_obj:
             label = 1.0 if is_real else -1.0
             return self.hinge_loss(label, y_pred)
 
@@ -109,7 +109,7 @@ class MAE(kr.losses.Loss):
         self.mae = kr.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
     def call(self, y_true, y_pred, strategy_obj):
-        with strategy_obj.scope():
+        with strategy_obj:
             y_true = (y_true + 1.0) / 2.0
             y_pred = (y_pred + 1.0) / 2.0
             return self.mae(y_true, y_pred)
@@ -121,7 +121,7 @@ class p2p_disc_loss(kr.losses.Loss):
             super().__init__(**kwargs)
     
     def call(self, real_img, fake_img, strategy_obj):
-            with strategy_obj.scope():
+            with strategy_obj:
                 real_loss = tf.reduce_mean(real_img, reduction=tf.keras.losses.Reduction.SUM)
                 fake_loss = tf.reduce_mean(fake_img, reduction=tf.keras.losses.Reduction.SUM)
                 return fake_loss - real_loss

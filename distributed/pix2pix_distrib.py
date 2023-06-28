@@ -10,51 +10,53 @@ import pandas as pd
 from  matplotlib import pyplot as plt
 from datetime import datetime
 
-strategy = tf.distribute.MirroredStrategy()
-with strategy.scope():
-    # Pix2Pix
-    class Pix2Pix(kr.Model):
-        def __init__(self, flags, strategy, **kwargs):
 
-            super().__init__(**kwargs)
-            
-            self.flags = flags
-            self.strategy = strategy
-            self.experiment_name = self.flags.name
-            self.samples_dir = self.flags.sample_dir
-            self.models_dir = self.flags.checkpoints_dir
-            self.hist_dir = self.flags.hist_path
-            self.image_shape = (self.flags.crop_size, self.flags.crop_size, 1)
-            self.image_size = self.flags.crop_size
-            self.batch_size = self.flags.batch_size * strategy.num_replicas_in_sync
+# Pix2Pix
+class Pix2Pix(kr.Model):
+    def __init__(self, flags, strategy, **kwargs):
 
-            self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
-            self.ssim_loss_coeff = self.flags.ssim_loss_coeff
-            self.disc_loss_coeff = self.flags.disc_loss_coeff
+        super().__init__(**kwargs)
+        
+        self.flags = flags
+        self.strategy = strategy
+        self.experiment_name = self.flags.name
+        self.samples_dir = self.flags.sample_dir
+        self.models_dir = self.flags.checkpoints_dir
+        self.hist_dir = self.flags.hist_path
+        self.image_shape = (self.flags.crop_size, self.flags.crop_size, 1)
+        self.image_size = self.flags.crop_size
+        self.batch_size = self.flags.batch_size * strategy.num_replicas_in_sync
 
-            self.discriminator = modules.Discriminator(flags)
-            self.generator = modules.p2p_generator(flags)
-            self.patch_size, self.combined_model = self.build_combined_model()
+        self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
+        self.ssim_loss_coeff = self.flags.ssim_loss_coeff
+        self.disc_loss_coeff = self.flags.disc_loss_coeff
 
-            self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
-            self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
-            self.discriminator_loss = loss.DiscriminatorLoss(self.strategy)
-            self.vgg_loss = loss.VGGFeatureMatchingLoss()
+        self.discriminator = modules.Discriminator(flags)
+        self.generator = modules.p2p_generator(flags)
+        self.patch_size, self.combined_model = self.build_combined_model()
 
-            self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
-            self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
-            self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
+        self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
+        self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
+        self.discriminator_loss = loss.DiscriminatorLoss(self.strategy)
+        self.vgg_loss = loss.VGGFeatureMatchingLoss()
+
+        self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
+        self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
+        self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
 
 
-        @property
-        def metrics(self):
+    @property
+    def metrics(self):
+        with self.strategy:
             return [
                 self.disc_loss_tracker,
                 self.vgg_loss_tracker,
                 self.ssim_loss_tracker]
 
 
-        def build_combined_model(self):
+    def build_combined_model(self):
+
+        with self.strategy:
 
             self.discriminator.trainable = False
             ct_input = kr.Input(shape=self.image_shape, name="ct")
@@ -71,12 +73,15 @@ with strategy.scope():
             return patch_size, combined_model
 
 
-        def compile(self, **kwargs):
+    def compile(self, **kwargs):
+        with self.strategy:
             super().compile(**kwargs)
 
 
-        def train_discriminator(self, ct, real_mri):
-            
+    def train_discriminator(self, ct, real_mri):
+
+        with self.strategy:
+
             fake_mri = self.generator(ct)
             with tf.GradientTape() as gradient_tape:
                 pred_fake = self.discriminator([ct, fake_mri])[-1]  
@@ -97,7 +102,9 @@ with strategy.scope():
             return total_loss
 
 
-        def train_generator(self, ct, mri__):
+    def train_generator(self, ct, mri__):
+
+        with self.strategy:
 
             self.discriminator.trainable = False
             with tf.GradientTape() as tape:
@@ -124,7 +131,9 @@ with strategy.scope():
             return vgg_loss, ssim_loss
 
 
-        def train_step(self, data):
+    def train_step(self, data):
+
+        with self.strategy:
 
             ct, mri = data
             
@@ -142,7 +151,9 @@ with strategy.scope():
             return results
 
 
-        def test_step(self, data):
+    def test_step(self, data):
+
+        with self.strategy:
 
             ct, mri = data
             fake_mri = self.generator(ct)
@@ -171,12 +182,14 @@ with strategy.scope():
 
             return results
 
-        def call(self, inputs):
+    def call(self, inputs):
+        with self.strategy:
             return self.generator(inputs)
 
-        
-        def model_evaluate(self, test_data, epoch=0):
+    
+    def model_evaluate(self, test_data, epoch=0):
 
+        with self.strategy:
 
             results = []
             
@@ -212,12 +225,15 @@ with strategy.scope():
             np.savetxt(log_file, [results], fmt='%.6f', header="fid, mse, mae, cs, psnr,ssim", delimiter=",")
 
 
-        def save_model(self, flags):
+    def save_model(self, flags):
+        with self.strategy:
             self.generator.save(self.flags.model_path + self.experiment_name)
 
 
-        def plot_losses(self, hist):
-            
+    def plot_losses(self, hist):
+
+        with self.strategy:
+        
             exp_path = self.hist_dir + self.experiment_name
 
             if not os.path.exists(exp_path):
