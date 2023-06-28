@@ -91,6 +91,7 @@ class DiscriminatorLoss(kr.losses.Loss):
 			label = 1.0 if is_real else -1.0
 			return self.hinge_loss(label, y_pred)
 
+
 class MAE(kr.losses.Loss):
 	def __init__(self, **kwargs):
 		super().__init__(**kwargs)

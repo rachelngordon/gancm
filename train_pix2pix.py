@@ -5,6 +5,7 @@ import p2p.modules as modules
 import data_loader
 import time
 import tensorflow as tf
+import loss
 
 def main(flags):
 
@@ -21,7 +22,10 @@ def main(flags):
   with strategy.scope() as s:
     #Build the model
     model = Pix2Pix(flags)
-    model.compile(s)
+    discriminator_loss = loss.DiscriminatorLoss()
+    feature_matching_loss = loss.FeatureMatchingLoss()
+    vgg_loss = loss.VGGFeatureMatchingLoss()
+    model.compile(discriminator_loss, feature_matching_loss, vgg_loss)
 
 
   history = model.fit(
