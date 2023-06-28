@@ -74,8 +74,7 @@ class Pix2Pix(kr.Model):
 
 
     def compile(self, **kwargs):
-        with self.strategy:
-            super().compile(**kwargs)
+        super().compile(**kwargs)
 
 
     def train_discriminator(self, ct, real_mri):
