@@ -262,6 +262,6 @@ class Pix2Pix(kr.Model):
 
 	def DiscriminatorLoss(self, is_real, y_pred):
 		label = 1.0 if is_real else -1.0
-		return kr.losses.Hinge(label, y_pred)
+		return kr.losses.Hinge(label, y_pred, reduction='sum_over_batch_size')
 
 
