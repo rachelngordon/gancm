@@ -288,4 +288,4 @@ class Pix2Pix(kr.Model):
 	def SSIMLoss(self, y_true, y_pred):
 		y_true = (y_true + 1.0) / 2.0
 		y_pred = (y_pred + 1.0) / 2.0
-		return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0), reduction=kr.losses.Reduction.SUM)
+		return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0))
