@@ -12,13 +12,18 @@ from datetime import datetime
 
 
 class DiscriminatorLoss(kr.losses.Loss):
-	def __init__(self, **kwargs):
-			super().__init__(**kwargs)
-			self.hinge_loss = kr.losses.Hinge(reduction=tf.keras.losses.Reduction.SUM_OVER_BATCH_SIZE)
+	def __init__(self, flags, s, **kwargs):
+        with s:
+            
+            self.batch_size = flags.batch_size
+            self.hinge_loss = kr.losses.Hinge(reduction=tf.keras.losses.Reduction.NONE)
+            
+        super().__init__(**kwargs)
 
-	def call(self, is_real, y_pred):
-			label = 1.0 if is_real else -1.0
-			return self.hinge_loss(label, y_pred)
+    def call(self, is_real, y_pred):
+            
+            label = 1.0 if is_real else -1.0
+            return self.hinge_loss(label, y_pred) * (1. / self.batch_size)
         
 
 # Pix2Pix
@@ -82,11 +87,11 @@ class Pix2Pix(kr.Model):
         return patch_size, combined_model
 
 
-    def compile(self, **kwargs):
+    def compile(self, s, **kwargs):
 
         self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
         self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
-        self.discriminator_loss = DiscriminatorLoss()
+        self.discriminator_loss = DiscriminatorLoss(self.flags, s)
         self.feature_matching_loss = loss.FeatureMatchingLoss()
         self.vgg_loss = loss.VGGFeatureMatchingLoss()
     
