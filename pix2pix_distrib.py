@@ -116,7 +116,7 @@ class Pix2Pix(kr.Model):
 			
 			# Compute generator loss
 			vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri__, fake_mri, self.vgg_model, self.vgg_weights) * (1. / self.batch_size)
-			ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri__, fake_mri) * (1. / self.batch_size)
+			ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri__, fake_mri) 
 			total_loss = vgg_loss + ssim_loss
 			
 		all_trainable_variables = (
@@ -167,7 +167,7 @@ class Pix2Pix(kr.Model):
 		pred = fake_d_output[-1]
 		
 		vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri, fake_image, self.vgg_model, self.vgg_weights) * (1. / self.batch_size)
-		ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri, fake_image) * (1. / self.batch_size)
+		ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri, fake_image) 
 		#total_generator_loss = vgg_loss + ssim_loss
 
 		# Report progress.
