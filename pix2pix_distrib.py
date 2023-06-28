@@ -249,14 +249,14 @@ class Pix2Pix(kr.Model):
 
 	def DiscriminatorLoss(self, is_real, y_pred):
 		label = 1.0 if is_real else -1.0
-		h = kr.losses.Hinge(reduction=kr.losses.Reduction.NONE)
+		h = kr.losses.Hinge(reduction=kr.losses.Reduction.SUM)
 
 		return h(label, y_pred)
 	
 
 	def VGGFeatureMatchingLoss(self, y_true, y_pred, vgg_model, weights):
 		
-		mae = kr.losses.MeanAbsoluteError(reduction=kr.losses.Reduction.NONE)
+		mae = kr.losses.MeanAbsoluteError(reduction=kr.losses.Reduction.SUM)
 		
 		y_true = (y_true + 1.0) / 2.0
 		y_pred = (y_pred + 1.0) / 2.0
