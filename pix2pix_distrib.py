@@ -2,7 +2,7 @@
 import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
-from . import modules
+from .distributed import modules
 import loss
 import evaluate
 import os

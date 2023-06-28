@@ -1,6 +1,6 @@
-from distributed.pix2pix_distrib import Pix2Pix
+from pix2pix_distrib import Pix2Pix
 from flags import Flags
-import distributed.modules_distrib as modules
+import modules_distrib as modules
 import data_loader
 import time
 import tensorflow as tf
