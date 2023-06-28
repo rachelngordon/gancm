@@ -14,7 +14,7 @@ from datetime import datetime
 class DiscriminatorLoss(kr.losses.Loss):
 	def __init__(self, **kwargs):
 			super().__init__(**kwargs)
-			self.hinge_loss = kr.losses.Hinge()
+			self.hinge_loss = kr.losses.Hinge(reduction=tf.keras.losses.Reduction.SUM_OVER_BATCH_SIZE)
 
 	def call(self, is_real, y_pred):
 			label = 1.0 if is_real else -1.0
