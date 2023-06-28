@@ -17,7 +17,7 @@ def main(flags):
   start_time = time.time()
   
   # define the distribution strategy
-  strategy = tf.distribute.MirroredStrategy(cross_device_ops=tf.distribute.ReductionToOneDevice())
+  strategy = tf.distribute.MirroredStrategy()
 
   with strategy.scope() as s:
     #Build the model
