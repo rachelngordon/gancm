@@ -144,7 +144,7 @@ class Pix2Pix(kr.Model):
 
 		return vgg_loss, ssim_loss
 
-	@tf.function
+
 	def train_step(self, data):
 
 		ct, mri = data
@@ -162,7 +162,7 @@ class Pix2Pix(kr.Model):
 
 		return results
 
-	@tf.function
+
 	def test_step(self, data):
 
 		ct, mri = data
