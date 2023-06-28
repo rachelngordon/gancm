@@ -70,7 +70,7 @@ class Pix2Pix(kr.Model):
 
 
     def compile(self, **kwargs):
-        
+
         self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
         self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
         self.discriminator_loss = loss.DiscriminatorLoss()
@@ -128,7 +128,7 @@ class Pix2Pix(kr.Model):
 
         return vgg_loss, ssim_loss
 
-
+    @tf.function
     def train_step(self, data):
 
         ct, mri = data
@@ -146,7 +146,7 @@ class Pix2Pix(kr.Model):
 
         return results
 
-
+    @tf.function
     def test_step(self, data):
 
         ct, mri = data
