@@ -21,7 +21,7 @@ def main(flags):
   with strategy.scope() as s:
     #Build the model
     model = Pix2Pix(flags)
-    model.compile()
+    model.compile(s)
 
 
   history = model.fit(
