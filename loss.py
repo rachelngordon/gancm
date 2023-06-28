@@ -81,7 +81,7 @@ class VGGFeatureMatchingLoss(kr.losses.Loss):
 					loss += self.weights[i] * self.mae(real_features[i], fake_features[i])
 			return loss
 
-'''
+
 class DiscriminatorLoss(kr.losses.Loss):
 	def __init__(self, **kwargs):
 			super().__init__(**kwargs)
@@ -90,11 +90,7 @@ class DiscriminatorLoss(kr.losses.Loss):
 	def call(self, is_real, y_pred):
 			label = 1.0 if is_real else -1.0
 			return self.hinge_loss(label, y_pred)
-'''
-	
-def DiscriminatorLoss(is_real, y_pred):
-	label = 1.0 if is_real else -1.0
-	return kr.losses.Hinge(label, y_pred)
+
 
 
 class MAE(kr.losses.Loss):
