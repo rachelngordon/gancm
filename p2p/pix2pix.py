@@ -260,7 +260,7 @@ class Pix2Pix(kr.Model):
 			plt.savefig(exp_path + '/pix2pix_' + loss + '_loss.png')
 
 
-	def DiscriminatorLoss(is_real, y_pred):
+	def DiscriminatorLoss(self, is_real, y_pred):
 		label = 1.0 if is_real else -1.0
 		return kr.losses.Hinge(label, y_pred)
 
