@@ -85,11 +85,11 @@ class Pix2Pix(kr.Model):
 		return patch_size, combined_model
 
 
-	def compile(self, discriminator_loss, feature_matching_loss, vgg_loss, **kwargs):
+	def compile(self, feature_matching_loss, vgg_loss, **kwargs):
 
 		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
 		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
-		self.discriminator_loss = discriminator_loss
+		#self.discriminator_loss = discriminator_loss
 		self.feature_matching_loss = feature_matching_loss
 		self.vgg_loss = vgg_loss
 	
@@ -102,8 +102,8 @@ class Pix2Pix(kr.Model):
 		with tf.GradientTape() as gradient_tape:
 			pred_fake = self.discriminator([ct, fake_mri])[-1]  
 			pred_real = self.discriminator([ct, real_mri])[-1]  
-			loss_fake = self.discriminator_loss(False, pred_fake)
-			loss_real = self.discriminator_loss(True, pred_real)
+			loss_fake = self.DiscriminatorLoss(False, pred_fake)
+			loss_real = self.DiscriminatorLoss(True, pred_real)
 			total_loss = self.disc_loss_coeff * (loss_fake + loss_real)
 
 		self.discriminator.trainable = True
@@ -171,8 +171,8 @@ class Pix2Pix(kr.Model):
 		# Calculate the losses.
 		pred_fake = self.discriminator([ct, fake_mri])[-1]
 		pred_real = self.discriminator([ct, mri])[-1]  
-		loss_fake = self.discriminator_loss(False, pred_fake)
-		loss_real = self.discriminator_loss(True, pred_real)
+		loss_fake = self.DiscriminatorLoss(False, pred_fake)
+		loss_real = self.DiscriminatorLoss(True, pred_real)
 		total_discriminator_loss = self.disc_loss_coeff * (loss_fake + loss_real)
 
 		real_d_output = self.discriminator([fake_mri, mri])
@@ -258,5 +258,10 @@ class Pix2Pix(kr.Model):
 			plt.plot(hist['val_' + loss + '_loss'])
 			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
 			plt.savefig(exp_path + '/pix2pix_' + loss + '_loss.png')
+
+
+	def DiscriminatorLoss(is_real, y_pred):
+		label = 1.0 if is_real else -1.0
+		return kr.losses.Hinge(label, y_pred)
 
 
