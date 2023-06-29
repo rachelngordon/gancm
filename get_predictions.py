@@ -9,7 +9,7 @@ flags = Flags().parse()
 
 #test_data_path = "/grand/EVITA/ct-mri/data/norm_test/norm_test_data_pat1.npz"
 
-test_dataset = data_loader.DataGenerator_PairedReady(flags, flags.test_data_path).load()
+test_dataset = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
 model_path = "/grand/EVITA/ct-mri/exp_results/models/p2p_avg_eq_1234"
 
