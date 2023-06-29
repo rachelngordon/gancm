@@ -75,7 +75,7 @@ def show_plot_generated(image, name, step):
     f = pyplot.figure(figsize=(8,8))
     pyplot.axis('off')
     pyplot.imshow(np.squeeze(image),  cmap='gray')
-    sample_dir_ = 'generated_test/%s/' %name
+    sample_dir_ = '/grand/EVITA/ct-mri/data/generated_test/%s/' %name
     if not os.path.exists(sample_dir_):
         os.makedirs(sample_dir_)
     

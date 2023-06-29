@@ -50,7 +50,7 @@ class ResidualT(kr.layers.Layer):
             num_channels, padding='same', kernel_size=3, strides=strides,use_bias=False,
             kernel_initializer = kr.initializers.GlorotNormal())
        
-        self.bn1 = tfa.layers.Normalization(groups=num_channels, gamma_initializer=gamma_init)
+        self.bn1 = tfa.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
      
 
     def call(self, X):
