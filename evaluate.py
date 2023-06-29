@@ -10,6 +10,7 @@ import math
 import sklearn.metrics as sk
 from flags import Flags
 from datetime import datetime
+import loss
 
 
 flags = Flags().parse()
@@ -104,6 +105,7 @@ def predict_p2p(model_path, modelname, ct):
   
 
   generator = load_model(model_path)
+  generator.compile(optimizer='adam', loss=[loss.VGGFeatureMatchingLoss, loss.SSIMLoss])
   
   generated = generator(ct)
   
