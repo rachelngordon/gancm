@@ -14,4 +14,4 @@ test_dataset = data_loader.DataGenerator_PairedReady(flags, test_data_path).load
 model_path = "/grand/EVITA/ct-mri/exp_results/models/p2p_avg_eq_1234"
 
 for ct, mri in test_dataset:
-    evaluate.predict_p2p(model_path, "cy_avg_eq_1234", ct)
+    evaluate.predict_p2p(model_path, "p2p_avg_eq_1234", ct)
