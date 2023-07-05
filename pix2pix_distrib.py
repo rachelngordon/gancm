@@ -13,10 +13,11 @@ from datetime import datetime
 
 # Pix2Pix
 class Pix2Pix(kr.Model):
-	def __init__(self, flags, vgg_model, vgg_weights, **kwargs):
+	def __init__(self, flags, vgg_model, vgg_weights, num_replicas, **kwargs):
 
 		super().__init__(**kwargs)
 		self.flags = flags
+		self.num_replicas = num_replicas
 
 		self.experiment_name = self.flags.name
 		self.samples_dir = self.flags.sample_dir
@@ -77,7 +78,7 @@ class Pix2Pix(kr.Model):
 
 	def compile(self, **kwargs):
 
-		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
+		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr * self.num_replicas, beta_1=self.flags.gen_beta_1)
 		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
 	
 		super().compile(**kwargs)

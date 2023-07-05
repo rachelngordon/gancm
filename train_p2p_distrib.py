@@ -33,7 +33,7 @@ def main(flags):
     vgg_model = kr.Model(vgg.input, layer_outputs, name="VGG")
 
     #Build the model
-    model = Pix2Pix(flags, vgg_model, weights)
+    model = Pix2Pix(flags, vgg_model, weights, strategy.num_replicas_in_sync)
     model.compile()
 
 
