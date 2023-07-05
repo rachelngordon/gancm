@@ -79,7 +79,7 @@ class Pix2Pix(kr.Model):
 	def compile(self, **kwargs):
 
 		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr * self.num_replicas, beta_1=self.flags.gen_beta_1)
-		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
+		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr * self.num_replicas, beta_1=self.flags.gen_beta_1)
 	
 		super().compile(**kwargs)
 
