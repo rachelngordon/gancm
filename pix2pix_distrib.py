@@ -290,7 +290,7 @@ class Pix2Pix(kr.Model):
 		
 		loss = 0
 		for i in range(len(real_features)):
-			loss += weights__[i] * tf.reduce_mean(tf.abs((real_features[i], fake_features[i])))
+			loss += weights__[i] * tf.reduce_mean(tf.abs((real_features[i]- fake_features[i])))
 		return loss
 	
 
