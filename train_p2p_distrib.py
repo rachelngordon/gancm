@@ -48,8 +48,7 @@ def main(flags):
     model = Pix2Pix(flags, vgg_model, weights, s.num_replicas_in_sync)
     model.compile()
 
-    
-  exit()
+  print("Batch size: ", flags.batch_size)
   history = model.fit(
     train_data,
     validation_data=test_data,
