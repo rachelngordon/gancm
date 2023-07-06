@@ -6,6 +6,7 @@ import time
 import tensorflow as tf
 import tensorflow.keras as kr
 from contextlib import suppress
+import loss
 
 def get_strategy_scope():
   if len(tf.config.list_physical_devices("GPU")) > 1:
@@ -30,7 +31,8 @@ def main(flags):
 
     #Build the model
     flags.batch_size = number_devices
-    model = Pix2Pix(flags, s.num_replicas_in_sync)
+    vgg_loss = loss.VGGFeatureMatchingLoss()
+    model = Pix2Pix(flags, vgg_loss, s.num_replicas_in_sync)
     model.compile()
 
   print("Batch size: ", flags.batch_size)
