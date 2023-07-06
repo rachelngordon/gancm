@@ -5,13 +5,13 @@ import data_loader
 import time
 import tensorflow as tf
 import tensorflow.keras as kr
-
+from contextlib import suppress
 
 def get_strategy_scope():
   if len(tf.config.list_physical_devices("GPU")) > 1:
     return tf.distribute.MirroredStrategy().scope()
   else:
-      return tf.distribute.get_strategy().scope()
+      suppress()
   
 def main(flags):
   
@@ -21,7 +21,6 @@ def main(flags):
 
   start_time = time.time()
   
-  #get the numebr of replpica in the strategy
   with get_strategy_scope() as s:
     number_devices = s.num_replicas_in_sync
     print("Number of devices: {}".format(number_devices))
@@ -41,6 +40,7 @@ def main(flags):
     vgg_model = kr.Model(vgg.input, layer_outputs, name="VGG")
 
     #Build the model
+    flags.batch_size = number_devices
     model = Pix2Pix(flags, vgg_model, weights, s.num_replicas_in_sync)
     model.compile()
 
@@ -78,5 +78,4 @@ def main(flags):
   
 if __name__ == '__main__':
   flags = Flags().parse()
-  flags.batch_size = len(tf.config.list_physical_devices("GPU"))
   main(flags)
