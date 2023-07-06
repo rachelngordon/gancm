@@ -27,25 +27,10 @@ def main(flags):
   with get_strategy_scope() as s:
     number_devices = s.num_replicas_in_sync
     print("Number of devices: {}".format(number_devices))
-    
-    
-
-    # define VGG model for VGG loss
-    encoder_layers = [
-            "block1_conv1",
-            "block2_conv1",
-            "block3_conv1",
-            "block4_conv1",
-            "block5_conv1",
-        ]
-    weights = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
-    vgg = kr.applications.VGG19(include_top=False, weights="imagenet")
-    layer_outputs = [vgg.get_layer(x).output for x in encoder_layers]
-    vgg_model = kr.Model(vgg.input, layer_outputs, name="VGG")
 
     #Build the model
     flags.batch_size = number_devices
-    model = Pix2Pix(flags, vgg_model, weights, s.num_replicas_in_sync)
+    model = Pix2Pix(flags, s.num_replicas_in_sync)
     model.compile()
 
   print("Batch size: ", flags.batch_size)

@@ -10,10 +10,42 @@ from  matplotlib import pyplot as plt
 from datetime import datetime
 
 
+def VGGFeatureMatchingLoss(y_true, y_pred):
+	
+		encoder_layers = [
+				"block1_conv1",
+				"block2_conv1",
+				"block3_conv1",
+				"block4_conv1",
+				"block5_conv1",
+		]
+		weights = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
+		vgg = kr.applications.VGG19(include_top=False, weights="imagenet")
+		layer_outputs = [vgg.get_layer(x).output for x in encoder_layers]
+		vgg_model = kr.Model(vgg.input, layer_outputs, name="VGG")
+		mae = kr.losses.MeanAbsoluteError()
+
+		y_true = (y_true + 1.0) / 2.0
+		y_pred = (y_pred + 1.0) / 2.0
+		
+		y_true = tf.image.grayscale_to_rgb(y_true)
+		y_pred = tf.image.grayscale_to_rgb(y_pred)
+		
+		y_true = kr.applications.vgg19.preprocess_input(127.5 * (y_true + 1))
+		y_pred = kr.applications.vgg19.preprocess_input(127.5 * (y_pred + 1))
+		real_features = vgg_model(y_true)
+		fake_features = vgg_model(y_pred)
+		loss = 0
+		for i in range(len(real_features)):
+				loss += weights[i] * mae(real_features[i], fake_features[i])
+
+		return loss
+	
+
 
 # Pix2Pix
 class Pix2Pix(kr.Model):
-	def __init__(self, flags, vgg_model, vgg_weights, num_replicas, **kwargs):
+	def __init__(self, flags, num_replicas, **kwargs):
 
 		super().__init__(**kwargs)
 		self.flags = flags
@@ -35,8 +67,6 @@ class Pix2Pix(kr.Model):
 		self.generator = modules.p2p_generator(flags)
 		self.patch_size, self.combined_model = self.build_combined_model()
 
-		self.vgg_model = vgg_model
-		self.vgg_weights = vgg_weights
 
 		'''
 		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
@@ -116,7 +146,7 @@ class Pix2Pix(kr.Model):
 			pred = fake_d_output[-1]
 			
 			# Compute generator loss
-			vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri__, fake_mri, self.vgg_model, self.vgg_weights) * (1. / self.batch_size)
+			vgg_loss = self.vgg_feature_loss_coeff * VGGFeatureMatchingLoss(mri__, fake_mri) * (1. / self.batch_size)
 			ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri__, fake_mri) 
 			total_loss = vgg_loss + ssim_loss
 			
@@ -167,7 +197,7 @@ class Pix2Pix(kr.Model):
 		fake_d_output, fake_image = self.combined_model([ct, mri])
 		pred = fake_d_output[-1]
 		
-		vgg_loss = self.vgg_feature_loss_coeff * self.VGGFeatureMatchingLoss(mri, fake_image, self.vgg_model, self.vgg_weights) * (1. / self.batch_size)
+		vgg_loss = self.vgg_feature_loss_coeff * VGGFeatureMatchingLoss(mri, fake_image) * (1. / self.batch_size)
 		ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(mri, fake_image) 
 		#total_generator_loss = vgg_loss + ssim_loss
 
@@ -255,30 +285,10 @@ class Pix2Pix(kr.Model):
 		return h(label, y_pred)
 	
 
-	def VGGFeatureMatchingLoss(self, y_true, y_pred, vgg_model, weights):
-		
-		mae = kr.losses.MeanAbsoluteError(reduction=kr.losses.Reduction.SUM)
-		
-		y_true = (y_true + 1.0) / 2.0
-		y_pred = (y_pred + 1.0) / 2.0
-		
-		y_true = tf.image.grayscale_to_rgb(y_true)
-		y_pred = tf.image.grayscale_to_rgb(y_pred)
-		
-		y_true = kr.applications.vgg19.preprocess_input(127.5 * (y_true + 1))
-		y_pred = kr.applications.vgg19.preprocess_input(127.5 * (y_pred + 1))
-
-		real_features = vgg_model(y_true)
-		fake_features = vgg_model(y_pred)
-
-		loss = 0
-		for i in range(len(real_features)):
-				loss += weights[i] * mae(real_features[i], fake_features[i])
-				
-		return loss
-	
-
 	def SSIMLoss(self, y_true, y_pred):
 		y_true = (y_true + 1.0) / 2.0
 		y_pred = (y_pred + 1.0) / 2.0
 		return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0))
+	
+
+
