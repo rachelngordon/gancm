@@ -20,7 +20,7 @@ class VGG(kr.Model):
 			"block4_conv1",
 			"block5_conv1",
 		]
-		self.weights = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
+		#self.weights = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
 		vgg = kr.applications.VGG19(include_top=False, weights="imagenet")
 		layer_outputs = [vgg.get_layer(x).output for x in self.encoder_layers]
 		self.vgg_model = kr.Model(vgg.input, layer_outputs, name="VGG")
