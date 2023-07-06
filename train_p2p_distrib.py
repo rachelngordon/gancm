@@ -9,9 +9,12 @@ from contextlib import suppress
 
 def get_strategy_scope():
   if len(tf.config.list_physical_devices("GPU")) > 1:
+    print(tf.config.list_physical_devices("GPU"))
     return tf.distribute.MirroredStrategy().scope()
   else:
       suppress()
+
+
   
 def main(flags):
   
@@ -24,6 +27,7 @@ def main(flags):
   with get_strategy_scope() as s:
     number_devices = s.num_replicas_in_sync
     print("Number of devices: {}".format(number_devices))
+    
     
 
     # define VGG model for VGG loss
@@ -44,7 +48,8 @@ def main(flags):
     model = Pix2Pix(flags, vgg_model, weights, s.num_replicas_in_sync)
     model.compile()
 
-
+    
+  exit()
   history = model.fit(
     train_data,
     validation_data=test_data,
