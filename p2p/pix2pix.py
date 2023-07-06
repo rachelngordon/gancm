@@ -11,6 +11,8 @@ from  matplotlib import pyplot as plt
 from datetime import datetime
 
 
+
+
 # Pix2Pix
 class Pix2Pix(kr.Model):
 	def __init__(self, flags,**kwargs):

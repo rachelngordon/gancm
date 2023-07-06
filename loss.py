@@ -63,7 +63,7 @@ class VGGFeatureMatchingLoss(kr.losses.Loss):
 			vgg = kr.applications.VGG19(include_top=False, weights="imagenet")
 			layer_outputs = [vgg.get_layer(x).output for x in self.encoder_layers]
 			self.vgg_model = kr.Model(vgg.input, layer_outputs, name="VGG")
-			self.mae = kr.losses.MeanAbsoluteError(reduction =kr.losses.Reduction.SUM)
+			self.mae = kr.losses.MeanAbsoluteError()
 
 	def call(self, y_true, y_pred):
 			y_true = (y_true + 1.0) / 2.0

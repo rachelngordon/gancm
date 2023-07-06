@@ -10,15 +10,39 @@ from  matplotlib import pyplot as plt
 from datetime import datetime
 
 
-
-
-
+class VGG(kr.Model):
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+		self.encoder_layers = [
+			"block1_conv1",
+			"block2_conv1",
+			"block3_conv1",
+			"block4_conv1",
+			"block5_conv1",
+		]
+		self.weights = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
+		vgg = kr.applications.VGG19(include_top=False, weights="imagenet")
+		layer_outputs = [vgg.get_layer(x).output for x in self.encoder_layers]
+		self.vgg_model = kr.Model(vgg.input, layer_outputs, name="VGG")
+	
+	def call(self, y_true, y_pred):
+		y_true = (y_true + 1.0) / 2.0
+		y_pred = (y_pred + 1.0) / 2.0
+		
+		y_true = tf.image.grayscale_to_rgb(y_true)
+		y_pred = tf.image.grayscale_to_rgb(y_pred)
+		
+		y_true = kr.applications.vgg19.preprocess_input(127.5 * (y_true + 1))
+		y_pred = kr.applications.vgg19.preprocess_input(127.5 * (y_pred + 1))
+		real_features = self.vgg_model(y_true)
+		fake_features = self.vgg_model(y_pred)
+		return real_features, fake_features
 	
 
 
 # Pix2Pix
 class Pix2Pix(kr.Model):
-	def __init__(self, flags, vgg_loss, num_replicas, **kwargs):
+	def __init__(self, flags, vgg, num_replicas, **kwargs):
 
 		super().__init__(**kwargs)
 		self.flags = flags
@@ -31,7 +55,7 @@ class Pix2Pix(kr.Model):
 		self.image_shape = (self.flags.crop_size, self.flags.crop_size, 1)
 		self.image_size = self.flags.crop_size
 		self.batch_size = self.flags.batch_size
-		self.vgg_loss = vgg_loss
+		self.vgg_model = vgg
 		self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
 		self.ssim_loss_coeff = self.flags.ssim_loss_coeff
 		self.disc_loss_coeff = self.flags.disc_loss_coeff
@@ -257,6 +281,14 @@ class Pix2Pix(kr.Model):
 		h = kr.losses.Hinge(reduction=kr.losses.Reduction.SUM)
 
 		return h(label, y_pred)
+	
+	def vgg_loss(self, vgg_model, y_true, y_pred):
+		real_features, fake_features = vgg_model(y_true, y_pred)
+		mae = kr.losses.MeanAbsoluteError(reduction=kr.losses.Reduction.SUM)
+		loss = 0
+		for i in range(len(real_features)):
+			loss += self.vgg_model.weights[i] * mae(real_features[i], fake_features[i])
+		return loss
 	
 
 	def SSIMLoss(self, y_true, y_pred):

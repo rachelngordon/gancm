@@ -1,4 +1,4 @@
-from pix2pix_distrib import Pix2Pix
+from pix2pix_distrib import Pix2Pix, VGG
 from flags import Flags
 import modules_distrib as modules
 import data_loader
@@ -31,8 +31,8 @@ def main(flags):
 
     #Build the model
     flags.batch_size = number_devices
-    vgg_loss = loss.VGGFeatureMatchingLoss()
-    model = Pix2Pix(flags, vgg_loss, s.num_replicas_in_sync)
+    vgg_model = VGG()
+    model = Pix2Pix(flags, vgg_model, s.num_replicas_in_sync)
     model.compile()
 
   print("Batch size: ", flags.batch_size)
