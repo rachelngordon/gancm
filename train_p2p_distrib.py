@@ -6,19 +6,26 @@ import time
 import tensorflow as tf
 import tensorflow.keras as kr
 
+
+def get_strategy_scope():
+  if len(tf.config.list_physical_devices("GPU")) > 1:
+    return tf.distribute.MirroredStrategy().scope()
+  else:
+      return tf.distribute.get_strategy().scope()
+  
 def main(flags):
-
-
+  
   train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True).load()
   test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
 
   start_time = time.time()
   
-  # define the distribution strategy
-  strategy = tf.distribute.MirroredStrategy()
-  
-  with strategy.scope() as s:
+  #get the numebr of replpica in the strategy
+  with get_strategy_scope() as s:
+    number_devices = s.num_replicas_in_sync
+    print("Number of devices: {}".format(number_devices))
+    
 
     # define VGG model for VGG loss
     encoder_layers = [
@@ -34,7 +41,7 @@ def main(flags):
     vgg_model = kr.Model(vgg.input, layer_outputs, name="VGG")
 
     #Build the model
-    model = Pix2Pix(flags, vgg_model, weights, strategy.num_replicas_in_sync)
+    model = Pix2Pix(flags, vgg_model, weights, s.num_replicas_in_sync)
     model.compile()
 
 
@@ -71,4 +78,5 @@ def main(flags):
   
 if __name__ == '__main__':
   flags = Flags().parse()
+  flags.batch_size = len(tf.config.list_physical_devices("GPU"))
   main(flags)
