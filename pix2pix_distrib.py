@@ -57,7 +57,7 @@ class Pix2Pix(kr.Model):
 		self.batch_size = self.flags.batch_size
 		self.vgg_model = vgg
 		
-		self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
+		self.vgg_feature_loss_coeff = 1 #self.flags.vgg_feature_loss_coeff
 		self.ssim_loss_coeff = self.flags.ssim_loss_coeff
 		self.disc_loss_coeff = self.flags.disc_loss_coeff
 	
