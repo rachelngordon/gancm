@@ -286,10 +286,11 @@ class Pix2Pix(kr.Model):
 	def vgg_loss(self, vgg_model, y_true, y_pred):
 		real_features, fake_features = vgg_model(y_true, y_pred)
 		weights__ = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
-		mae = kr.losses.MeanAbsoluteError(reduction=kr.losses.Reduction.SUM)
+		#mae = kr.losses.MeanAbsoluteError(reduction=kr.losses.Reduction.SUM)
+		
 		loss = 0
 		for i in range(len(real_features)):
-			loss += weights__[i] * mae(real_features[i], fake_features[i])
+			loss += weights__[i] * tf.reduce_mean(tf.abs((real_features[i], fake_features[i])))
 		return loss
 	
 
