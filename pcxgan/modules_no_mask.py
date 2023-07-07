@@ -73,7 +73,7 @@ class ResBlock(kr.layers.Layer):
 class GaussianSampler(kr.layers.Layer):
 	def __init__(self, batch_size, latent_dim, **kwargs):
 		super().__init__(**kwargs)
-		self.batch_size = batch_size
+		self.batch_size = 1 #batch_size
 		self.latent_dim = latent_dim
 	
 	def call(self, inputs):
@@ -200,7 +200,7 @@ class Decoder(kr.Model):
 		#m = kr.layers.Input(shape=self.mask_shape)
 		l = kr.layers.Input(shape=self.latent_dim)
 		c = kr.layers.Input(shape=self.image_shape)
-		return kr.Model(inputs=[l, m, c], outputs=self.call([l, c]))
+		return kr.Model(inputs=[l, c], outputs=self.call([l, c]))
 	
 	def call(self, inputs_, **kwargs):
 		latent, ct = inputs_
