@@ -11,6 +11,7 @@ import data_loader
 import flags
 import random
 #import tensorflow_addons as tfa
+from tensorflow_addons.layers import InstanceNormalization
 
 
 class SPADE(kr.layers.Layer):
@@ -102,7 +103,7 @@ class DownsampleModule(kr.layers.Layer):
 
 		if apply_norm:
 			#self.block.add(tfa.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
-			self.block.add(kr.layers.InstanceNormalization())
+			self.block.add(InstanceNormalization())
 
 		self.block.add(kr.layers.LeakyReLU(0.2))
 	
