@@ -23,7 +23,6 @@ def main(flags):
 
   # load test data without augmentation
   test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
-  x_test, y_test, _ = test_data
 
   # play with rotation, shift, zoom
   
@@ -89,7 +88,7 @@ def main(flags):
   print("Batch size: ", flags.batch_size)
   history = model.fit(
     train_generator,
-    validation_data=(x_test, y_test),
+    validation_data=test_data,
     epochs=flags.epochs,
     verbose=1,
     batch_size = flags.batch_size,
