@@ -23,6 +23,7 @@ def main(flags):
 
   # load test data without augmentation
   test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
+  x_test, y_test = test_data
 
   # play with rotation, shift, zoom
   
@@ -73,10 +74,6 @@ def main(flags):
       mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, subset='training')
   )
 
-  print("X_train: ", x_train.shape)
-  print("Y_train: ", y_train.shape)
-  print("test data: ", test_data.shape)
-
   start_time = time.time()
   
   with get_strategy_scope() as s:
@@ -92,7 +89,7 @@ def main(flags):
   print("Batch size: ", flags.batch_size)
   history = model.fit(
     train_generator,
-    validation_data=test_data,
+    validation_data=(x_test, y_test),
     epochs=flags.epochs,
     verbose=1,
     batch_size = flags.batch_size,
