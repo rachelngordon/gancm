@@ -23,7 +23,7 @@ def main(flags):
 
   # load test data without augmentation
   test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
-  x_test, y_test = test_data
+  x_test, y_test, _ = test_data
 
   # play with rotation, shift, zoom
   
