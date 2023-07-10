@@ -73,6 +73,9 @@ def main(flags):
       mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, subset='training')
   )
 
+  print("X_train: ", x_train.shape)
+  print("Y_train: ", y_train.shape)
+  print("test data: ", test_data.shape)
 
   start_time = time.time()
   
