@@ -6,7 +6,7 @@ import time
 import tensorflow as tf
 import tensorflow.keras as kr
 from contextlib import suppress
-import loss
+import numpy as np
 
 def get_strategy_scope():
   if len(tf.config.list_physical_devices("GPU")) > 1:
@@ -19,8 +19,41 @@ def get_strategy_scope():
   
 def main(flags):
   
-  train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True).load()
+  #train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True).load()
+
+  # load test data without augmentation
   test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
+
+  # play with rotation, shift, zoom
+  datagen = kr.preprocessing.image.ImageDataGenerator(
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    horizontal_flip=True,
+    vertical_flip=True)
+  
+
+  # remove test fold
+  folds = list(range(1,6))
+  folds.remove(flags.test_fold)
+  
+  for i in folds:
+
+    path = f"{flags.data_path}{i}.npz"
+
+    if i == folds[0]:
+      data = np.load(path)
+      x_train, y_train = data['arr_0'], data['arr_1']
+  
+    else:
+      data = np.load(path)
+      x_train = np.concatenate((x_train, data['arr_0']), axis=0)
+      y_train = np.concatenate((y_train, data['arr_1']), axis=0)
+
+
+  # do we do data augmentation on both ct and mri?                                   
+  datagen.fit(x_train)
+  datagen.fit(y_train)
 
 
   start_time = time.time()
@@ -37,7 +70,8 @@ def main(flags):
 
   print("Batch size: ", flags.batch_size)
   history = model.fit(
-    train_data,
+    datagen.flow(x_train, y_train, batch_size=flags.batch_size,
+          subset='training'),
     validation_data=test_data,
     epochs=flags.epochs,
     verbose=1,
@@ -62,7 +96,7 @@ def main(flags):
   '''
   
   
-  model.save_model(flags)
+  model.save_model()
   model.model_evaluate(test_data)
   model.plot_losses(history.history)
   

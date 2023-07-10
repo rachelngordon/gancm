@@ -250,7 +250,7 @@ class Pix2Pix(kr.Model):
 		np.savetxt(log_file, [results], fmt='%.6f', header="fid, mse, mae, cs, psnr,ssim", delimiter=",")
 
 
-	def save_model(self, flags):
+	def save_model(self):
 		self.generator.save(self.flags.model_path + self.experiment_name)
 
 
