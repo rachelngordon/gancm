@@ -22,7 +22,8 @@ def main(flags):
   #train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True).load()
 
   # load test data without augmentation
-  test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
+  #test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
+  x_test, y_test = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
   # play with rotation, shift, zoom
   
@@ -88,11 +89,11 @@ def main(flags):
   print("Batch size: ", flags.batch_size)
   history = model.fit(
     train_generator,
-    validation_data=test_data,
+    validation_data=(x_test, y_test),
     epochs=flags.epochs,
     verbose=1,
     batch_size = flags.batch_size,
-    callbacks=[modules.GanMonitor(test_data, flags)],
+    callbacks=[modules.GanMonitor((x_test, y_test), flags)],
   )
 
   end_time = time.time()
@@ -113,7 +114,7 @@ def main(flags):
   
   
   model.save_model()
-  model.model_evaluate(test_data)
+  model.model_evaluate((x_test, y_test))
   model.plot_losses(history.history)
   
   
