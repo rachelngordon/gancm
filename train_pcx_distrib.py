@@ -25,12 +25,24 @@ def main(flags):
   test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
   # play with rotation, shift, zoom
-  datagen = kr.preprocessing.image.ImageDataGenerator(
+  
+  # Create an ImageDataGenerator for CT images
+  ct_datagen = kr.preprocessing.image.ImageDataGenerator(
     rotation_range=20,
     width_shift_range=0.2,
     height_shift_range=0.2,
     horizontal_flip=True,
-    vertical_flip=True)
+    vertical_flip=True
+  )
+
+  # Create an ImageDataGenerator for MRI images
+  mri_datagen = kr.preprocessing.image.ImageDataGenerator(
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    horizontal_flip=True,
+    vertical_flip=True
+  )
   
 
   # remove test fold
@@ -52,8 +64,14 @@ def main(flags):
 
 
   # do we do data augmentation on both ct and mri?                                   
-  datagen.fit(x_train)
-  datagen.fit(y_train)
+  ct_datagen.fit(x_train)
+  mri_datagen.fit(y_train)
+
+    # Create the generator for training data
+  train_generator = zip(
+      ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, subset='training'),
+      mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, subset='training')
+  )
 
 
   start_time = time.time()
@@ -70,8 +88,7 @@ def main(flags):
 
   print("Batch size: ", flags.batch_size)
   history = model.fit(
-    datagen.flow(x_train, y_train, batch_size=flags.batch_size,
-          subset='training'),
+    train_generator,
     validation_data=test_data,
     epochs=flags.epochs,
     verbose=1,
