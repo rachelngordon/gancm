@@ -62,6 +62,8 @@ def main(flags):
   ct_generator = ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, seed=seed),
   mri_generator = mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, seed=seed)
 
+  print("CT Gen: ", type(ct_generator))
+  print("MRI Gen: ", type(mri_generator))
     # Create the generator for training data
   train_generator = zip(ct_generator, mri_generator)
 
