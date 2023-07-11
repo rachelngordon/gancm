@@ -36,14 +36,17 @@ def main(flags):
     model.compile()
 
   print("Batch size: ", flags.batch_size)
-  history = model.fit(
-    train_data,
-    validation_data=test_data,
-    epochs=flags.epochs,
-    verbose=1,
-    batch_size = flags.batch_size,
-    callbacks=[modules.P2PMonitor(test_data, flags)],
-  )
+
+  
+  history = s.run(model.fit,
+                  args=(train_data,
+                        validation_data=test_data,
+                        epochs=flags.epochs,
+                        verbose=1,
+                        batch_size=flags.batch_size),
+                  kwargs={"callbacks": [modules.P2PMonitor(test_data, flags)]},
+                  )
+  
 
   end_time = time.time()
 
