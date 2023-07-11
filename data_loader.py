@@ -2,7 +2,7 @@ import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
 import math
-import keras_cv
+#import keras_cv
 
 
 # data generator for pcxgan (normalized mask data) and cross validation with test fold ready
@@ -132,8 +132,8 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 		CT_augmentation = kr.Sequential([
 			kr.layers.RandomContrast(0.2),
 			kr.layers.RandomBrightness(0.2),
-			keras_cv.layers.RandomHue(0.2),
-			keras_cv.layers.RandomSaturation(0.2)
+			#keras_cv.layers.RandomHue(0.2),
+			#keras_cv.layers.RandomSaturation(0.2)
 		])
 
 		aug_x = data_augmentation(x)
