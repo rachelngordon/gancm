@@ -144,8 +144,6 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 		return ct, mri
 
 
-	
-	# made small adjustments to return x and y separately instead of batch dataset
 	def __getitem__(self, idx):
 		return self.dataset.batch(self.batch_size, drop_remainder=True)
 	
