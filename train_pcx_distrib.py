@@ -1,6 +1,6 @@
 from pcxgan_distrib import PCxGAN, VGG
 from flags import Flags
-from pcxgan import modules_no_mask as modules
+import modules_distrib_pcx as modules
 import data_loader
 import time
 import tensorflow as tf
