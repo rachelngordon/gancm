@@ -12,7 +12,7 @@ import time
 def main(flags):
 
 
-  train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True, aug=True).load()
+  train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True).load()
   test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
 
