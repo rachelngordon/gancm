@@ -35,19 +35,16 @@ def main(flags):
     model = Pix2Pix(flags, vgg_model, s.num_replicas_in_sync)
     model.compile()
 
-  print("Batch size: ", flags.batch_size)
-
-  
-  history = s.run(model.fit,
-                  args=(train_data,
-                        validation_data=test_data,
-                        epochs=flags.epochs,
-                        verbose=1,
-                        batch_size=flags.batch_size),
-                  kwargs={"callbacks": [modules.P2PMonitor(test_data, flags)]},
-                  )
-  
-
+    print("Batch size: ", flags.batch_size)
+    history = model.fit(
+        train_data,
+        validation_data=test_data,
+        epochs=flags.epochs,
+        verbose=1,
+        batch_size = flags.batch_size,
+        callbacks=[modules.GanMonitor(test_data, flags)],
+      )
+    
   end_time = time.time()
 
   # Calculate the training duration
