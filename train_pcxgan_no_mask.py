@@ -13,13 +13,9 @@ import time
 
 def main(flags):
 
-  # pass path to data in flags
 
   #train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True).load()
-  #test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
-
-  # load test data without augmentation
-  x_test, y_test = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
+  test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
   # play with rotation, shift, zoom
   
@@ -64,11 +60,13 @@ def main(flags):
   ct_datagen.fit(x_train)
   mri_datagen.fit(y_train)
 
+  '''
     # Create the generator for training data
   train_generator = zip(
       ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, subset='training'),
       mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, subset='training')
   )
+  '''
 
 
   # Start the timer
@@ -79,12 +77,13 @@ def main(flags):
   model = PCxGAN(flags)
   model.compile()
   history = model.fit(
-    train_generator,
-    validation_data=(x_test, y_test),
+    (ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, subset='training'),
+      mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, subset='training')),
+    validation_data=test_data,
     epochs=flags.epochs,
     verbose=1,
     batch_size = flags.batch_size,
-    callbacks=[modules.GanMonitor((x_test, y_test), flags)],
+    callbacks=[modules.GanMonitor(test_data, flags)],
   )
   
   end_time = time.time()
