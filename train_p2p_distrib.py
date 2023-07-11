@@ -1,6 +1,6 @@
 from pix2pix_distrib import Pix2Pix, VGG
 from flags import Flags
-import distributed.modules_distrib as modules
+import modules_distrib as modules
 import data_loader
 import time
 import tensorflow as tf
