@@ -61,11 +61,11 @@ def main(flags):
   ct_datagen.fit(x_train, augment=True, seed=seed)
   mri_datagen.fit(y_train, augment=True, seed=seed)
 
+  ct_generator = ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, seed=seed, subset='training'),
+  mri_generator = mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, seed=seed, subset='training')
+
     # Create the generator for training data
-  train_generator = zip(
-      ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, seed=seed, subset='training'),
-      mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, seed=seed, subset='training')
-  )
+  train_generator = zip(ct_generator, mri_generator)
 
 
 
