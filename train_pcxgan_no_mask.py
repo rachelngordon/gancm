@@ -58,7 +58,7 @@ def main(flags):
 
   # do we do data augmentation on both ct and mri?                                   
   ct_datagen.fit(x_train)
-  mri_datagen.fit(y_train)
+  #mri_datagen.fit(y_train)
 
   '''
     # Create the generator for training data
@@ -77,8 +77,7 @@ def main(flags):
   model = PCxGAN(flags)
   model.compile()
   history = model.fit(
-    (ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, subset='training'),
-      mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, subset='training')),
+    ct_datagen.flow(x_train, y_train, batch_size=flags.batch_size, shuffle=True, subset='training'),
     validation_data=test_data,
     epochs=flags.epochs,
     verbose=1,
