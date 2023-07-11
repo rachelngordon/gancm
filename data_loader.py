@@ -67,7 +67,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
 # data generator for pix2pix (normalized paired data) and cross validation with test fold ready
 class DataGenerator_PairedReady(kr.utils.Sequence):
 
-	def __init__(self, flags, data_path, if_train = True, **kwargs):
+	def __init__(self, flags, data_path, if_train = True, aug=False, **kwargs):
 		
 		super().__init__(**kwargs)
 
@@ -77,7 +77,7 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 		# load data
 		x, y = self.load_data(flags, self.data_path, if_train=if_train)
 
-		if if_train == True:
+		if aug == True:
 			x, y = self.augmentation(x, y)
 
 		# create dataset
@@ -121,27 +121,31 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 
 	def augmentation(self, x, y):
 
-		data_augmentation = kr.Sequential([
-			kr.layers.RandomFlip("horizontal_and_vertical"),
-			kr.layers.RandomRotation(0.2),
-			kr.layers.RandomTranslation(height_factor=0.2, width_factor=0.2),
-			kr.layers.RandomCrop(256, 256),
-			kr.layers.RandomZoom(height_factor=0.2, width_factor=0.2)
+		augmented_ct_images = []
+		augmented_mri_images = []
+
+		seed = 42
+
+		# Define the data augmentation operations
+		data_augmentation = tf.keras.Sequential([
+			tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal_and_vertical", seed=seed),
+			tf.keras.layers.experimental.preprocessing.RandomRotation(0.2, seed=seed),
+			tf.keras.layers.experimental.preprocessing.RandomZoom(0.2, 0.2, seed=seed),
+			tf.keras.layers.experimental.preprocessing.RandomTranslation(0.2, 0.2, seed=seed),
+			tf.keras.layers.experimental.preprocessing.RandomCrop(256, 256, seed=seed)
 		])
 
-		CT_augmentation = kr.Sequential([
-			kr.layers.RandomContrast(0.2),
-			kr.layers.RandomBrightness(0.2),
-			#keras_cv.layers.RandomHue(0.2),
-			#keras_cv.layers.RandomSaturation(0.2)
-		])
+		ct_tensors = tf.convert_to_tensor(x, dtype=tf.float32)
+		mri_tensors = tf.convert_to_tensor(y, dtype=tf.float32)
 
-		aug_x = data_augmentation(x)
-		ct = CT_augmentation(aug_x)
+		combined_tensor = tf.stack([ct_tensors, mri_tensors], axis=1)
+		augmented_tensor = data_augmentation(combined_tensor)
 
-		mri = data_augmentation(y)
+		# Split augmented data back into separate CTs and MRIs
+		augmented_ct_images = augmented_tensor[:, 0, ...]
+		augmented_mri_images = augmented_tensor[:, 1, ...]
 
-		return ct, mri
+		return augmented_ct_images, augmented_mri_images
 
 
 	def __getitem__(self, idx):
