@@ -9,8 +9,6 @@ import tensorflow.keras as kr
 import time
 
 
-
-
 def main(flags):
 
 
@@ -61,8 +59,8 @@ def main(flags):
   ct_datagen.fit(x_train, augment=True, seed=seed)
   mri_datagen.fit(y_train, augment=True, seed=seed)
 
-  ct_generator = ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, seed=seed, subset='training'),
-  mri_generator = mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, seed=seed, subset='training')
+  ct_generator = ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, seed=seed),
+  mri_generator = mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, seed=seed)
 
     # Create the generator for training data
   train_generator = zip(ct_generator, mri_generator)
@@ -77,7 +75,8 @@ def main(flags):
   model = PCxGAN(flags)
   model.compile()
   history = model.fit(
-    train_generator,
+    (ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, seed=seed), 
+     mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, seed=seed)),
     validation_data=test_data,
     epochs=flags.epochs,
     verbose=1,
