@@ -19,60 +19,10 @@ def get_strategy_scope():
   
 def main(flags):
   
-  #train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True).load()
-
-  # load test data without augmentation
-  #test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
-  x_test, y_test = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
-
-  # play with rotation, shift, zoom
-  
-  # Create an ImageDataGenerator for CT images
-  ct_datagen = kr.preprocessing.image.ImageDataGenerator(
-    rotation_range=20,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    horizontal_flip=True,
-    vertical_flip=True
-  )
-
-  # Create an ImageDataGenerator for MRI images
-  mri_datagen = kr.preprocessing.image.ImageDataGenerator(
-    rotation_range=20,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    horizontal_flip=True,
-    vertical_flip=True
-  )
-  
-
-  # remove test fold
-  folds = list(range(1,6))
-  folds.remove(flags.test_fold)
-  
-  for i in folds:
-
-    path = f"{flags.data_path}{i}.npz"
-
-    if i == folds[0]:
-      data = np.load(path)
-      x_train, y_train = data['arr_0'], data['arr_1']
-  
-    else:
-      data = np.load(path)
-      x_train = np.concatenate((x_train, data['arr_0']), axis=0)
-      y_train = np.concatenate((y_train, data['arr_1']), axis=0)
+  train_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=True).load()
+  test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
 
-  # do we do data augmentation on both ct and mri?                                   
-  ct_datagen.fit(x_train)
-  mri_datagen.fit(y_train)
-
-    # Create the generator for training data
-  train_generator = zip(
-      ct_datagen.flow(x_train, batch_size=flags.batch_size, shuffle=True, subset='training'),
-      mri_datagen.flow(y_train, batch_size=flags.batch_size, shuffle=True, subset='training')
-  )
 
   start_time = time.time()
   
@@ -88,12 +38,12 @@ def main(flags):
 
   print("Batch size: ", flags.batch_size)
   history = model.fit(
-    train_generator,
-    validation_data=(x_test, y_test),
+    train_data,
+    validation_data=test_data,
     epochs=flags.epochs,
     verbose=1,
     batch_size = flags.batch_size,
-    callbacks=[modules.GanMonitor((x_test, y_test), flags)],
+    callbacks=[modules.GanMonitor(test_data, flags)],
   )
 
   end_time = time.time()
