@@ -2,13 +2,12 @@
 import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
-import modules_distrib as modules
+import modules_distrib_pcx as modules
 import evaluate
 import os
 import pandas as pd
 from  matplotlib import pyplot as plt
 from datetime import datetime
-from pcxgan import modules_no_mask as modules
 
 
 
