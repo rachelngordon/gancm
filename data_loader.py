@@ -118,15 +118,15 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 	
 	# made small adjustments to return x and y separately instead of batch dataset
 	def __getitem__(self, idx):
-		return self.dataset.batch(self.batch_size, drop_remainder=True)
+		#return self.dataset.batch(self.batch_size, drop_remainder=True)
 
-		#batch_x, batch_y = next(iter(self.dataset.skip(idx * self.batch_size).take(self.batch_size)))
-		#return batch_x, batch_y
+		batch_x, batch_y = next(iter(self.dataset.skip(idx * self.batch_size).take(self.batch_size)))
+		return batch_x, batch_y
 	
 	def load(self):
-		return self.dataset.batch(self.batch_size, drop_remainder=True)
+		#return self.dataset.batch(self.batch_size, drop_remainder=True)
 
-		#return next(iter(self.dataset.batch(self.batch_size, drop_remainder=True)))
+		return next(iter(self.dataset.batch(self.batch_size, drop_remainder=True)))
 
 
 
