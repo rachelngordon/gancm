@@ -364,5 +364,5 @@ class GanMonitor(kr.callbacks.Callback):
 					plt.figure()
 					plt.plot(self.losses[loss])
 					plt.title(loss)
-					plt.savefig(self.hist_path + '/pcxgan_' + loss + '_loss.png')
+					plt.savefig(self.hist_path + '/pcxgan_' + loss + '.png')
 					plt.close()

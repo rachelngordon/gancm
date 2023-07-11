@@ -77,6 +77,9 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 		# load data
 		x, y = self.load_data(flags, self.data_path, if_train=if_train)
 
+		if if_train == True:
+			x, y = self.augmentation(x, y)
+
 		# create dataset
 		self.dataset = tf.data.Dataset.from_tensor_slices((x, y))
 		self.dataset.shuffle(buffer_size=64, seed=42, reshuffle_each_iteration=False)
@@ -114,19 +117,40 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 			x, y = data['arr_0'], data['arr_1']
 			
 			return x, y
+		
+
+	def augmentation(self, x, y):
+
+		data_augmentation = kr.Sequential([
+			kr.layers.RandomFlip("horizontal_and_vertical"),
+			kr.layers.RandomRotation(0.2),
+			kr.layers.RandomTranslation(height_factor=0.2, width_factor=0.2),
+			kr.layers.RandomCrop(256, 256),
+			kr.layers.RandomZoom(height_factor=0.2, width_factor=0.2)
+		])
+
+		CT_augmentation = kr.Sequential([
+			kr.layers.RandomContrast(0.2),
+			kr.layers.RandomBrightness(0.2),
+			#keras_cv.layers.RandomHue(0.2),
+			#keras_cv.layers.RandomSaturation(0.2)
+		])
+
+		aug_x = data_augmentation(x)
+		ct = CT_augmentation(aug_x)
+
+		mri = data_augmentation(y)
+
+		return ct, mri
+
 
 	
 	# made small adjustments to return x and y separately instead of batch dataset
 	def __getitem__(self, idx):
-		#return self.dataset.batch(self.batch_size, drop_remainder=True)
-
-		batch_x, batch_y = next(iter(self.dataset.skip(idx * self.batch_size).take(self.batch_size)))
-		return batch_x, batch_y
+		return self.dataset.batch(self.batch_size, drop_remainder=True)
 	
 	def load(self):
-		#return self.dataset.batch(self.batch_size, drop_remainder=True)
-
-		return next(iter(self.dataset.batch(self.batch_size, drop_remainder=True)))
+		return self.dataset.batch(self.batch_size, drop_remainder=True)
 
 
 
