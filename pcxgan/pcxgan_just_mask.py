@@ -222,7 +222,7 @@ class PCxGAN_mask(kr.Model):
 		return results
 	
 	def call(self, inputs):
-		latent_vectors, labels, ct = inputs
+		latent_vectors, labels = inputs
 		return self.decoder([latent_vectors, labels])
 	
 	def model_evaluate(self, data, epoch=0):
