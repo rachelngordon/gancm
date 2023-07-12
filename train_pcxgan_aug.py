@@ -12,7 +12,7 @@ import time
 def main(flags):
 
   # load augmented training data
-  train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
+  train_data = data_loader.DataGeneratorAug(flags.data_path, if_train=True).load()
 
   # load test data without augmentation
   test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()

@@ -6,9 +6,10 @@ import math
 
 # data generator for augmenting pcxgan data
 class DataGeneratorAug(kr.utils.Sequence):
-    def __init__(self, data_path, is_train=True, **kwargs):
+    def __init__(self, data_path, if_train=True, **kwargs):
         
         super().__init__(**kwargs)
+	
         data = np.load(data_path)
         self.x, self.y = data['arr_0'], data['arr_1']
         
