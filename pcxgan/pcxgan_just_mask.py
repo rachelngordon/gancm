@@ -75,7 +75,7 @@ class PCxGAN_mask(kr.Model):
 		
 		patch_size = discriminator_output[-1].shape[1]
 		combined_model = kr.Model(
-			[latent_input, mask_input],
+			[latent_input, mask_input, image_input],
 			[discriminator_output, generated_image],
 		)
 		return patch_size, combined_model
@@ -138,7 +138,7 @@ class PCxGAN_mask(kr.Model):
 
 			real_d_output = self.discriminator([segmentation_map, image])
 			fake_d_output, fake_image = self.combined_model(
-				[latent_vector, labels]
+				[latent_vector, labels, segmentation_map]
 			)
 			pred = fake_d_output[-1]
 
@@ -203,7 +203,7 @@ class PCxGAN_mask(kr.Model):
 		
 		real_d_output = self.discriminator([ct, mri])
 		fake_d_output, fake_image = self.combined_model(
-			[latent_vector, labels]
+			[latent_vector, labels, ct]
 		)
 		pred = fake_d_output[-1]
 		
