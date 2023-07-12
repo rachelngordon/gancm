@@ -14,7 +14,8 @@ def main(flags):
 
   train_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=True).load()
   test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
-
+  print(train_data.shape)
+  print(test_data.shape)
 
   # Start the timer
   start_time = time.time()
