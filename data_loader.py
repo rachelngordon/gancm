@@ -4,6 +4,102 @@ import numpy as np
 import math
 #import keras_cv
 
+# data generator for augmenting pcxgan data
+class DataGeneratorAug(kr.utils.Sequence):
+    def __init__(self, data_path, is_train=True, **kwargs):
+        
+        super().__init__(**kwargs)
+        data = np.load(data_path)
+        self.x, self.y = data['arr_0'], data['arr_1']
+        
+        self.batch_size = 8
+        self.is_train = is_train
+        self.multiply_factor = 3 if is_train else 1
+        
+        if self.multiply_factor > 1:
+            self.x = np.repeat(self.x, self.multiply_factor, axis=0)
+            self.y = np.repeat(self.y, self.multiply_factor, axis=0)
+                
+        self.dataset = tf.data.Dataset.from_tensor_slices(
+            (self.x, self.y)
+        )
+        self.dataset = self.dataset.shuffle(500) if self.is_train else self.dataset
+        
+        if self.is_train:
+            self.dataset = self.dataset.map(self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE)
+    
+    def resize(self, x, y, height, width):
+        x = tf.image.resize(x, [height, width],
+                            method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        y = tf.image.resize(y, [height, width],
+                            method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        
+        return x, y
+    
+    def random_crop(self, x, y, height, width):
+        stacked_image = tf.stack([x, y], axis=0)
+        cropped_image = tf.image.random_crop(
+            stacked_image, size=[2, height, width, 1])
+        
+        return cropped_image[0], cropped_image[1]
+    
+    @tf.function()
+    def random_jitter(self, x, y):
+        # make the image larger to crop part of it later
+        x, y = self.resize(x, y, 286, 286)
+        
+        # Random cropping back to 256x256
+        x, y = self.random_crop(x, y, 256, 256)
+        
+        rand_flip = tf.random.uniform(())
+        if rand_flip > 0.66:
+            # Random horizontal flipping
+            x = tf.image.flip_left_right(x)
+            y = tf.image.flip_left_right(y)
+        
+        elif rand_flip > 0.3:
+            # Random vertical flipping
+            x = tf.image.flip_up_down(x)
+            y = tf.image.flip_up_down(y)
+        
+        """
+        rand_saturation = tf.random.uniform(())
+        if rand_saturation > 0.5:
+            x = tf.image.adjust_saturation(x, 1)
+            y = tf.image.adjust_saturation(y, 1)
+
+
+        """
+        rand_brightness = tf.random.uniform(())
+        if rand_brightness > 0.5:
+            x = tf.image.adjust_brightness(x, .3)
+            y = tf.image.adjust_brightness(y, .3)
+        
+        rand_cen_crop = tf.random.uniform(())
+        if rand_cen_crop > 0.5:
+            x = tf.image.central_crop(x, central_fraction=0.8)
+            y = tf.image.central_crop(y, central_fraction=0.8)
+            x, y = self.resize(x, y, 256, 256)
+        
+        rand_rot = tf.random.uniform(())
+        if rand_rot > 0.5:
+            x = tf.image.rot90(x)
+            y = tf.image.rot90(y)
+        
+        return x, y
+    
+    def __getitem__(self, idx):
+        return self.dataset.batch(self.batch_size, drop_remainder=True)
+    
+    def __len__(self):
+        return int((len(self.x) // self.batch_size) * self.multiply_factor)
+    
+    def load(self):
+        self.dataset = self.dataset.batch(self.batch_size, drop_remainder=True)
+        return self.dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+
+
+
 
 # data generator for pcxgan (normalized mask data) and cross validation with test fold ready
 class DataGenerator_Ready(kr.utils.Sequence):
@@ -67,7 +163,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
 # data generator for pix2pix (normalized paired data) and cross validation with test fold ready
 class DataGenerator_PairedReady(kr.utils.Sequence):
 
-	def __init__(self, flags, data_path, if_train = True, aug=False, **kwargs):
+	def __init__(self, flags, data_path, if_train = True, **kwargs):
 		
 		super().__init__(**kwargs)
 
@@ -76,9 +172,6 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 
 		# load data
 		x, y = self.load_data(flags, self.data_path, if_train=if_train)
-
-		if aug == True:
-			x, y = self.augmentation(x, y)
 
 		# create dataset
 		self.dataset = tf.data.Dataset.from_tensor_slices((x, y))
@@ -117,35 +210,6 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 			x, y = data['arr_0'], data['arr_1']
 			
 			return x, y
-		
-
-	def augmentation(self, x, y):
-
-		augmented_ct_images = []
-		augmented_mri_images = []
-
-		seed = 42
-
-		# Define the data augmentation operations
-		data_augmentation = tf.keras.Sequential([
-			tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal_and_vertical", seed=seed),
-			tf.keras.layers.experimental.preprocessing.RandomRotation(0.2, seed=seed),
-			tf.keras.layers.experimental.preprocessing.RandomZoom(0.2, 0.2, seed=seed),
-			tf.keras.layers.experimental.preprocessing.RandomTranslation(0.2, 0.2, seed=seed),
-			tf.keras.layers.experimental.preprocessing.RandomCrop(256, 256, seed=seed)
-		])
-
-		ct_tensors = tf.convert_to_tensor(x, dtype=tf.float32)
-		mri_tensors = tf.convert_to_tensor(y, dtype=tf.float32)
-
-		combined_tensor = tf.stack([ct_tensors, mri_tensors], axis=1)
-		augmented_tensor = data_augmentation(combined_tensor)
-
-		# Split augmented data back into separate CTs and MRIs
-		augmented_ct_images = augmented_tensor[:, 0, ...]
-		augmented_mri_images = augmented_tensor[:, 1, ...]
-
-		return augmented_ct_images, augmented_mri_images
 
 
 	def __getitem__(self, idx):
