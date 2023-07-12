@@ -6,16 +6,16 @@ import math
 
 # data generator for augmenting pcxgan data
 class DataGeneratorAug(kr.utils.Sequence):
-    def __init__(self, data_path, if_train=True, **kwargs):
+    def __init__(self, flags, data_path, if_train=True, **kwargs):
         
         super().__init__(**kwargs)
 	
-        data = np.load(data_path)
-        self.x, self.y = data['arr_0'], data['arr_1']
+		# load data
+        self.x, self.y = self.load_data(flags, data_path, if_train=if_train)
         
         self.batch_size = 8
-        self.is_train = is_train
-        self.multiply_factor = 3 if is_train else 1
+        self.if_train = if_train
+        self.multiply_factor = 3 if if_train else 1
         
         if self.multiply_factor > 1:
             self.x = np.repeat(self.x, self.multiply_factor, axis=0)
@@ -24,11 +24,43 @@ class DataGeneratorAug(kr.utils.Sequence):
         self.dataset = tf.data.Dataset.from_tensor_slices(
             (self.x, self.y)
         )
-        self.dataset = self.dataset.shuffle(500) if self.is_train else self.dataset
+        self.dataset = self.dataset.shuffle(500) if self.if_train else self.dataset
         
-        if self.is_train:
+        if self.if_train:
             self.dataset = self.dataset.map(self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE)
     
+
+    def load_data(self, flags, data_path, if_train):
+	    
+        if if_train:
+			
+            folds = list(range(1,6))
+
+            folds.remove(flags.test_fold)
+
+            for i in folds:
+                path = f"{data_path}{i}.npz"
+
+                if i==folds[0]:
+                    data=np.load(path)
+                    x,y = data['arr_0'], data['arr_1']
+
+                else:
+                    data = np.load(path)
+                    x = np.concatenate((x, data['arr_0']), axis=0)
+                    y = np.concatenate((y, data['arr_1']), axis=0)
+
+            return x, y
+		
+        else:
+            path = f"{data_path}{flags.test_fold}.npz"
+            data = np.load(path)
+            x, y =  data['arr_0'], data['arr_1']
+
+            return x, y
+
+	
+	
     def resize(self, x, y, height, width):
         x = tf.image.resize(x, [height, width],
                             method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
