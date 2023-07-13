@@ -160,7 +160,7 @@ def discriminator_loss(disc_real_output, disc_generated_output):
 
   total_disc_loss = real_loss + generated_loss
 
-  return total_disc_loss
+  return total_disc_loss > 0.5
 
 
 
