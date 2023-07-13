@@ -169,7 +169,7 @@ class Flags():
       self.save_options(opt)
     
     # set gpu ids
-    '''
+
     str_ids = opt.gpu_ids.split(',')
     opt.gpu_ids = []
     for str_id in str_ids:
@@ -189,6 +189,6 @@ class Flags():
     assert len(opt.gpu_ids) == 0 or opt.batch_size % len(opt.gpu_ids) == 0, \
       "Batch size %d is wrong. It must be a multiple of # GPUs %d." \
       % (opt.batch_size, len(opt.gpu_ids))
-    '''
+
     self.opt = opt
     return self.opt
