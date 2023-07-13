@@ -240,7 +240,7 @@ class Pix2Pix(kr.Model):
 			plt.plot(hist[loss + '_loss'])
 			plt.plot(hist['val_' + loss + '_loss'])
 			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
-			plt.savefig(exp_path + '/pix2pix_' + loss + '_loss.png')
+			plt.savefig(exp_path + '/pix2pix_' + loss + '.png')
 
 
 

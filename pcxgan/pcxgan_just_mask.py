@@ -284,7 +284,7 @@ class PCxGAN_mask(kr.Model):
 			plt.plot(hist[loss + '_loss'])
 			plt.plot(hist['val_' + loss + '_loss'])
 			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
-			plt.savefig(exp_path + '/pcxgan_' + loss + '_loss.png')
+			plt.savefig(exp_path + '/pcxgan_' + loss + '.png')
 
 
 

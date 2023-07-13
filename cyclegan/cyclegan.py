@@ -346,4 +346,4 @@ class CycleGAN(kr.Model):
             plt.plot(hist[loss])
             plt.plot(hist['val_' + loss])
             plt.legend([loss,'val_' + loss],loc='upper right')
-            plt.savefig(exp_path + '/cycle_' + loss + '_loss.png')
+            plt.savefig(exp_path + '/cycle_' + loss + '.png')
