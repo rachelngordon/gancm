@@ -101,6 +101,10 @@ def Discriminator(flags):
 
   x = tf.keras.layers.concatenate([inp, tar])  # (batch_size, 256, 256, channels*2)
 
+  print(inp.shape)
+  print(tar.shape)
+  print(x.shape)
+
   down1 = downsample(64, 4, False)(x)  # (batch_size, 128, 128, 64)
   down2 = downsample(128, 4)(down1)  # (batch_size, 64, 64, 128)
   down3 = downsample(256, 4)(down2)  # (batch_size, 32, 32, 256)
