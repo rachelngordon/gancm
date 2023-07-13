@@ -3,10 +3,10 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_aug_1234 --test_fold 5 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 0),
-    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_aug_1235 --test_fold 4 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 1),
-    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_aug_1245 --test_fold 3 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 2),
-    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_aug_1345 --test_fold 2 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 3)
+    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_aug_1234_1000 --test_fold 5 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 0),
+    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_aug_1235_1000 --test_fold 4 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 1),
+    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_aug_1245_1000 --test_fold 3 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 2),
+    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_aug_1345_1000 --test_fold 2 --epochs 1000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 3)
 ]
 
 # Function to run a command on a GPU
