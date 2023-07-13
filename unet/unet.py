@@ -60,6 +60,8 @@ class UNet(kr.Model):
 
 		generated_mri = self.generator(ct_input)
 
+		print(ct_input.shape)
+		print(generated_mri.shape)
 		discriminator_outputs = self.discriminator([ct_input, generated_mri])
 		patch_size = discriminator_outputs[-1].shape[1]
 		combined_model = kr.Model(
