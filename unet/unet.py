@@ -35,8 +35,6 @@ class UNet(kr.Model):
 
 		self.generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 		self.discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-		self.discriminator_loss = modules.discriminator_loss()
-		self.generator_loss = modules.generator_loss()
 		self.disc_loss_coeff = self.flags.disc_loss_coeff
 
 
@@ -82,8 +80,8 @@ class UNet(kr.Model):
 		with tf.GradientTape() as gradient_tape:
 			pred_fake = self.discriminator([ct, fake_mri])[-1]  
 			pred_real = self.discriminator([ct, real_mri])[-1]  
-			loss_fake = self.discriminator_loss(False, pred_fake)
-			loss_real = self.discriminator_loss(True, pred_real)
+			loss_fake = modules.discriminator_loss(False, pred_fake)
+			loss_real = modules.discriminator_loss(True, pred_real)
 			total_loss = self.disc_loss_coeff * (loss_fake + loss_real)
 
 		self.discriminator.trainable = True
@@ -108,7 +106,7 @@ class UNet(kr.Model):
 			pred = fake_d_output[-1]
 			
 			# Compute generator loss
-			gen_loss =  self.gen_loss(mri__, fake_mri)
+			gen_loss =  modules.generator_loss(mri__, fake_mri)
 			
 		all_trainable_variables = (
 			self.combined_model.trainable_variables
@@ -156,7 +154,7 @@ class UNet(kr.Model):
 		fake_d_output, fake_image = self.combined_model([ct, mri])
 		pred = fake_d_output[-1]
 		
-		gen_loss = self.generator_loss(fake_image, mri)
+		gen_loss = modules.generator_loss(fake_image, mri)
 
 		# Report progress.
 		self.disc_loss_tracker.update_state(total_discriminator_loss)
