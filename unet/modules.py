@@ -106,6 +106,8 @@ def Discriminator(flags):
   print(x.shape)
 
   down1 = downsample(64, 4, False)(x)  # (batch_size, 128, 128, 64)
+
+  print(down1.shape)
   down2 = downsample(128, 4)(down1)  # (batch_size, 64, 64, 128)
   down3 = downsample(256, 4)(down2)  # (batch_size, 32, 32, 256)
 
