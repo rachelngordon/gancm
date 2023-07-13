@@ -123,12 +123,12 @@ def Discriminator(flags):
   batchnorm1 = tf.keras.layers.BatchNormalization()(conv)
   print(batchnorm1.shape)
   leaky_relu = tf.keras.layers.LeakyReLU()(batchnorm1)
-
+  print(leaky_relu.shape)
   zero_pad2 = tf.keras.layers.ZeroPadding2D()(leaky_relu)  # (batch_size, 33, 33, 512)
-
+  print(zero_pad2.shape)
   last = tf.keras.layers.Conv2D(1, 4, strides=1,
                                 kernel_initializer=initializer)(zero_pad2)  # (batch_size, 30, 30, 1)
-
+  print(last.shape)
   return tf.keras.Model(inputs=[inp, tar], outputs=last)
 
 
