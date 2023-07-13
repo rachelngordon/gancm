@@ -23,7 +23,7 @@ def main(flags):
     epochs=flags.epochs,
     verbose=1,
     batch_size = flags.batch_size,
-    callbacks=[modules.P2PMonitor(test_data, flags)],
+    callbacks=[modules.GanMonitor(test_data, flags)],
   )
 
   end_time = time.time()
