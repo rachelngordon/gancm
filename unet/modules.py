@@ -109,15 +109,19 @@ def Discriminator(flags):
 
   print(down1.shape)
   down2 = downsample(128, 4)(down1)  # (batch_size, 64, 64, 128)
+  print(down2.shape)
   down3 = downsample(256, 4)(down2)  # (batch_size, 32, 32, 256)
+  print(down3.shape)
 
   zero_pad1 = tf.keras.layers.ZeroPadding2D()(down3)  # (batch_size, 34, 34, 256)
+
+  print(zero_pad1.shape)
   conv = tf.keras.layers.Conv2D(512, 4, strides=1,
                                 kernel_initializer=initializer,
                                 use_bias=False)(zero_pad1)  # (batch_size, 31, 31, 512)
-
+  print(conv.shape)
   batchnorm1 = tf.keras.layers.BatchNormalization()(conv)
-
+  print(batchnorm1.shape)
   leaky_relu = tf.keras.layers.LeakyReLU()(batchnorm1)
 
   zero_pad2 = tf.keras.layers.ZeroPadding2D()(leaky_relu)  # (batch_size, 33, 33, 512)
