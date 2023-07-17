@@ -292,8 +292,10 @@ class GanMonitor(kr.callbacks.Callback):
 			print(tf.shape(self.val_images))
 			indices = np.random.permutation(self.flags.batch_size)
 			#self.n_masks = self.val_images[2].numpy()[indices]
-			self.n_cts = self.val_images[0].numpy()[indices]
-			self.n_mris = self.val_images[1].numpy()[indices]
+			#self.n_cts = self.val_images[0].numpy()[indices]
+			#self.n_mris = self.val_images[1].numpy()[indices]
+			self.n_cts = self.val_images[indices, ..., 0:1]  # Extract cts and maintain shape (8, 256, 256, 1)
+			self.n_mris = self.val_images[indices, ..., 1:2]
 			print(tf.shape(self.n_cts))
 			print(tf.shape(self.n_mris))
 
