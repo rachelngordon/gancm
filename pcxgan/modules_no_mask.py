@@ -291,6 +291,7 @@ class GanMonitor(kr.callbacks.Callback):
 			self.val_images=self.batch_images
 			print(tf.shape(self.val_images))
 			indices = np.random.permutation(self.flags.batch_size)
+			indices_tensor = tf.convert_to_tensor(indices, dtype=tf.int32)
 			#self.n_masks = self.val_images[2].numpy()[indices]
 			#self.n_cts = self.val_images[0].numpy()[indices]
 			#self.n_mris = self.val_images[1].numpy()[indices]
