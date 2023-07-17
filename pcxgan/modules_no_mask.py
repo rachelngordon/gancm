@@ -288,23 +288,23 @@ class GanMonitor(kr.callbacks.Callback):
 		# get random images if the batch size is larger than 3
 		if batch == True:
 			#self.val_images= self.batch_images
-			print("Val Images: ", tf.shape(self.val_images)) # shape: (8, 256, 256, 1)
-			print("Val Images 0: ", tf.shape(self.val_images[0]))
-			print("Val Images 1: ", tf.shape(self.val_images[1]))
+			# print("Val Images: ", tf.shape(self.val_images))
+			# print("Val Images 0: ", tf.shape(self.val_images[0]))
+			# print("Val Images 1: ", tf.shape(self.val_images[1]))
 			indices = np.random.permutation(self.flags.batch_size)
 			#self.n_masks = self.val_images[2].numpy()[indices]
 
-			self.n_cts = self.val_images[0].numpy()[indices] # shape: (8, 256, 1)
-			self.n_mris = self.val_images[1].numpy()[indices] # shape: (8, 256, 1)
-			print("CTs: ", tf.shape(self.n_cts))
-			print("MRIs: ", tf.shape(self.n_mris))
+			self.n_cts = self.val_images[0].numpy()[indices]
+			self.n_mris = self.val_images[1].numpy()[indices]
+			# print("CTs: ", tf.shape(self.n_cts))
+			# print("MRIs: ", tf.shape(self.n_mris))
 
 		else:
 			#self.n_masks = self.val_images[2]
 			self.n_cts = self.val_images[0]
 			self.n_mris = self.val_images[1]
 
-		return self.model.predict([latent_vector, tf.cast(self.n_cts, tf.float64)])
+		return self.model.predict([latent_vector, n_cts])
 	
 	def save_models(self, epoch):
 		e_name = f"encoder_epoch_{epoch}"
@@ -314,8 +314,6 @@ class GanMonitor(kr.callbacks.Callback):
 	
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:
-
-			#self.save_models(epoch)
 			
 			# get predicted images
 			if self.n_samples == 3:
@@ -330,10 +328,10 @@ class GanMonitor(kr.callbacks.Callback):
 				for row in range(grid_row):
 					r = random.randrange(self.flags.batch_size)
 					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((self.val_images[0][r]) , cmap='gray')
+					ax[0].imshow((self.n_cts[0][r]) , cmap='gray')
 					ax[0].axis("off")
 					ax[0].set_title("CT", fontsize=20)
-					ax[1].imshow((self.val_images[1][r]), cmap='gray')
+					ax[1].imshow((self.n_mris[1][r]), cmap='gray')
 					ax[1].axis("off")
 					ax[1].set_title("rMRI", fontsize=20)
 					ax[2].imshow((generated_images[r]), cmap='gray')
