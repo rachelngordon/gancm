@@ -44,7 +44,7 @@ class DataGeneratorAug(kr.utils.Sequence):
                 if i==folds[0]:
                     data=np.load(path)
                     x,y = data['arr_0'], data['arr_1']
-                    break
+                    #break
 
                 else:
                     data = np.load(path)
