@@ -12,10 +12,12 @@ import time
 def main(flags):
 
   # load augmented training data
-  train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
+  # load data using gpu 0
+  with tf.device('/gpu:0'):
+    train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
 
-  # load test data without augmentation
-  test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
+    # load test data without augmentation
+    test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
 
   # Start the timer
@@ -23,8 +25,11 @@ def main(flags):
 
 
   #Build and train the model
-  model = PCxGAN(flags)
-  model.compile()
+  # run the model using different gpu
+  with tf.device('/gpu:1'):
+    model = PCxGAN(flags)
+    model.compile()
+  
   history = model.fit(
     train_data,
     validation_data=test_data,
