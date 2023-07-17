@@ -295,8 +295,8 @@ class GanMonitor(kr.callbacks.Callback):
 			#self.n_masks = self.val_images[2].numpy()[indices]
 			#self.n_cts = self.val_images[0].numpy()[indices]
 			#self.n_mris = self.val_images[1].numpy()[indices]
-			self.n_cts = self.val_images[indices, ..., 0:1]  # Extract cts and maintain shape (8, 256, 256, 1)
-			self.n_mris = self.val_images[indices, ..., 1:2]
+			self.n_cts = tf.gather(self.val_images, indices, axis=0)[..., 0:1]  # Extract cts and maintain shape (8, 256, 256, 1)
+			self.n_mris = tf.gather(self.val_images, indices, axis=0)[..., 1:2]  # Extract mris and maintain shape (8, 256, 256, 1)
 			print(tf.shape(self.n_cts))
 			print(tf.shape(self.n_mris))
 
