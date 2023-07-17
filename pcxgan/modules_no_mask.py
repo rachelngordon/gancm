@@ -289,18 +289,16 @@ class GanMonitor(kr.callbacks.Callback):
 		# get random images if the batch size is larger than 3
 		if batch == True:
 			self.val_images=self.batch_images
-			print(tf.shape(self.val_images))
-			print(tf.shape(self.val_images[0]))
-			print(tf.shape(self.val_images[1]))
+			print("Val Images: ", tf.shape(self.val_images)) # shape: (8, 256, 256, 1)
+			print("Val Images 0: ", tf.shape(self.val_images[0]))
+			print("Val Images 1: ", tf.shape(self.val_images[1]))
 			indices = np.random.permutation(self.flags.batch_size)
-			indices_tensor = tf.convert_to_tensor(indices, dtype=tf.int32)
 			#self.n_masks = self.val_images[2].numpy()[indices]
-			#self.n_cts = self.val_images[0].numpy()[indices]
-			#self.n_mris = self.val_images[1].numpy()[indices]
-			self.n_cts = tf.gather(self.val_images, indices, axis=0)[..., 0:1]  # Extract cts and maintain shape (8, 256, 256, 1)
-			self.n_mris = tf.gather(self.val_images, indices, axis=0)[..., 1:2]  # Extract mris and maintain shape (8, 256, 256, 1)
-			print(tf.shape(self.n_cts))
-			print(tf.shape(self.n_mris))
+
+			self.n_cts = self.val_images[0][indices].numpy() # shape: (8, 256, 1)
+			self.n_mris = self.val_images[1][indices].numpy() # shape: (8, 256, 1)
+			print("CTs: ", tf.shape(self.n_cts))
+			print("MRIs: ", tf.shape(self.n_mris))
 
 		else:
 			#self.n_masks = self.val_images[2]
