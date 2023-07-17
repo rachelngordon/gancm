@@ -44,11 +44,13 @@ class DataGeneratorAug(kr.utils.Sequence):
                 if i==folds[0]:
                     data=np.load(path)
                     x,y = data['arr_0'], data['arr_1']
+                    #break
 
                 else:
                     data = np.load(path)
                     x = np.concatenate((x, data['arr_0']), axis=0)
                     y = np.concatenate((y, data['arr_1']), axis=0)
+
 
             return x, y
 		
