@@ -30,14 +30,14 @@ def main(flags):
     model = PCxGAN(flags)
     model.compile()
   
-  history = model.fit(
-    train_data,
-    validation_data=test_data,
-    epochs=flags.epochs,
-    verbose=1,
-    batch_size = flags.batch_size,
-    callbacks=[modules.GanMonitor(test_data, flags)],
-  )
+    history = model.fit(
+      train_data,
+      validation_data=test_data,
+      epochs=flags.epochs,
+      verbose=1,
+      batch_size = flags.batch_size,
+      callbacks=[modules.GanMonitor(test_data, flags)],
+    )
   
   end_time = time.time()
 
