@@ -289,11 +289,13 @@ class GanMonitor(kr.callbacks.Callback):
 		# get random images if the batch size is larger than 3
 		if batch == True:
 			self.val_images=self.batch_images
-
+			print(tf.shape(self.val_images))
 			indices = np.random.permutation(self.flags.batch_size)
 			#self.n_masks = self.val_images[2].numpy()[indices]
 			self.n_cts = self.val_images[0].numpy()[indices]
 			self.n_mris = self.val_images[1].numpy()[indices]
+			print(tf.shape(self.n_cts))
+			print(tf.shape(self.n_mris))
 
 		else:
 			#self.n_masks = self.val_images[2]
