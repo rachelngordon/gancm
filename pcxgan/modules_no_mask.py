@@ -257,7 +257,6 @@ class GanMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags):
 
 		self.val_images = next(iter(val_dataset))
-
 		if flags.batch_size > 3:
 			self.n_samples = 3
 		else:
@@ -288,15 +287,15 @@ class GanMonitor(kr.callbacks.Callback):
 
 		# get random images if the batch size is larger than 3
 		if batch == True:
-			self.val_images=self.batch_images
+			#self.val_images= self.batch_images
 			print("Val Images: ", tf.shape(self.val_images)) # shape: (8, 256, 256, 1)
 			print("Val Images 0: ", tf.shape(self.val_images[0]))
 			print("Val Images 1: ", tf.shape(self.val_images[1]))
 			indices = np.random.permutation(self.flags.batch_size)
 			#self.n_masks = self.val_images[2].numpy()[indices]
 
-			self.n_cts = self.val_images[0][indices].numpy() # shape: (8, 256, 1)
-			self.n_mris = self.val_images[1][indices].numpy() # shape: (8, 256, 1)
+			self.n_cts = self.val_images[0].numpy()[indices] # shape: (8, 256, 1)
+			self.n_mris = self.val_images[1].numpy()[indices] # shape: (8, 256, 1)
 			print("CTs: ", tf.shape(self.n_cts))
 			print("MRIs: ", tf.shape(self.n_mris))
 
@@ -320,7 +319,6 @@ class GanMonitor(kr.callbacks.Callback):
 			
 			# get predicted images
 			if self.n_samples == 3:
-				self.batch_images = next(iter(self.val_images))
 				generated_images = self.infer(batch=True)
 			else:
 				generated_images = self.infer()
