@@ -13,7 +13,7 @@ def main(flags):
 
   # load augmented training data
   # get gpus visible to tensorflow
-  gpus = tf.config.list_physical_devices('GPU')
+  gpus = tf.config.experimental.list_physical_devices('GPU')
   
   # load data using gpu 0
   with tf.device(gpus[0].name):
