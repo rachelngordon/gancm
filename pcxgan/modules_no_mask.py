@@ -333,13 +333,13 @@ class GanMonitor(kr.callbacks.Callback):
 				for row in range(grid_row):
 					#r = random.randrange(self.flags.batch_size)
 					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((self.val_images[0][row].numpy().squeeze() + 1) / 2, cmap='gray')
+					ax[0].imshow((self.val_images[0][row].squeeze() + 1) / 2, cmap='gray')
 					ax[0].axis("off")
 					ax[0].set_title("CT", fontsize=20)
-					ax[1].imshow((self.val_images[1][row].numpy().squeeze() + 1) / 2, cmap='gray')
+					ax[1].imshow((self.val_images[1][row].squeeze() + 1) / 2, cmap='gray')
 					ax[1].axis("off")
 					ax[1].set_title("rMRI", fontsize=20)
-					ax[2].imshow((generated_images[row].numpy().squeeze() + 1) / 2, cmap='gray')
+					ax[2].imshow((generated_images[row].squeeze() + 1) / 2, cmap='gray')
 					ax[2].axis("off")
 					ax[2].set_title("PCxGAN sMRI", fontsize=20)
 				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
