@@ -13,14 +13,14 @@ def main(flags):
 
   # load augmented training data
   # get gpus visible to tensorflow
-  gpus = tf.config.experimental.list_physical_devices('GPU')
+  #gpus = tf.config.experimental.list_physical_devices('GPU')
   
   # load data using gpu 0
-  with tf.device(gpus[0].name):
-    train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
+  #with tf.device(gpus[0].name):
+  train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
 
-    # load test data without augmentation
-    test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
+  # load test data without augmentation
+  test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
 
   # Start the timer
@@ -29,9 +29,9 @@ def main(flags):
 
   #Build and train the model
   # run the model using different gpu
-  with tf.device(gpus[1].name):
-    model = PCxGAN(flags)
-    model.compile()
+  #with tf.device(gpus[1].name):
+  model = PCxGAN(flags)
+  model.compile()
   
   history = model.fit(
     train_data,
