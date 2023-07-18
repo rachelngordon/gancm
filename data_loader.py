@@ -24,7 +24,7 @@ class DataGeneratorAug(kr.utils.Sequence):
         self.dataset = tf.data.Dataset.from_tensor_slices(
             (self.x, self.y)
         )
-        self.dataset = self.dataset.shuffle(500) if self.if_train else self.dataset
+        #self.dataset = self.dataset.shuffle(500) if self.if_train else self.dataset
         
         if self.if_train:
             self.dataset = self.dataset.map(self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE)
@@ -130,8 +130,9 @@ class DataGeneratorAug(kr.utils.Sequence):
         return int((len(self.x) // self.batch_size) * self.multiply_factor)
     
     def load(self):
-        self.dataset = self.dataset.batch(self.batch_size, drop_remainder=True)
-        return self.dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+		self.dataset = self.dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+		return self.dataset.batch(self.batch_size, drop_remainder=True)
+        
 
 
 
