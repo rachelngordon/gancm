@@ -130,8 +130,8 @@ class DataGeneratorAug(kr.utils.Sequence):
         return int((len(self.x) // self.batch_size) * self.multiply_factor)
     
     def load(self):
-		self.dataset = self.dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
-		return self.dataset.batch(self.batch_size, drop_remainder=True)
+        self.dataset = self.dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+        return self.dataset.batch(self.batch_size, drop_remainder=True)
         
 
 
