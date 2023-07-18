@@ -304,7 +304,7 @@ class GanMonitor(kr.callbacks.Callback):
 			self.n_cts = self.val_images[0]
 			self.n_mris = self.val_images[1]
 
-		return self.model.predict([latent_vector, n_cts])
+		return self.model.predict([latent_vector, self.n_cts])
 	
 	def save_models(self, epoch):
 		e_name = f"encoder_epoch_{epoch}"
