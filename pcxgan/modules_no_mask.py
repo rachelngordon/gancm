@@ -256,11 +256,15 @@ class Discriminator(kr.Model):
 class GanMonitor(kr.callbacks.Callback):
 	def __init__(self, val_dataset, flags):
 
+		'''
 		self.val_images = next(iter(val_dataset))
 		if flags.batch_size > 3:
 			self.n_samples = 3
 		else:
 			self.n_samples = 1
+		'''
+		self.val_images = next(iter(val_dataset))
+		self.n_samples = 1
 
 		self.epoch_interval = flags.epoch_interval
 		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
@@ -284,7 +288,7 @@ class GanMonitor(kr.callbacks.Callback):
 		latent_vector = tf.random.normal(
 			shape=(self.model.batch_size, self.model.latent_dim), mean=0.0, stddev=2.0, seed=500
 		)
-
+		'''
 		# get random images if the batch size is larger than 3
 		if batch == True:
 			#self.val_images= self.batch_images
@@ -303,8 +307,8 @@ class GanMonitor(kr.callbacks.Callback):
 			#self.n_masks = self.val_images[2]
 			self.n_cts = self.val_images[0]
 			self.n_mris = self.val_images[1]
-
-		return self.model.predict([latent_vector, self.n_cts])
+		'''
+		return self.model.predict([latent_vector, self.val_images[0]])
 	
 	def save_models(self, epoch):
 		e_name = f"encoder_epoch_{epoch}"
@@ -314,27 +318,28 @@ class GanMonitor(kr.callbacks.Callback):
 	
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch > 0 and epoch % self.epoch_interval == 0:
-			
+			'''
 			# get predicted images
 			if self.n_samples == 3:
 				generated_images = self.infer(batch=True)
 			else:
 				generated_images = self.infer()
-			
+			'''
+			generated_images = self.infer()
 			# plot training samples
 			for s_ in range(self.n_samples):
 				grid_row = min(generated_images.shape[0], 3)
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
 				for row in range(grid_row):
-					r = random.randrange(self.flags.batch_size)
+					#r = random.randrange(self.flags.batch_size)
 					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((self.n_cts[0][r]) , cmap='gray')
+					ax[0].imshow((self.val_images[0][row].numpy().squeeze() + 1) / 2, cmap='gray')
 					ax[0].axis("off")
 					ax[0].set_title("CT", fontsize=20)
-					ax[1].imshow((self.n_mris[1][r]), cmap='gray')
+					ax[1].imshow((self.val_images[1][row].numpy().squeeze() + 1) / 2, cmap='gray')
 					ax[1].axis("off")
 					ax[1].set_title("rMRI", fontsize=20)
-					ax[2].imshow((generated_images[r]), cmap='gray')
+					ax[2].imshow((generated_images[row].numpy().squeeze() + 1) / 2, cmap='gray')
 					ax[2].axis("off")
 					ax[2].set_title("PCxGAN sMRI", fontsize=20)
 				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
