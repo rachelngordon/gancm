@@ -1,232 +1,148 @@
 import tensorflow as tf
-import os 
-import matplotlib.pyplot as plt
 
 
 
-def downsample(filters, size, apply_batchnorm=True):
-  initializer = tf.random_normal_initializer(0., 0.02)
+class downsample(tf.keras.layers.Layer):
+	def __init__(self, filters, size, apply_batchnorm=True, **kwargs):
+		super().__init__(**kwargs)
+		initializer = tf.random_normal_initializer(0., 0.02)
 
-  result = tf.keras.Sequential()
-  result.add(
-      tf.keras.layers.Conv2D(filters, size, strides=2, padding='same',
-                             kernel_initializer=initializer, use_bias=False))
+		self.block = tf.keras.Sequential()
+    
+		self.block.add(
+        tf.keras.layers.Conv2D(filters, size, strides=2, padding='same',
+                              kernel_initializer=initializer, use_bias=False))
 
-  if apply_batchnorm:
-    result.add(tf.keras.layers.BatchNormalization())
+		if apply_batchnorm:
+			self.block.add(tf.keras.layers.BatchNormalization())
 
-  result.add(tf.keras.layers.LeakyReLU())
+		self.block.add(tf.keras.layers.LeakyReLU())
+  
+	
+	def call(self, inputs__):
+		return self.block(inputs__)
+    
 
-  return result
 
+class upsample(tf.keras.layers.Layer):
+	def __init__(self, filters, size, apply_dropout=False, **kwargs):
+		super().__init__(**kwargs)
+		initializer = tf.random_normal_initializer(0., 0.02)
 
+		self.block = tf.keras.Sequential()
+		self.block.add(
+      tf.keras.layers.Conv2DTranspose(filters, size, strides=2,
+                                      padding='same',
+                                      kernel_initializer=initializer,
+                                      use_bias=False))
 
-def upsample(filters, size, apply_dropout=False):
-  initializer = tf.random_normal_initializer(0., 0.02)
+		self.block.add(tf.keras.layers.BatchNormalization())
 
-  result = tf.keras.Sequential()
-  result.add(
-    tf.keras.layers.Conv2DTranspose(filters, size, strides=2,
-                                    padding='same',
-                                    kernel_initializer=initializer,
-                                    use_bias=False))
+		if apply_dropout:
+			self.block.add(tf.keras.layers.Dropout(0.5))
 
-  result.add(tf.keras.layers.BatchNormalization())
+		self.block.add(tf.keras.layers.ReLU())
+	
+	def call(self, inputs__):
+		return self.block(inputs__)
 
-  if apply_dropout:
-      result.add(tf.keras.layers.Dropout(0.5))
 
-  result.add(tf.keras.layers.ReLU())
 
-  return result
+class Generator(tf.keras.Model):
+    def __init__(self, **kwargs):
+        
+        super().__init__(**kwargs)
 
+        self.down_stack = [
+          downsample(64, 4, apply_batchnorm=False),  # (batch_size, 128, 128, 64)
+          downsample(128, 4),  # (batch_size, 64, 64, 128)
+          downsample(256, 4),  # (batch_size, 32, 32, 256)
+          downsample(512, 4),  # (batch_size, 16, 16, 512)
+          downsample(512, 4),  # (batch_size, 8, 8, 512)
+          downsample(512, 4),  # (batch_size, 4, 4, 512)
+          downsample(512, 4),  # (batch_size, 2, 2, 512)
+          downsample(512, 4),  # (batch_size, 1, 1, 512)
+        ]
 
+        self.up_stack = [
+          upsample(512, 4, apply_dropout=True),  # (batch_size, 2, 2, 1024)
+          upsample(512, 4, apply_dropout=True),  # (batch_size, 4, 4, 1024)
+          upsample(512, 4, apply_dropout=True),  # (batch_size, 8, 8, 1024)
+          upsample(512, 4),  # (batch_size, 16, 16, 1024)
+          upsample(256, 4),  # (batch_size, 32, 32, 512)
+          upsample(128, 4),  # (batch_size, 64, 64, 256)
+          upsample(64, 4),  # (batch_size, 128, 128, 128)
+        ]
 
-def Generator(flags):
-  inputs = tf.keras.layers.Input(shape=[flags.crop_size, flags.crop_size, 1])
+        initializer = tf.random_normal_initializer(0., 0.02)
+        self.last = tf.keras.layers.Conv2DTranspose(1, 4,
+                                              strides=2,
+                                              padding='same',
+                                              kernel_initializer=initializer,
+                                              activation='tanh')  # (batch_size, 256, 256, 3)
 
-  down_stack = [
-    downsample(64, 4, apply_batchnorm=False),  # (batch_size, 128, 128, 64)
-    downsample(128, 4),  # (batch_size, 64, 64, 128)
-    downsample(256, 4),  # (batch_size, 32, 32, 256)
-    downsample(512, 4),  # (batch_size, 16, 16, 512)
-    downsample(512, 4),  # (batch_size, 8, 8, 512)
-    downsample(512, 4),  # (batch_size, 4, 4, 512)
-    downsample(512, 4),  # (batch_size, 2, 2, 512)
-    downsample(512, 4),  # (batch_size, 1, 1, 512)
-  ]
+        
 
-  up_stack = [
-    upsample(512, 4, apply_dropout=True),  # (batch_size, 2, 2, 1024)
-    upsample(512, 4, apply_dropout=True),  # (batch_size, 4, 4, 1024)
-    upsample(512, 4, apply_dropout=True),  # (batch_size, 8, 8, 1024)
-    upsample(512, 4),  # (batch_size, 16, 16, 1024)
-    upsample(256, 4),  # (batch_size, 32, 32, 512)
-    upsample(128, 4),  # (batch_size, 64, 64, 256)
-    upsample(64, 4),  # (batch_size, 128, 128, 128)
-  ]
+    def call(self, x):
+        # Downsampling through the model
+        skips = []
+        for down in self.down_stack:
+          x = down(x)
+          skips.append(x)
 
-  initializer = tf.random_normal_initializer(0., 0.02)
-  last = tf.keras.layers.Conv2DTranspose(1, 4,
-                                         strides=2,
-                                         padding='same',
-                                         kernel_initializer=initializer,
-                                         activation='tanh')  # (batch_size, 256, 256, 3)
+        skips = reversed(skips[:-1])
 
-  x = inputs
+        # Upsampling and establishing the skip connections
+        for up, skip in zip(self.up_stack, skips):
+          x = up(x)
+          x = tf.keras.layers.Concatenate()([x, skip])
 
-  # Downsampling through the model
-  skips = []
-  for down in down_stack:
-    x = down(x)
-    skips.append(x)
+        x = self.last(x)
 
-  skips = reversed(skips[:-1])
+        return x
 
-  # Upsampling and establishing the skip connections
-  for up, skip in zip(up_stack, skips):
-    x = up(x)
-    x = tf.keras.layers.Concatenate()([x, skip])
 
-  x = last(x)
 
-  return tf.keras.Model(inputs=inputs, outputs=x)
+class Discriminator(tf.keras.Model):
+    def __init__(self, **kwargs):
+        
+        super().__init__(**kwargs)
 
+        self.merged = tf.keras.layers.Concatenate()
 
+        initializer = tf.random_normal_initializer(0., 0.02)
 
+        self.down1 = downsample(64, 4, False)  # (batch_size, 128, 128, 64)
+        self.down2 = downsample(128, 4)  # (batch_size, 64, 64, 128)
+        self.down3 = downsample(256, 4) # (batch_size, 32, 32, 256)
 
-def Discriminator(flags):
-  initializer = tf.random_normal_initializer(0., 0.02)
+        self.zero_pad1 = tf.keras.layers.ZeroPadding2D()  # (batch_size, 34, 34, 256)
+        self.conv = tf.keras.layers.Conv2D(512, 4, strides=1,
+                                      kernel_initializer=initializer,
+                                      use_bias=False)  # (batch_size, 31, 31, 512)
 
-  inp = tf.keras.layers.Input(shape=[flags.crop_size, flags.crop_size, 1], name='input_image')
-  tar = tf.keras.layers.Input(shape=[flags.crop_size, flags.crop_size, 1], name='target_image')
+        self.batchnorm1 = tf.keras.layers.BatchNormalization()
 
-  x = tf.keras.layers.concatenate([inp, tar])  # (batch_size, 256, 256, channels*2)
+        self.leaky_relu = tf.keras.layers.LeakyReLU()
 
-  print(inp.shape)
-  print(tar.shape)
-  print(x.shape)
+        self.zero_pad2 = tf.keras.layers.ZeroPadding2D()  # (batch_size, 33, 33, 512)
 
-  down1 = downsample(64, 4, False)(x)  # (batch_size, 128, 128, 64)
+        self.last = tf.keras.layers.Conv2D(1, 4, strides=1,
+                                      kernel_initializer=initializer)  # (batch_size, 30, 30, 1)
 
-  print(down1.shape)
-  down2 = downsample(128, 4)(down1)  # (batch_size, 64, 64, 128)
-  print(down2.shape)
-  down3 = downsample(256, 4)(down2)  # (batch_size, 32, 32, 256)
-  print(down3.shape)
+        
 
-  zero_pad1 = tf.keras.layers.ZeroPadding2D()(down3)  # (batch_size, 34, 34, 256)
-
-  print(zero_pad1.shape)
-  conv = tf.keras.layers.Conv2D(512, 4, strides=1,
-                                kernel_initializer=initializer,
-                                use_bias=False)(zero_pad1)  # (batch_size, 31, 31, 512)
-  print(conv.shape)
-  batchnorm1 = tf.keras.layers.BatchNormalization()(conv)
-  print(batchnorm1.shape)
-  leaky_relu = tf.keras.layers.LeakyReLU()(batchnorm1)
-  print(leaky_relu.shape)
-  zero_pad2 = tf.keras.layers.ZeroPadding2D()(leaky_relu)  # (batch_size, 33, 33, 512)
-  print(zero_pad2.shape)
-  last = tf.keras.layers.Conv2D(1, 4, strides=1,
-                                kernel_initializer=initializer)(zero_pad2)  # (batch_size, 30, 30, 1)
-  print(last.shape)
-  return tf.keras.Model(inputs=[inp, tar], outputs=last)
-
-
-
-## LOSSES
-
-loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-
-def generator_loss(gen_output, target):
-
-  #gan_loss = loss_object(tf.ones_like(disc_generated_output), disc_generated_output)
-
-  # Mean absolute error
-  l1_loss = tf.reduce_mean(tf.abs(target - gen_output))
-
-  #total_gen_loss = gan_loss + (100 * l1_loss)
-
-  return l1_loss
-
-
-def discriminator_loss(disc_real_output, disc_generated_output):
-  #real_loss = loss_object(tf.ones_like(disc_real_output), disc_real_output)
-  real_loss = loss_object(disc_real_output, disc_real_output)
-
-  #generated_loss = loss_object(tf.ones_like(disc_generated_output), disc_generated_output)
-  generated_loss = loss_object(disc_generated_output, disc_generated_output)
-
-  total_disc_loss = real_loss + generated_loss
-
-  return total_disc_loss > 0.5
-
-
-
-class GanMonitor(tf.keras.callbacks.Callback):
-	def __init__(self, val_dataset, flags, my_strategy=False):
-
-		self.val_images = next(iter(val_dataset))
-		self.n_samples = 1
-		self.epoch_interval = flags.epoch_interval
-		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
-		self.hist_path = os.path.join(flags.hist_path, flags.name)
-		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
-		self.losses = {'disc_loss': []} 
-
-		if not os.path.exists(self.checkpoints_path):
-			os.makedirs(self.checkpoints_path)
-		if not os.path.exists(self.sample_dir):
-			os.makedirs(self.sample_dir)
-		if not os.path.exists(self.hist_path):
-			os.makedirs(self.hist_path)
-
-	def infer(self):
-		return self.model(self.val_images[0])
-
-	def on_epoch_end(self, epoch, logs=None):
-		if epoch > 0 and epoch % self.epoch_interval == 0:
-			#self.save_models()
-			generated_images = self.infer()
-			for s_ in range(self.n_samples):
-				grid_row = min(generated_images.shape[0], 3)
-				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
-				for row in range(grid_row):
-					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((self.val_images[0][row].numpy().squeeze() + 1) / 2, cmap='gray')
-					ax[0].axis("off")
-					ax[0].set_title("CT", fontsize=20)
-					ax[1].imshow((self.val_images[1][row].numpy().squeeze() + 1) / 2, cmap='gray')
-					ax[1].axis("off")
-					ax[1].set_title("rMRI", fontsize=20)
-					ax[2].imshow((generated_images[row].numpy().squeeze() + 1) / 2, cmap='gray')
-					ax[2].axis("off")
-					ax[2].set_title("Pix2Pix sMRI", fontsize=20)
-				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-				sample_file = os.path.join(self.sample_dir, filename)
-				plt.savefig(sample_file)
-				#plt.show()
-
-
-				self.losses['disc_loss'].append(logs['disc_loss']) 
-
-				# Plot losses
-				plt.figure()
-				plt.plot(self.losses['disc_loss'], label='Discriminator Loss')
-				plt.xlabel('Epoch')
-				plt.ylabel('Loss')
-				plt.legend()
-				plt.title('UNet Losses')
-				plt.savefig(os.path.join(self.hist_path, 'losses.png'))
-				plt.close()
-                                
-
-				for loss in self.losses.keys():
-					plt.figure()
-					plt.plot(self.losses[loss])
-					plt.title(loss)
-					plt.savefig(self.hist_path + '/unet_' +  loss + '.png')
-					plt.close()
-
-
+    def call(self, inputs__):
+        
+        x = self.merged([inputs__[0], inputs__[1]])  # (batch_size, 256, 256, channels*2)
+        x1 = self.down1(x)
+        x2 = self.down2(x1)
+        x3 = self.down3(x2)
+        x4 = self.zero_pad1(x3)
+        x5 = self.conv(x4)
+        x6 = self.batchnorm1(x5)
+        x7 = self.leaky_relu(x6)
+        x8 = self.zero_pad2(x7)
+        x9 = self.last(x8)
+        return x9
+    

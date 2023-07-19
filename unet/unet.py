@@ -28,26 +28,33 @@ class UNet(kr.Model):
 		self.image_size = self.flags.crop_size
 		self.batch_size = self.flags.batch_size
 
-		self.discriminator = modules.Discriminator(flags)
-		self.generator = modules.Generator(flags)
+		self.vgg_feature_loss_coeff = self.flags.vgg_feature_loss_coeff
+		self.ssim_loss_coeff = self.flags.ssim_loss_coeff
+		self.disc_loss_coeff = self.flags.disc_loss_coeff
+
+		self.discriminator = modules.Discriminator()
+		self.generator = modules.Generator()
 		self.patch_size, self.combined_model = self.build_combined_model()
 
 
-		self.generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-		self.discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-		self.disc_loss_coeff = self.flags.disc_loss_coeff
-
+		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1)
+		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.gen_beta_1)
+		self.discriminator_loss = loss.DiscriminatorLoss()
+		self.feature_matching_loss = loss.FeatureMatchingLoss()
+		self.vgg_loss = loss.VGGFeatureMatchingLoss()
 
 
 		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
-		self.gen_loss_tracker = tf.keras.metrics.Mean(name="gen_loss")
+		self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
+		self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
 
 
 	@property
 	def metrics(self):
 		return [
 			self.disc_loss_tracker,
-			self.gen_loss_tracker]
+			self.vgg_loss_tracker,
+			self.ssim_loss_tracker]
 
 
 	def build_combined_model(self):
@@ -58,8 +65,6 @@ class UNet(kr.Model):
 
 		generated_mri = self.generator(ct_input)
 
-		print(ct_input.shape)
-		print(generated_mri.shape)
 		discriminator_outputs = self.discriminator([ct_input, generated_mri])
 		patch_size = discriminator_outputs[-1].shape[1]
 		combined_model = kr.Model(
@@ -80,8 +85,8 @@ class UNet(kr.Model):
 		with tf.GradientTape() as gradient_tape:
 			pred_fake = self.discriminator([ct, fake_mri])[-1]  
 			pred_real = self.discriminator([ct, real_mri])[-1]  
-			loss_fake = modules.discriminator_loss(False, pred_fake)
-			loss_real = modules.discriminator_loss(True, pred_real)
+			loss_fake = self.discriminator_loss(False, pred_fake)
+			loss_real = self.discriminator_loss(True, pred_real)
 			total_loss = self.disc_loss_coeff * (loss_fake + loss_real)
 
 		self.discriminator.trainable = True
@@ -106,19 +111,21 @@ class UNet(kr.Model):
 			pred = fake_d_output[-1]
 			
 			# Compute generator loss
-			gen_loss =  modules.generator_loss(mri__, fake_mri)
+			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri__, fake_mri)
+			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri__, fake_mri)
+			total_loss = vgg_loss + ssim_loss
 			
 		all_trainable_variables = (
 			self.combined_model.trainable_variables
 		)
 
-		gradients = tape.gradient(gen_loss, all_trainable_variables)
+		gradients = tape.gradient(total_loss, all_trainable_variables)
 
 		self.generator_optimizer.apply_gradients(
 			zip(gradients, all_trainable_variables)
 		)
 
-		return gen_loss
+		return vgg_loss, ssim_loss
 
 
 	def train_step(self, data):
@@ -126,11 +133,12 @@ class UNet(kr.Model):
 		ct, mri = data
 		
 		discriminator_loss = self.train_discriminator(ct, mri)
-		gen_loss = self.train_generator(ct, mri)
+		(vgg_loss, ssim_loss) = self.train_generator(ct, mri)
 
 		# Report progress.
 		self.disc_loss_tracker.update_state(discriminator_loss)
-		self.gen_loss_tracker.update_state(gen_loss)
+		self.vgg_loss_tracker.update_state(vgg_loss)
+		self.ssim_loss_tracker.update_state(ssim_loss)
 
 
 		results = {m.name: m.result() for m in self.metrics}
@@ -154,11 +162,14 @@ class UNet(kr.Model):
 		fake_d_output, fake_image = self.combined_model([ct, mri])
 		pred = fake_d_output[-1]
 		
-		gen_loss = modules.generator_loss(fake_image, mri)
+		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
+		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
+		total_generator_loss = vgg_loss + ssim_loss
 
 		# Report progress.
 		self.disc_loss_tracker.update_state(total_discriminator_loss)
-		self.gen_loss_tracker.update_state(gen_loss)
+		self.vgg_loss_tracker.update_state(vgg_loss)
+		self.ssim_loss_tracker.update_state(ssim_loss)
 
 		results = {m.name: m.result() for m in self.metrics}
 
@@ -229,7 +240,7 @@ class UNet(kr.Model):
 			plt.plot(hist[loss + '_loss'])
 			plt.plot(hist['val_' + loss + '_loss'])
 			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
-			plt.savefig(exp_path + '/unet_' + loss + '.png')
+			plt.savefig(exp_path + '/pix2pix_' + loss + '.png')
 
 
 
