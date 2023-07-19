@@ -1,4 +1,7 @@
 import tensorflow as tf
+import os
+import matplotlib.pyplot as plt
+from datetime import datetime
 
 
 
@@ -146,3 +149,74 @@ class Discriminator(tf.keras.Model):
         x9 = self.last(x8)
         return x9
     
+
+class P2PMonitor(kr.callbacks.Callback):
+	def __init__(self, val_dataset, flags, my_strategy=False):
+
+		self.val_images = next(iter(val_dataset))
+		self.n_samples = 1
+		self.epoch_interval = flags.epoch_interval
+		self.checkpoints_path = os.path.join(flags.checkpoints_dir, flags.name)
+		self.hist_path = os.path.join(flags.hist_path, flags.name)
+		self.sample_dir = os.path.join(flags.sample_dir, flags.name)
+		self.losses = {'disc_loss': [], 'vgg_loss': [], 'ssim_loss': []} 
+
+		if not os.path.exists(self.checkpoints_path):
+			os.makedirs(self.checkpoints_path)
+		if not os.path.exists(self.sample_dir):
+			os.makedirs(self.sample_dir)
+		if not os.path.exists(self.hist_path):
+			os.makedirs(self.hist_path)
+
+	def infer(self):
+		return self.model(self.val_images[0])
+
+	def on_epoch_end(self, epoch, logs=None):
+		if epoch > 0 and epoch % self.epoch_interval == 0:
+			#self.save_models()
+			generated_images = self.infer()
+			for s_ in range(self.n_samples):
+				grid_row = min(generated_images.shape[0], 3)
+				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
+				for row in range(grid_row):
+					ax = axarr if grid_row == 1 else axarr[row]
+					ax[0].imshow((self.val_images[0][row].numpy().squeeze() + 1) / 2, cmap='gray')
+					ax[0].axis("off")
+					ax[0].set_title("CT", fontsize=20)
+					ax[1].imshow((self.val_images[1][row].numpy().squeeze() + 1) / 2, cmap='gray')
+					ax[1].axis("off")
+					ax[1].set_title("rMRI", fontsize=20)
+					ax[2].imshow((generated_images[row].numpy().squeeze() + 1) / 2, cmap='gray')
+					ax[2].axis("off")
+					ax[2].set_title("UNet sMRI", fontsize=20)
+				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+				sample_file = os.path.join(self.sample_dir, filename)
+				plt.savefig(sample_file)
+				#plt.show()
+
+
+				self.losses['disc_loss'].append(logs['disc_loss']) 
+				self.losses['vgg_loss'].append(logs['vgg_loss']) 
+				self.losses['ssim_loss'].append(logs['ssim_loss']) 
+
+				# Plot losses
+				plt.figure()
+				plt.plot(self.losses['disc_loss'], label='Discriminator Loss')
+				plt.plot(self.losses['vgg_loss'], label='VGG Loss')
+				plt.plot(self.losses['ssim_loss'], label='SSIM Loss')
+				plt.xlabel('Epoch')
+				plt.ylabel('Loss')
+				plt.legend()
+				plt.title('UNet Losses')
+				plt.savefig(os.path.join(self.hist_path, 'losses.png'))
+				plt.close()
+                                
+
+				for loss in self.losses.keys():
+					plt.figure()
+					plt.plot(self.losses[loss])
+					plt.title(loss)
+					plt.savefig(self.hist_path + '/unet_' +  loss + '.png')
+					plt.close()
+
+
