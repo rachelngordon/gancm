@@ -150,7 +150,7 @@ class Discriminator(tf.keras.Model):
         return x9
     
 
-class P2PMonitor(kr.callbacks.Callback):
+class GanMonitor(tf.keras.callbacks.Callback):
 	def __init__(self, val_dataset, flags, my_strategy=False):
 
 		self.val_images = next(iter(val_dataset))
