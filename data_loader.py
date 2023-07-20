@@ -209,9 +209,9 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
     def random_crop(self, x, y, z, height, width):
         stacked_image = tf.stack([x, y, z], axis=0)
         cropped_image = tf.image.random_crop(
-            stacked_image, size=[2, height, width, 1])
+            stacked_image, size=[3, height, width, 1])
         
-        return cropped_image[0], cropped_image[1]
+        return cropped_image[0], cropped_image[1], cropped_image[2]
     
     @tf.function()
     def random_jitter(self, x, y, z):
