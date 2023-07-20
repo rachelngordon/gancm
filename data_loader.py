@@ -211,7 +211,20 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         cropped_image = tf.image.random_crop(
             stacked_image, size=[3, height, width, 1])
         
-        return cropped_image[0], cropped_image[1], cropped_image[2]
+        cropped_ct = cropped_image[0]
+        cropped_mri = cropped_image[1]
+        cropped_mask = cropped_image[2]
+
+        # Assuming `z` is the mask tensor, we will split it into two channels
+        # representing two classes (background and foreground).
+        # Modify this step based on how you represent your mask images.
+        cropped_mask_bg = tf.where(cropped_mask < 0.5, 1.0, 0.0)
+        cropped_mask_fg = tf.where(cropped_mask >= 0.5, 1.0, 0.0)
+
+        # Stack the mask channels together to get (256, 256, 2) shape.
+        cropped_mask = tf.stack([cropped_mask_bg, cropped_mask_fg], axis=-1)
+        
+        return cropped_ct, cropped_mri, cropped_mask
     
     @tf.function()
     def random_jitter(self, x, y, z):
