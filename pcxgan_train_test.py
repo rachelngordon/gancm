@@ -10,12 +10,18 @@ import time
 
 
 def main(flags):
-
     # Get the available GPUs
     gpus = tf.config.experimental.list_physical_devices('GPU')
 
+    # Check if at least two GPUs are available
+    if len(gpus) < 2:
+        raise RuntimeError("At least two GPUs are required for this script.")
+
+    # Get the name of the first GPU without "physical_device:"
+    gpu_name_1 = gpus[0].name.replace("physical_device:", "")
+
     # Load augmented training data on the first GPU
-    with tf.device(gpus[0]):
+    with tf.device(gpu_name_1):
         train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
 
     # Load test data without augmentation
@@ -24,8 +30,11 @@ def main(flags):
     # Start the timer
     start_time = time.time()
 
+    # Get the name of the second GPU without "physical_device:"
+    gpu_name_2 = gpus[1].name.replace("physical_device:", "")
+
     # Build and train the model on the second GPU
-    with tf.device(gpus[1]):
+    with tf.device(gpu_name_2):
         model = PCxGAN(flags)
         model.compile()
 
