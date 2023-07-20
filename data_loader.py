@@ -142,7 +142,8 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
 	
 		# load data
         self.x, self.y, self.z = self.load_data(flags, data_path, if_train=if_train)
-        
+        print("Mask Shape Aug: ", self.z.shape)
+
         self.batch_size = 8
         self.if_train = if_train
         self.multiply_factor = 3 if if_train else 1
@@ -302,6 +303,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
     
 	# load data
     x, y, z = self.load_data(flags, self.data_path, if_train=if_train)
+    print("Mask Shape: ", z.shape)
     
 	# create dataset
     self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
