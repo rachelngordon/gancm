@@ -219,11 +219,12 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         cropped_mri = cropped_image[1]
         cropped_mask = cropped_image[2]
 
-        # Assuming `z` is the mask tensor, we will split it into two channels
-        # representing two classes (background and foreground).
-        # Modify this step based on how you represent your mask images.
         cropped_mask_bg = tf.where(cropped_mask < 0.5, 1.0, 0.0)
         cropped_mask_fg = tf.where(cropped_mask >= 0.5, 1.0, 0.0)
+
+        # Remove the additional dimension from cropped_mask
+        cropped_mask_bg = tf.squeeze(cropped_mask_bg, axis=-1)
+        cropped_mask_fg = tf.squeeze(cropped_mask_fg, axis=-1)
 
         # Stack the mask channels together to get (256, 256, 2) shape.
         cropped_mask = tf.stack([cropped_mask_bg, cropped_mask_fg], axis=-1)
