@@ -15,7 +15,7 @@ def main(flags):
     gpus = tf.config.experimental.list_physical_devices('GPU')
 
     # Load augmented training data on the first GPU
-    with tf.device(gpus[0].name):
+    with tf.device(gpus[0]):
         train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
 
     # Load test data without augmentation
@@ -25,7 +25,7 @@ def main(flags):
     start_time = time.time()
 
     # Build and train the model on the second GPU
-    with tf.device(gpus[1].name):
+    with tf.device(gpus[1]):
         model = PCxGAN(flags)
         model.compile()
 
