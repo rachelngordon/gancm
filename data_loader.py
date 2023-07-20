@@ -222,7 +222,7 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         cropped_mask_bg = tf.squeeze(cropped_mask_bg, axis=-1)
         cropped_mask_fg = tf.squeeze(cropped_mask_fg, axis=-1)
 
-        # Stack the mask channels together to get (256, 256, 2) shape.
+        # Stack the mask channels together 
         cropped_mask = tf.stack([cropped_mask_bg, cropped_mask_fg], axis=-1)
 
         
