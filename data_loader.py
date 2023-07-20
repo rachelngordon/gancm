@@ -159,7 +159,7 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         
         if self.if_train:
             self.dataset = self.dataset.map(self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE)
-            z_shape = self.dataset.reduce(tf.TensorShape([None, None, None])).element_spec[2]
+            z_shape = next(iter(self.dataset))[2].shape
 
             print("Shape of z after random jittering:", z_shape)
     
@@ -311,7 +311,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
     self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration = not if_train)
     self.dataset = self.dataset.map(
     lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
-    z_shape = self.dataset.reduce(tf.TensorShape([None, None, None])).element_spec[2]
+    z_shape = next(iter(self.dataset))[2].shape
 
     print("Shape of z:", z_shape)
     
