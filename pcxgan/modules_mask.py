@@ -172,7 +172,7 @@ class Encoder(kr.Model):
 class Decoder(kr.Model):
 	def __init__(self, flags, **kwargs):
 		super().__init__(**kwargs)
-		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
+		self.mask_shape = (flags.crop_size, flags.crop_size, 1)
 		self.image_shape = (flags.crop_size, flags.crop_size, 1)
 		self.latent_dim = flags.latent_dim
 		res_filters = flags.d_res_filters
