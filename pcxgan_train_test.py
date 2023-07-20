@@ -24,8 +24,8 @@ def main(flags):
     with tf.device(gpu_name_1):
         train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
 
-    # Load test data without augmentation
-    test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
+        # Load test data without augmentation
+        test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
     # Start the timer
     start_time = time.time()
