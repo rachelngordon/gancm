@@ -12,11 +12,6 @@ import time
 def main(flags):
 
   # load augmented training data
-  # get gpus visible to tensorflow
-  #gpus = tf.config.experimental.list_physical_devices('GPU')
-  
-  # load data using gpu 0
-  #with tf.device(gpus[0].name):
   train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
 
   # load test data without augmentation
@@ -28,8 +23,6 @@ def main(flags):
 
 
   #Build and train the model
-  # run the model using different gpu
-  #with tf.device(gpus[1].name):
   model = PCxGAN(flags)
   model.compile()
   
