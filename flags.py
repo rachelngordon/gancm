@@ -15,7 +15,7 @@ class Flags():
     parser.add_argument('--gpu_ids', type=str, default='1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
     parser.add_argument('--data_path', type=str, default='/media/aisec-102/DATA31/rachel/PCGAN/data/folds1234.npz', help='Data .npz file' )# CT_MRI-512-Updated
     parser.add_argument('--test_fold', type=int, default=5, help='fold to be left out of trainings' )
-
+    '''
     parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
     parser.add_argument('--sample_dir', type=str, default='./training_samples', help='samples are saved here')
     parser.add_argument('--result_logs', type=str, default='./results' , help='Logs are stored here' )
@@ -27,7 +27,7 @@ class Flags():
     parser.add_argument('--result_logs', type=str, default='/grand/EVITA/ct-mri/exp_results/results' , help='Logs are stored here' )
     parser.add_argument('--model_path', type=str, default='/grand/EVITA/ct-mri/exp_results/models/' , help='Model is stored here' )
     parser.add_argument('--hist_path', type=str, default='/grand/EVITA/ct-mri/exp_results/history/' , help='Model is stored here' )
-    '''
+
     parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
     
     # input/output sizes
@@ -169,7 +169,7 @@ class Flags():
       self.save_options(opt)
     
     # set gpu ids
-    '''  
+ 
     str_ids = opt.gpu_ids.split(',')
     opt.gpu_ids = []
     for str_id in str_ids:
@@ -189,6 +189,6 @@ class Flags():
     assert len(opt.gpu_ids) == 0 or opt.batch_size % len(opt.gpu_ids) == 0, \
       "Batch size %d is wrong. It must be a multiple of # GPUs %d." \
       % (opt.batch_size, len(opt.gpu_ids))
-    '''
+
     self.opt = opt
     return self.opt

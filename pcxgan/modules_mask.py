@@ -10,7 +10,7 @@ from datetime import datetime
 import data_loader
 import flags
 import random
-#import tensorflow_addons as tfa
+import tensorflow_addons as tfa
 
 
 class SPADE(kr.layers.Layer):
@@ -102,7 +102,7 @@ class DownsampleModule(kr.layers.Layer):
 		)
 
 		if apply_norm:
-			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			self.block.add(tfa.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
 
 		self.block.add(kr.layers.LeakyReLU(0.2))
 	
@@ -173,7 +173,7 @@ class Decoder(kr.Model):
 	def __init__(self, flags, **kwargs):
 		super().__init__(**kwargs)
 		self.mask_shape = (flags.crop_size, flags.crop_size, 1)
-		self.image_shape = (flags.crop_size, flags.crop_size, 1)
+		self.image_shape = (flags.crop_size, flags.crop_size, 2)
 		self.latent_dim = flags.latent_dim
 		res_filters = flags.d_res_filters
 		self.dense1 = kr.layers.Dense(self.latent_dim * 4 * 4)
