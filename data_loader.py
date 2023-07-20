@@ -132,6 +132,146 @@ class DataGeneratorAug(kr.utils.Sequence):
     def load(self):
         self.dataset = self.dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
         return self.dataset.batch(self.batch_size, drop_remainder=True)
+    
+
+# data generator for augmenting pcxgan data with mask
+class DataGeneratorAug_Mask(kr.utils.Sequence):
+    def __init__(self, flags, data_path, if_train=True, **kwargs):
+        
+        super().__init__(**kwargs)
+	
+		# load data
+        self.x, self.y, self.z = self.load_data(flags, data_path, if_train=if_train)
+        
+        self.batch_size = 8
+        self.if_train = if_train
+        self.multiply_factor = 3 if if_train else 1
+        
+        if self.multiply_factor > 1:
+            self.x = np.repeat(self.x, self.multiply_factor, axis=0)
+            self.y = np.repeat(self.y, self.multiply_factor, axis=0)
+            self.z = np.repeat(self.z, self.multiply_factor, axis=0)
+                
+        self.dataset = tf.data.Dataset.from_tensor_slices(
+            (self.x, self.y, self.z)
+        )
+        #self.dataset = self.dataset.shuffle(500) if self.if_train else self.dataset
+        
+        if self.if_train:
+            self.dataset = self.dataset.map(self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE)
+    
+
+    def load_data(self, flags, data_path, if_train):
+	    
+        if if_train:
+			
+            folds = list(range(1,6))
+
+            folds.remove(flags.test_fold)
+
+            for i in folds:
+                path = f"{data_path}{i}.npz"
+
+                if i==folds[0]:
+                    data=np.load(path)
+                    x,y,z = data['arr_0'], data['arr_1'], data['arr_2']
+                    #break
+
+                else:
+                    data = np.load(path)
+                    x = np.concatenate((x, data['arr_0']), axis=0)
+                    y = np.concatenate((y, data['arr_1']), axis=0)
+                    z = np.concatenate((z, data['arr_2']), axis=0)
+
+
+            return x, y, z
+		
+        else:
+            path = f"{data_path}{flags.test_fold}.npz"
+            data = np.load(path)
+            x, y, z =  data['arr_0'], data['arr_1'], data['arr_2']
+
+            return x, y, z
+
+	
+	
+    def resize(self, x, y, z, height, width):
+        x = tf.image.resize(x, [height, width],
+                            method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        y = tf.image.resize(y, [height, width],
+                            method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        z = tf.image.resize(z, [height, width],
+                            method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        
+        
+        return x, y, z
+    
+    def random_crop(self, x, y, z, height, width):
+        stacked_image = tf.stack([x, y, z], axis=0)
+        cropped_image = tf.image.random_crop(
+            stacked_image, size=[2, height, width, 1])
+        
+        return cropped_image[0], cropped_image[1]
+    
+    @tf.function()
+    def random_jitter(self, x, y, z):
+        # make the image larger to crop part of it later
+        x, y, z = self.resize(x, y, z, 286, 286)
+        
+        # Random cropping back to 256x256
+        x, y, z = self.random_crop(x, y, z, 256, 256)
+        
+        rand_flip = tf.random.uniform(())
+        if rand_flip > 0.66:
+            # Random horizontal flipping
+            x = tf.image.flip_left_right(x)
+            y = tf.image.flip_left_right(y)
+            z = tf.image.flip_left_right(z)
+        
+        elif rand_flip > 0.3:
+            # Random vertical flipping
+            x = tf.image.flip_up_down(x)
+            y = tf.image.flip_up_down(y)
+            z = tf.image.flip_up_down(z)
+        
+        """
+        rand_saturation = tf.random.uniform(())
+        if rand_saturation > 0.5:
+            x = tf.image.adjust_saturation(x, 1)
+            y = tf.image.adjust_saturation(y, 1)
+
+
+        """
+        rand_brightness = tf.random.uniform(())
+        if rand_brightness > 0.5:
+            x = tf.image.adjust_brightness(x, .3)
+            y = tf.image.adjust_brightness(y, .3)
+            z = tf.image.adjust_brightness(z, .3)
+        
+        rand_cen_crop = tf.random.uniform(())
+        if rand_cen_crop > 0.5:
+            x = tf.image.central_crop(x, central_fraction=0.8)
+            y = tf.image.central_crop(y, central_fraction=0.8)
+            z = tf.image.central_crop(z, central_fraction=0.8)
+            x, y, z = self.resize(x, y, z, 256, 256)
+        
+        rand_rot = tf.random.uniform(())
+        if rand_rot > 0.5:
+            x = tf.image.rot90(x)
+            y = tf.image.rot90(y)
+            z = tf.image.rot90(z)
+        
+        return x, y, z
+    
+    def __getitem__(self, idx):
+        return self.dataset.batch(self.batch_size, drop_remainder=True)
+    
+    def __len__(self):
+        return int((len(self.x) // self.batch_size) * self.multiply_factor)
+    
+    def load(self):
+        self.dataset = self.dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+        return self.dataset.batch(self.batch_size, drop_remainder=True)
         
 
 

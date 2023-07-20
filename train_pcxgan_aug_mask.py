@@ -22,10 +22,10 @@ def main(flags):
 
     # Load augmented training data on the first GPU
     with tf.device(gpu_name_1):
-        train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
+        train_data = data_loader.DataGeneratorAug_Mask(flags, flags.data_path, if_train=True).load()
 
         # Load test data without augmentation
-        test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
+        test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
 
     # Start the timer
     start_time = time.time()
