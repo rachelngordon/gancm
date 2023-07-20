@@ -159,9 +159,6 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         
         if self.if_train:
             self.dataset = self.dataset.map(self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE)
-            z_shape = next(iter(self.dataset))[2].shape
-
-            print("Shape of z after random jittering:", z_shape)
     
 
     def load_data(self, flags, data_path, if_train):
@@ -206,7 +203,6 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         z = tf.image.resize(z, [height, width],
                             method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
         
-        print("resized: ", z.shape)
         
         return x, y, z
     
@@ -229,7 +225,6 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         # Stack the mask channels together to get (256, 256, 2) shape.
         cropped_mask = tf.stack([cropped_mask_bg, cropped_mask_fg], axis=-1)
 
-        print("cropped: ", cropped_mask.shape)
         
         return cropped_ct, cropped_mri, cropped_mask
     
@@ -274,7 +269,6 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
             y = tf.image.central_crop(y, central_fraction=0.8)
             z = tf.image.central_crop(z, central_fraction=0.8)
             x, y, z = self.resize(x, y, z, 256, 256)
-            print("central crio: ", z.shape)
         
         rand_rot = tf.random.uniform(())
         if rand_rot > 0.5:
@@ -316,9 +310,6 @@ class DataGenerator_Ready(kr.utils.Sequence):
     self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration = not if_train)
     self.dataset = self.dataset.map(
     lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
-    z_shape = next(iter(self.dataset))[2].shape
-
-    print("Shape of z:", z_shape)
     
 	
 	
