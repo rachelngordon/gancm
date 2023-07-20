@@ -13,7 +13,7 @@ class DataGeneratorAug(kr.utils.Sequence):
 		# load data
         self.x, self.y = self.load_data(flags, data_path, if_train=if_train)
         
-        self.batch_size = 8
+        self.batch_size = flags.batch_size
         self.if_train = if_train
         self.multiply_factor = 3 if if_train else 1
         
