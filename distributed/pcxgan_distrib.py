@@ -73,7 +73,7 @@ class PCxGAN(kr.Model):
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
 		self.encoder = modules.Encoder(self.flags)
-		self.sampler = modules.GaussianSampler(int(self.batch_size / num_replicas), self.latent_dim)
+		self.sampler = modules.GaussianSampler(self.batch_size / num_replicas, self.latent_dim)
 		self.patch_size, self.combined_model = self.build_combined_model()
 		
 		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
