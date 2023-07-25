@@ -17,7 +17,7 @@ class SPADE(kr.layers.Layer):
 	def __init__(self, filters, flags, **kwargs):
 		super().__init__(**kwargs)
 		self.epsilon = flags.s_epsilon
-		self.conv = kr.layers.Conv2D(128, 2, padding="same", activation="relu")
+		self.conv = kr.layers.Conv2D(128, 3, padding="same", activation="relu")
 		self.conv_gamma = kr.layers.Conv2D(filters, flags.s_gamma_filter_size, padding="same")
 		self.conv_beta = kr.layers.Conv2D(filters, flags.s_beta_filter_size, padding="same")
 	
@@ -172,8 +172,8 @@ class Encoder(kr.Model):
 class Decoder(kr.Model):
 	def __init__(self, flags, **kwargs):
 		super().__init__(**kwargs)
-		self.mask_shape = (flags.crop_size, flags.crop_size, 1)
-		self.image_shape = (flags.crop_size, flags.crop_size, 2)
+		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
+		self.image_shape = (flags.crop_size, flags.crop_size, 1)
 		self.latent_dim = flags.latent_dim
 		res_filters = flags.d_res_filters
 		self.dense1 = kr.layers.Dense(self.latent_dim * 4 * 4)
