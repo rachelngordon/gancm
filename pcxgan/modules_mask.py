@@ -17,7 +17,7 @@ class SPADE(kr.layers.Layer):
 	def __init__(self, filters, flags, **kwargs):
 		super().__init__(**kwargs)
 		self.epsilon = flags.s_epsilon
-		self.conv = kr.layers.Conv2D(128, 3, padding="same", activation="relu")
+		self.conv = kr.layers.Conv2D(128, 2, padding="same", activation="relu")
 		self.conv_gamma = kr.layers.Conv2D(filters, flags.s_gamma_filter_size, padding="same")
 		self.conv_beta = kr.layers.Conv2D(filters, flags.s_beta_filter_size, padding="same")
 	
