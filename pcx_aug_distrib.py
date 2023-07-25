@@ -45,10 +45,14 @@ class PCxGAN_mask(kr.Model):
 	def __init__(
 			self,
 			flags,
+			vgg,
+			num_replicas,
 			**kwargs
 	):
 		super().__init__(**kwargs)
 		self.flags = flags
+		self.num_replicas = num_replicas
+
 		self.experiment_name = flags.name
 		self.hist_path = flags.hist_path
 		self.samples_dir = flags.sample_dir
@@ -58,6 +62,7 @@ class PCxGAN_mask(kr.Model):
 		self.latent_dim = flags.latent_dim
 		self.batch_size = flags.batch_size
 		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
+		self.vgg_model = vgg
 
 		self.vgg_feature_loss_coeff = 1 #flags.vgg_feature_loss_coeff
 		self.kl_divergence_loss_coeff = 50*flags.kl_divergence_loss_coeff
@@ -66,7 +71,7 @@ class PCxGAN_mask(kr.Model):
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
 		self.encoder = modules.Encoder(self.flags)
-		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
+		self.sampler = modules.GaussianSampler(self.batch_size / num_replicas, self.latent_dim)
 		self.patch_size, self.combined_model = self.build_combined_model()
 		
 		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
