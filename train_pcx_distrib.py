@@ -36,7 +36,11 @@ def main(flags):
     model = PCxGAN_mask(flags, vgg_model, s.num_replicas_in_sync)
     model.compile()
 
-  print("Batch size: ", flags.batch_size)
+    # Set the batch size for each replica (device)
+    flags.batch_size //= number_devices
+
+    print("Batch size: ", flags.batch_size)
+    
   history = model.fit(
     train_data,
     validation_data=test_data,
