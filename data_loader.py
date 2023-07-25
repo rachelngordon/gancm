@@ -155,7 +155,7 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         self.dataset = tf.data.Dataset.from_tensor_slices(
             (self.x, self.y, self.z)
         )
-        #self.dataset = self.dataset.shuffle(500) if self.if_train else self.dataset
+        self.dataset = self.dataset.shuffle(500) if self.if_train else self.dataset
         
         if self.if_train:
             self.dataset = self.dataset.map(self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE)
@@ -211,8 +211,23 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         cropped_image = tf.image.random_crop(
             stacked_image, size=[3, height, width, 1])
         
+
+        cropped_ct = cropped_image[0]
+        cropped_mri = cropped_image[1]
+        cropped_mask = cropped_image[2]
+
+        cropped_mask_bg = tf.where(cropped_mask < 0.5, 1.0, 0.0)
+        cropped_mask_fg = tf.where(cropped_mask >= 0.5, 1.0, 0.0)
+
+        # Remove the additional dimension from cropped_mask
+        cropped_mask_bg = tf.squeeze(cropped_mask_bg, axis=-1)
+        cropped_mask_fg = tf.squeeze(cropped_mask_fg, axis=-1)
+
+        # Stack the mask channels together 
+        cropped_mask = tf.stack([cropped_mask_bg, cropped_mask_fg], axis=-1)
+        
  
-        return cropped_image[0], cropped_image[1], cropped_image[2]
+        return cropped_ct, cropped_mri, cropped_mask
     
     @tf.function()
     def random_jitter(self, x, y, z):
