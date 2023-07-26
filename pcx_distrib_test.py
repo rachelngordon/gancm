@@ -33,7 +33,7 @@ def main(flags):
     #Build the model
     flags.batch_size = number_devices
     vgg_model = VGG()
-    model = PCxGAN_mask(flags, vgg_model, s.num_replicas_in_sync)
+    model = PCxGAN(flags, vgg_model, s.num_replicas_in_sync)
     model.compile()
 
     # Set the batch size for each replica (device)
