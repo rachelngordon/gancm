@@ -2,7 +2,7 @@
 import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
-import modules_distrib_pcx as modules
+import pcxgan.modules_distrib_pcx as modules
 import evaluate
 import os
 import pandas as pd
