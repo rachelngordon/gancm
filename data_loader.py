@@ -24,7 +24,7 @@ class DataGeneratorAug(kr.utils.Sequence):
         self.dataset = tf.data.Dataset.from_tensor_slices(
             (self.x, self.y)
         )
-        #self.dataset = self.dataset.shuffle(500) if self.if_train else self.dataset
+        self.dataset = self.dataset.shuffle(500) if self.if_train else self.dataset
         
         if self.if_train:
             self.dataset = self.dataset.map(self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE)
