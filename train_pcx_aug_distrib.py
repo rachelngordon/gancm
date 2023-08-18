@@ -1,6 +1,6 @@
-from pcx_aug_distrib import PCxGAN_mask, VGG
+from pcx_aug_distrib import PCxGAN, VGG
 from flags import Flags
-import pcxgan.modules_mask as modules
+import pcxgan.modules_no_mask as modules
 import data_loader
 import time
 import tensorflow as tf
@@ -19,8 +19,8 @@ def get_strategy_scope():
   
 def main(flags):
   
-  train_data = data_loader.DataGeneratorAug_Mask(flags, flags.data_path, if_train=True).load()
-  test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
+  train_data = data_loader.DataGeneratorAug(flags, flags.data_path, if_train=True).load()
+  test_data = data_loader.DataGenerator_PairedReady(flags, flags.data_path, if_train=False).load()
 
 
 
@@ -33,7 +33,7 @@ def main(flags):
     #Build the model
     flags.batch_size = number_devices
     vgg_model = VGG()
-    model = PCxGAN_mask(flags, vgg_model, s.num_replicas_in_sync)
+    model = PCxGAN(flags, vgg_model, s.num_replicas_in_sync)
     model.compile()
 
     # Set the batch size for each replica (device)

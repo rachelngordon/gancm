@@ -2,7 +2,7 @@
 import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
-import pcxgan.modules_mask as modules
+import pcxgan.modules_no_mask as modules
 import loss
 import evaluate
 from datetime import datetime
@@ -41,7 +41,7 @@ class VGG(kr.Model):
 	
 
 
-class PCxGAN_mask(kr.Model):
+class PCxGAN(kr.Model):
 	def __init__(
 			self,
 			flags,
@@ -61,7 +61,7 @@ class PCxGAN_mask(kr.Model):
 		self.image_size = flags.crop_size
 		self.latent_dim = flags.latent_dim
 		self.batch_size = flags.batch_size
-		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
+		#self.mask_shape = (flags.crop_size, flags.crop_size, 2)
 		self.vgg_model = vgg
 
 		self.vgg_feature_loss_coeff = 1 #flags.vgg_feature_loss_coeff
@@ -93,15 +93,15 @@ class PCxGAN_mask(kr.Model):
 	def build_combined_model(self):
 		
 		self.discriminator.trainable = False
-		mask_input = kr.Input(shape=self.mask_shape, name="mask")
+		#mask_input = kr.Input(shape=self.mask_shape, name="mask")
 		image_input = kr.Input(shape=self.image_shape, name="image")
 		latent_input = kr.Input(shape=self.latent_dim, name="latent")
-		generated_image = self.decoder([latent_input, mask_input, image_input])
+		generated_image = self.decoder([latent_input, image_input])
 		discriminator_output = self.discriminator([image_input, generated_image])
 		
 		patch_size = discriminator_output[-1].shape[1]
 		combined_model = kr.Model(
-			[latent_input, mask_input, image_input],
+			[latent_input, image_input],
 			[discriminator_output, generated_image],
 		)
 		return patch_size, combined_model
@@ -116,9 +116,9 @@ class PCxGAN_mask(kr.Model):
 		
 		super().compile(**kwargs)
 	
-	def train_discriminator(self, latent_vector, segmentation_map, real_image, labels):
+	def train_discriminator(self, latent_vector, segmentation_map, real_image):
 		
-		fake_images = self.decoder([latent_vector, labels, segmentation_map])
+		fake_images = self.decoder([latent_vector, segmentation_map])
 		
 		with tf.GradientTape() as gradient_tape:
 			pred_fake = self.discriminator([segmentation_map, fake_images])[-1]  # check
@@ -138,7 +138,7 @@ class PCxGAN_mask(kr.Model):
 		return total_loss
 	
 	
-	def train_generator(self, latent_vector, segmentation_map, labels, image):
+	def train_generator(self, latent_vector, segmentation_map, image):
 		
 		self.discriminator.trainable = False
 
@@ -170,7 +170,7 @@ class PCxGAN_mask(kr.Model):
 
 			real_d_output = self.discriminator([segmentation_map, image])
 			fake_d_output, fake_image = self.combined_model(
-				[latent_vector, labels, segmentation_map]
+				[latent_vector, segmentation_map]
 			)
 			pred = fake_d_output[-1]
 
@@ -196,7 +196,7 @@ class PCxGAN_mask(kr.Model):
 	
 	
 	def train_step(self, data):
-		ct, mri, labels = data
+		ct, mri = data
 
 		# Obtain the learned moments of the real image distribution.
 		mean, variance = self.encoder(mri)
@@ -205,10 +205,10 @@ class PCxGAN_mask(kr.Model):
 		latent_vector = self.sampler([mean, variance])
 
 		discriminator_loss = self.train_discriminator(
-			latent_vector, ct, mri, labels
+			latent_vector, ct, mri
 		)
 		(kl_loss, vgg_loss, ssim_loss) = self.train_generator(
-			latent_vector, ct, labels, mri
+			latent_vector, ct, mri
 		)
 		
 		# Report progress.
@@ -221,10 +221,10 @@ class PCxGAN_mask(kr.Model):
 		return results
 	
 	def test_step(self, data):
-		ct, mri, labels = data
+		ct, mri = data
 		mean, variance = self.encoder(mri)
 		latent_vector = self.sampler([mean, variance])
-		fake_images = self.decoder([latent_vector, labels, ct])
+		fake_images = self.decoder([latent_vector, ct])
 		
 		# Calculate the losses.
 		pred_fake = self.discriminator([ct, fake_images])[-1]
@@ -235,7 +235,7 @@ class PCxGAN_mask(kr.Model):
 		
 		real_d_output = self.discriminator([ct, mri])
 		fake_d_output, fake_image = self.combined_model(
-			[latent_vector, labels, ct]
+			[latent_vector, ct]
 		)
 		pred = fake_d_output[-1]
 		
@@ -254,19 +254,19 @@ class PCxGAN_mask(kr.Model):
 		return results
 	
 	def call(self, inputs):
-		latent_vectors, labels, ct = inputs
-		return self.decoder([latent_vectors, labels, ct])
+		latent_vectors, ct = inputs
+		return self.decoder([latent_vectors, ct])
 	
 	def model_evaluate(self, data, epoch=0):
 		results = []
 		
-		for ct, mri, label in data:
+		for ct, mri in data:
 
 			# Sample latent from a normal distribution.
 			latent_vector = tf.random.normal(
 				shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=2.0
 			)
-			fake_image = self.decoder([latent_vector, label, ct])
+			fake_image = self.decoder([latent_vector, ct])
 
 			mri = (mri + 1.0) / 2.0
 			fake_image = (fake_image + 1.0) / 2.0
