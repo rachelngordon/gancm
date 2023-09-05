@@ -95,7 +95,7 @@ def show_plot_generated(gen_image, name, step, ct, mri):
       filename = '%s%s_plot_%04d.png' % (sample_dir_, name, step)
       pyplot.savefig(filename)
       pyplot.close()
-      
+
     '''
     f = pyplot.figure(figsize=(8,8))
     pyplot.axis('off')
@@ -110,7 +110,7 @@ def show_plot_generated(gen_image, name, step, ct, mri):
     '''
 
 
-def predict_pcx(flags, decoder_file, ct, label):
+def predict_pcx(flags, decoder_file, ct, mri, label):
   
   decoder = load_model(decoder_file)
   modelname = decoder_file.split('/')[-1]
@@ -118,11 +118,11 @@ def predict_pcx(flags, decoder_file, ct, label):
       shape=(flags.batch_size, flags.latent_dim), mean=0.0, stddev=2.0)
   
   generated = decoder([latent_vector, label, ct])
-  
-  for idx, image in enumerate(generated):
-    show_plot_generated(image, modelname, idx+1)
-    
-    
+
+  counter = 0
+  for image in generated:
+    show_plot_generated(image, modelname, counter, ct, mri)
+    counter += 1
   
   return generated
 
@@ -136,8 +136,8 @@ def predict_p2p(model_path, modelname, ct, mri):
   generated = generator(ct)
   
   counter = 0
-  for idx, image in enumerate(generated):
-    show_plot_generated(image, modelname, counter)
+  for image in generated:
+    show_plot_generated(image, modelname, counter, ct, mri)
     counter += 1
   
   return generated
