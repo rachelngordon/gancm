@@ -6,7 +6,7 @@ flags = Flags().parse()
 
 
 # get pix2pix generated images
-test_data_path = "/media/aisec-102/DATA3/rachel/data/CV/no_eq_paired/norm_neg1pos1_fold5.npz"
+test_data_path = "/media/aisec-102/DATA3/rachel/data/CV/no_eq_paired/norm_neg1pos1_fold"
 
 test_dataset = data_loader.DataGenerator_PairedReady(flags, test_data_path, if_train=False).load()
 
@@ -18,7 +18,7 @@ for ct, mri in test_dataset:
 print("pix2pix complete")
 
 # get pcxgan generated images
-test_data_path = "/media/aisec-102/DATA3/rachel/data/CV/no_eq_edge/norm_mask_neg1pos1_fold5.npz"
+test_data_path = "/media/aisec-102/DATA3/rachel/data/CV/no_eq_edge/norm_mask_neg1pos1_fold"
 
 test_dataset = data_loader.DataGenerator_Ready(flags, test_data_path, if_train=False).load()
 
