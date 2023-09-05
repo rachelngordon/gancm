@@ -109,8 +109,6 @@ def predict_p2p(model_path, modelname, ct):
   
   generated = generator(ct)
   
-  data_name = 'test'
-  
   counter = 0
   for idx, image in enumerate(generated):
     show_plot_generated(image, modelname, idx+1)
