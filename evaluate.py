@@ -70,8 +70,33 @@ def get_metrics(y_true, y_pred):
 
 
 # plot the generated image
-def show_plot_generated(image, name, step):
+def show_plot_generated(gen_image, name, step, ct, mri):
+    
 
+    for s_ in range(3):
+      grid_row = min(gen_image.shape[0], 3)
+      f, axarr = pyplot.subplots(grid_row, 3, figsize=(18, grid_row * 6))
+      for row in range(grid_row):
+          ax = axarr if grid_row == 1 else axarr[row]
+          ax[0].imshow((ct[row] + 1) / 2, cmap='gray')
+          ax[0].axis("off")
+          ax[0].set_title("CT", fontsize=20)
+          ax[1].imshow((mri[row] + 1) / 2, cmap='gray')
+          ax[1].axis("off")
+          ax[1].set_title("rMRI", fontsize=20)
+          ax[2].imshow((gen_image[row] + 1) / 2, cmap='gray')
+          ax[2].axis("off")
+          ax[2].set_title("sMRI", fontsize=20)
+
+      sample_dir_ = '/media/aisec-102/DATA3/rachel/data/generated_test/%s/' %name
+      if not os.path.exists(sample_dir_):
+          os.makedirs(sample_dir_)
+      
+      filename = '%s%s_plot_%04d.png' % (sample_dir_, name, step)
+      pyplot.savefig(filename)
+      pyplot.close()
+      
+    '''
     f = pyplot.figure(figsize=(8,8))
     pyplot.axis('off')
     pyplot.imshow(np.squeeze(image),  cmap='gray')
@@ -82,6 +107,7 @@ def show_plot_generated(image, name, step):
     filename = '%s%s_plot_%04d.png' % (sample_dir_, name, step)
     pyplot.savefig(filename)
     pyplot.close()
+    '''
 
 
 def predict_pcx(flags, decoder_file, ct, label):
@@ -101,7 +127,7 @@ def predict_pcx(flags, decoder_file, ct, label):
   return generated
 
 
-def predict_p2p(model_path, modelname, ct):
+def predict_p2p(model_path, modelname, ct, mri):
   
 
   generator = load_model(model_path)
@@ -111,7 +137,7 @@ def predict_p2p(model_path, modelname, ct):
   
   counter = 0
   for idx, image in enumerate(generated):
-    show_plot_generated(image, modelname, idx+1)
+    show_plot_generated(image, modelname, counter)
     counter += 1
   
   return generated
