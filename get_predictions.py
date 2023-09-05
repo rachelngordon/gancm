@@ -4,6 +4,8 @@ import evaluate
 
 flags = Flags().parse()
 
+# pass test fold to flags
+
 
 # get pix2pix generated images
 test_data_path = "/media/aisec-102/DATA3/rachel/data/CV/no_eq_paired/norm_neg1pos1_fold"
