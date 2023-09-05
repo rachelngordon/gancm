@@ -70,7 +70,7 @@ def get_metrics(y_true, y_pred):
 
 
 # plot the generated image
-def show_plot_generated(ct, mri, gen_image, name, step):
+def show_plot_generated(ct, mri, gen_image, architecture, name, step):
     
 
     for s_ in range(3):
@@ -87,7 +87,7 @@ def show_plot_generated(ct, mri, gen_image, name, step):
           ax[1].set_title("rMRI", fontsize=20)
           ax[2].imshow((np.squeeze(gen_image) + 1) / 2, cmap='gray')
           ax[2].axis("off")
-          ax[2].set_title("sMRI", fontsize=20)
+          ax[2].set_title(architecture + " sMRI", fontsize=20)
 
       sample_dir_ = '/media/aisec-102/DATA3/rachel/data/generated_test/%s/' %name
       if not os.path.exists(sample_dir_):
@@ -122,7 +122,7 @@ def predict_pcx(flags, decoder_file, ct, mri, label):
 
   counter = 0
   for image in generated:
-    show_plot_generated(ct, mri, image, modelname, counter)
+    show_plot_generated(ct, mri, image, "PCxGAN", modelname, counter)
     counter += 1
   
   return generated
@@ -138,7 +138,7 @@ def predict_p2p(model_path, modelname, ct, mri):
   
   counter = 0
   for image in generated:
-    show_plot_generated(ct, mri, image, modelname, counter)
+    show_plot_generated(ct, mri, image, "Pix2Pix", modelname, counter)
     counter += 1
   
   return generated
