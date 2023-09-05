@@ -15,7 +15,7 @@ test_dataset = data_loader.DataGenerator_PairedReady(flags, test_data_path, if_t
 model_path = "/media/aisec-102/DATA3/rachel/experiments/models/p2p/p2p_no_eq_1234"
 
 for ct, mri in test_dataset:
-    evaluate.predict_p2p(model_path, "p2p_no_eq_1234", ct)
+    evaluate.predict_p2p(model_path, "p2p_no_eq_1234", ct, mri)
 
 print("pix2pix complete")
 
@@ -27,7 +27,7 @@ test_dataset = data_loader.DataGenerator_Ready(flags, test_data_path, if_train=F
 model_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcxgan/edge/pcx_just_edge_no_eq_1234_d"
 
 for ct, mri, label in test_dataset:
-    evaluate.predict_pcx(flags, model_path, ct, label)
+    evaluate.predict_pcx(flags, model_path, ct, mri, label)
 
 
 print("pcxgan complete")
