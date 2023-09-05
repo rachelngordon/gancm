@@ -93,7 +93,7 @@ def show_plot_generated(ct, mri, gen_image, name, step):
       if not os.path.exists(sample_dir_):
           os.makedirs(sample_dir_)
       
-      filename = '%s%s_plot_%04d%s.png' % (sample_dir_, name, step)
+      filename = '%s%s_plot_%s.png' % (sample_dir_, name, step)
       pyplot.savefig(filename)
       pyplot.close()
 
