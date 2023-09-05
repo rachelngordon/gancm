@@ -70,7 +70,7 @@ def get_metrics(y_true, y_pred):
 
 
 # plot the generated image
-def show_plot_generated(gen_image, name, step, ct, mri):
+def show_plot_generated(ct, mri, gen_image, name, step):
     
 
     for s_ in range(3):
@@ -93,7 +93,7 @@ def show_plot_generated(gen_image, name, step, ct, mri):
       if not os.path.exists(sample_dir_):
           os.makedirs(sample_dir_)
       
-      filename = '%s%s_plot_%04d.png' % (sample_dir_, name, step)
+      filename = '%s%s_plot_%04d%s.png' % (sample_dir_, name, step)
       pyplot.savefig(filename)
       pyplot.close()
 
@@ -122,7 +122,7 @@ def predict_pcx(flags, decoder_file, ct, mri, label):
 
   counter = 0
   for image in generated:
-    show_plot_generated(image, modelname, counter, ct, mri)
+    show_plot_generated(ct, mri, image, modelname, counter)
     counter += 1
   
   return generated
@@ -138,7 +138,7 @@ def predict_p2p(model_path, modelname, ct, mri):
   
   counter = 0
   for image in generated:
-    show_plot_generated(image, modelname, counter, ct, mri)
+    show_plot_generated(ct, mri, image, modelname, counter)
     counter += 1
   
   return generated
