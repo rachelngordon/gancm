@@ -292,6 +292,7 @@ class CycleGAN(kr.Model):
             
             fake_mri = self.generator_mri(ct)
 
+            # normalize to values between 0 and 1
             mri = (mri + 1.0) / 2.0
             fake_mri = (fake_mri + 1.0) / 2.0
 

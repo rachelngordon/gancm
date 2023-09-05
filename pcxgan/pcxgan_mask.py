@@ -236,6 +236,7 @@ class PCxGAN_mask(kr.Model):
 			)
 			fake_image = self.decoder([latent_vector, label, ct])
 
+			# normalize to values between 0 and 1
 			mri = (mri + 1.0) / 2.0
 			fake_image = (fake_image + 1.0) / 2.0
 			

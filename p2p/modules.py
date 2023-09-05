@@ -144,7 +144,7 @@ class DecoderModule(kr.Model):
         
         super().__init__(**kwargs)
 
-        #define encoder
+        #define decoder
         self.decoder = kr.models.Sequential()
         self.decoder._name = "Decoder"
         self.decoder.add(ResnetBlockT(channels, 1))

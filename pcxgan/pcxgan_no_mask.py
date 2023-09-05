@@ -231,7 +231,8 @@ class PCxGAN(kr.Model):
 				shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=2.0
 			)
 			fake_image = self.decoder([latent_vector, ct])
-
+			
+			# normalize to values between 0 and 1
 			mri = (mri + 1.0) / 2.0
 			fake_image = (fake_image + 1.0) / 2.0
 			
