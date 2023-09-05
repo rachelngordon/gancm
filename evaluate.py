@@ -74,17 +74,18 @@ def show_plot_generated(gen_image, name, step, ct, mri):
     
 
     for s_ in range(3):
-      grid_row = min(gen_image.shape[0], 3)
+      #grid_row = min(gen_image.shape[0], 3)
+      grid_row = 1
       f, axarr = pyplot.subplots(grid_row, 3, figsize=(18, grid_row * 6))
       for row in range(grid_row):
           ax = axarr if grid_row == 1 else axarr[row]
-          ax[0].imshow((ct[row] + 1) / 2, cmap='gray')
+          ax[0].imshow((ct + 1) / 2, cmap='gray')
           ax[0].axis("off")
           ax[0].set_title("CT", fontsize=20)
-          ax[1].imshow((mri[row] + 1) / 2, cmap='gray')
+          ax[1].imshow((mri + 1) / 2, cmap='gray')
           ax[1].axis("off")
           ax[1].set_title("rMRI", fontsize=20)
-          ax[2].imshow((gen_image[row] + 1) / 2, cmap='gray')
+          ax[2].imshow((gen_image + 1) / 2, cmap='gray')
           ax[2].axis("off")
           ax[2].set_title("sMRI", fontsize=20)
 
