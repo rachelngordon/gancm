@@ -5,7 +5,8 @@ import multiprocessing
 command_lines = [
     ("python3 ~/pcxgan/train_pcxgan_mask.py --exp_name pcx_edge_avg_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_edge/norm_mask_neg1pos1_fold'", 0),
     ("python3 ~/pcxgan/train_pcxgan_mask.py --exp_name pcx_seg_avg_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_mask/norm_mask_neg1pos1_fold'", 1), 
-    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_avg_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 2)
+    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_avg_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 2),
+    ("python3 ~/pcxgan/train_pcxgan_no_mask.py --exp_name pcx_no_mask_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/grand/EVITA/ct-mri/data/CV/eq_paired/norm_neg1pos1_fold'", 3)
 ]
 
 # Function to run a command on a GPU
