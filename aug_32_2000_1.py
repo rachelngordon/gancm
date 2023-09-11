@@ -3,7 +3,7 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 ~/pcxgan/train_pcxgan_aug.py --exp_name pcx_aug_32_1234_2000 --test_fold 5 --epochs 2000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 0, 1)
+    ("python3 ~/pcxgan/train_pcxgan_aug.py --exp_name pcx_aug_32_1234_2000 --test_fold 5 --epochs 2000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_neg1pos1_fold'", 0, 1),
     ("python3 ~/pcxgan/train_pcxgan_aug.py --exp_name pcx_aug_32_1235_2000 --test_fold 4 --epochs 2000 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_paired/norm_mask_neg1pos1_fold'", 2, 3)
 ]
 
