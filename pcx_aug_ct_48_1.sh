@@ -1,4 +1,4 @@
 # !/bin/bash
 module load conda
 conda activate 
-python3 ~/pcxgan/pcx_no_mask_aug_32.py
+python3 ~/pcxgan/pcx_aug_ct_48_1.py
