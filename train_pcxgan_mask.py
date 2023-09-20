@@ -7,8 +7,7 @@ import math
 import tensorflow as tf
 import tensorflow.keras as kr
 import time
-
-
+import os
 
 
 def main(flags):
@@ -27,8 +26,13 @@ def main(flags):
   model = PCxGAN_mask(flags)
   model.compile()
 
+  checkpoint_path = flags.model_path + flags.exp_name + '.h5'
+
+  if os.path.exist(checkpoint_path):
+     model.load_weights(checkpoint_path)
+
   checkpoint_callback = kr.callbacks.ModelCheckpoint(
-     filepath = flags.model_path + flags.exp_name + '.h5',
+     filepath = checkpoint_path,
      monitor = 'val_vgg_loss',
      save_best_only = True,
      save_weights_only = True,
