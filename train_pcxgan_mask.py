@@ -28,7 +28,7 @@ def main(flags):
 
   checkpoint_path = flags.model_path + flags.exp_name + '.h5'
 
-  if os.path.exist(checkpoint_path):
+  if os.path.exists(checkpoint_path):
      model.load_weights(checkpoint_path)
 
   checkpoint_callback = kr.callbacks.ModelCheckpoint(
