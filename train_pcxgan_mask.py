@@ -28,7 +28,7 @@ def main(flags):
   model.compile()
 
   checkpoint_callback = kr.callbacks.ModelCheckpoint(
-     filepath = flags.model_path + flags.exp_name + '/model_checkpoint.h5',
+     filepath = flags.model_path + flags.exp_name + '.h5',
      monitor = 'val_vgg_loss',
      save_best_only = True,
      save_weights_only = True,
