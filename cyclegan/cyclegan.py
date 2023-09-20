@@ -133,6 +133,7 @@ class CycleGAN(kr.Model):
         gradients_mri = gradient_tape.gradient(
             total_loss_mri, self.discriminator_mri.trainable_variables) 
 
+        # is this a mistake?
         self.mri_discriminator_optimizer.apply_gradients(
             zip(gradients_mri, self.discriminator_ct.trainable_variables)
         )

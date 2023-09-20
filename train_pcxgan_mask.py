@@ -26,13 +26,22 @@ def main(flags):
   #Build and train the model
   model = PCxGAN_mask(flags)
   model.compile()
+
+  checkpoint_callback = kr.callbacks.ModelCheckpoint(
+     filepath = flags.model_path + flags.exp_name + '/model_checkpoint.h5',
+     monitor = 'val_vgg_loss',
+     save_best_only = True,
+     save_weights_only = True,
+     verbose = 1,
+  )
+
   history = model.fit(
     train_data,
     validation_data=test_data,
     epochs=flags.epochs,
     verbose=1,
     batch_size = flags.batch_size,
-    callbacks=[modules.GanMonitor(test_data, flags)],
+    callbacks=[modules.GanMonitor(test_data, flags), checkpoint_callback],
   )
   
   end_time = time.time()
