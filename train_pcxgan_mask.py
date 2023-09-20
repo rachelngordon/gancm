@@ -21,11 +21,7 @@ def main(flags):
   # Start the timer
   start_time = time.time()
 
-
-  #Build and train the model
-  model = PCxGAN_mask(flags)
-  model.compile()
-
+  '''
   checkpoint_path = flags.model_path + flags.exp_name + '.h5'
 
   if os.path.exists(checkpoint_path):
@@ -38,15 +34,42 @@ def main(flags):
      save_weights_only = True,
      verbose = 1,
   )
+  '''
 
-  history = model.fit(
-    train_data,
-    validation_data=test_data,
-    epochs=flags.epochs,
-    verbose=1,
-    batch_size = flags.batch_size,
-    callbacks=[modules.GanMonitor(test_data, flags), checkpoint_callback],
-  )
+  # Load the model architecture from the JSON file
+  path = flags.model_path + flags.exp_name
+
+  if os.path.exists(path + ".h5") and os.path.exists(path + ".json"):
+    with open(path + ".json", "r") as json_file:
+        loaded_model_json = json_file.read()
+    model = tf.keras.models.model_from_json(loaded_model_json)
+
+    # Load the model weights from the HDF5 file
+    model.load_weights(path + ".h5")
+
+  else: 
+
+
+    model = PCxGAN_mask(flags)
+    model.compile()
+
+    history = model.fit(
+      train_data,
+      validation_data=test_data,
+      epochs=flags.epochs,
+      verbose=1,
+      batch_size = flags.batch_size,
+      callbacks=[modules.GanMonitor(test_data, flags)],
+    )
+
+  # Save the model architecture to a JSON file
+
+  model_json = model.to_json()
+  with open(path + ".json", "w") as json_file:
+      json_file.write(model_json)
+
+  # Save the model weights to an HDF5 file
+  model.save_weights(path + ".h5")
   
   end_time = time.time()
 
