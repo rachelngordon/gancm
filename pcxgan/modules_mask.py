@@ -11,8 +11,9 @@ import data_loader
 import flags
 import random
 import tensorflow_addons as tfa
+import keras
 
-@kr.saving.register_keras_serializable(package="MyLayers")
+@keras.saving.register_keras_serializable(package="MyLayers")
 class SPADE(kr.layers.Layer):
 	def __init__(self, filters, flags, **kwargs):
 		super().__init__(**kwargs)
