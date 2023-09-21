@@ -35,6 +35,8 @@ def main(flags):
      verbose = 1,
   )
   '''
+  # Clear all previously registered custom objects
+  kr.saving.get_custom_objects().clear()
 
   # Load the model architecture from the JSON file
   path = flags.model_path + flags.exp_name

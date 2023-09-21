@@ -11,7 +11,7 @@ import pandas as pd
 from  matplotlib import pyplot as plt
 from datetime import datetime
 
-@kr.saving.register_keras_serializable(package="MyLayers")
+
 class PCxGAN_mask(kr.Model):
 	def __init__(
 			self,
@@ -51,9 +51,9 @@ class PCxGAN_mask(kr.Model):
 		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1,
 																											beta_2=self.flags.disc_beta_2)
 		self.discriminator_loss = loss.DiscriminatorLoss()
-		#self.feature_matching_loss = loss.FeatureMatchingLoss()
+		self.feature_matching_loss = loss.FeatureMatchingLoss()
 		self.vgg_loss = loss.VGGFeatureMatchingLoss()
-		#self.mae_loss = loss.MAE()
+		self.mae_loss = loss.MAE()
 	
 	@property
 	def metrics(self):
@@ -224,80 +224,6 @@ class PCxGAN_mask(kr.Model):
 	def call(self, inputs):
 		latent_vectors, labels, ct = inputs
 		return self.decoder([latent_vectors, labels, ct])
-	
-	
-
-	def get_config(self):
-		base_config = super().get_config()
-		config = {
-            "flags": kr.saving.serialize_keras_object(self.flags),
-			"image_shape": kr.saving.serialize_keras_object(self.image_shape),
-			"mask_shape": kr.saving.serialize_keras_object(self.mask_shape),
-
-			"discriminator": kr.saving.serialize_keras_object(self.discriminator),
-			"decoder": kr.saving.serialize_keras_object(self.decoder),
-			"encoder": kr.saving.serialize_keras_object(self.encoder),
-			"sampler": kr.saving.serialize_keras_object(self.sampler),
-			"combined_model": kr.saving.serialize_keras_object(self.combined_model),
-
-			"disc_loss_tracker": kr.saving.serialize_keras_object(self.disc_loss_tracker),
-			"vgg_loss_tracker": kr.saving.serialize_keras_object(self.vgg_loss_tracker),
-			"kl_loss_tracker": kr.saving.serialize_keras_object(self.kl_loss_tracker),
-			"ssim_loss_tracker": kr.saving.serialize_keras_object(self.ssim_loss_tracker),
-
-			"en_optimizer": kr.saving.serialize_keras_object(self.en_optimizer),
-			"generator_optimizer": kr.saving.serialize_keras_object(self.generator_optimizer),
-			"discriminator_optimizer": kr.saving.serialize_keras_object(self.discriminator_optimizer),
-
-			"discriminator_loss": kr.saving.serialize_keras_object(self.discriminator_loss),
-			"vgg_loss": kr.saving.serialize_keras_object(self.vgg_loss),
-        }
-		return {**base_config, **config}
-	
-	@classmethod
-	def from_config(cls, config):
-		flags_config = config.pop("flags")
-		flags = kr.saving.deserialize_keras_object(flags_config)
-		image_shape_config = config.pop("image_shape")
-		image_shape = kr.saving.deserialize_keras_object(image_shape_config)
-		mask_shape_config = config.pop("mask_shape")
-		mask_shape = kr.saving.deserialize_keras_object(mask_shape_config)
-
-		discriminator_config = config.pop("discriminator")
-		discriminator = kr.saving.deserialize_keras_object(discriminator_config)
-		decoder_config = config.pop("decoder")
-		decoder = kr.saving.deserialize_keras_object(decoder_config)
-		encoder_config = config.pop("encoder")
-		encoder = kr.saving.deserialize_keras_object(encoder_config)
-		sampler_config = config.pop("sampler")
-		sampler = kr.saving.deserialize_keras_object(sampler_config)
-		combined_model_config = config.pop("combined_model")
-		combined_model = kr.saving.deserialize_keras_object(combined_model_config)
-
-		disc_loss_tracker_config = config.pop("disc_loss_tracker")
-		disc_loss_tracker = kr.saving.deserialize_keras_object(disc_loss_tracker_config)
-		vgg_loss_tracker_config = config.pop("vgg_loss_tracker")
-		vgg_loss_tracker = kr.saving.deserialize_keras_object(vgg_loss_tracker_config)
-		kl_loss_tracker_config = config.pop("kl_loss_tracker")
-		kl_loss_tracker = kr.saving.deserialize_keras_object(kl_loss_tracker_config)
-		ssim_loss_tracker_config = config.pop("ssim_loss_tracker")
-		ssim_loss_tracker = kr.saving.deserialize_keras_object(ssim_loss_tracker_config)
-
-		en_optimizer_config = config.pop("en_optimizer")
-		en_optimizer = kr.saving.deserialize_keras_object(en_optimizer_config)
-		generator_optimizer_config = config.pop("generator_optimizer")
-		generator_optimizer = kr.saving.deserialize_keras_object(generator_optimizer_config)
-		discriminator_optimizer_config = config.pop("discriminator_optimizer")
-		discriminator_optimizer = kr.saving.deserialize_keras_object(discriminator_optimizer_config)
-
-		discriminator_loss_config = config.pop("discriminator_loss")
-		discriminator_loss = kr.saving.deserialize_keras_object(discriminator_loss_config)
-		vgg_loss_config = config.pop("vgg_loss")
-		vgg_loss = kr.saving.deserialize_keras_object(vgg_loss_config)
-		
-		return cls(flags, image_shape, mask_shape, discriminator, decoder, encoder, sampler, combined_model, 
-			 disc_loss_tracker, vgg_loss_tracker, kl_loss_tracker, ssim_loss_tracker, en_optimizer, 
-			 generator_optimizer, discriminator_optimizer, discriminator_loss, vgg_loss, **config)
 	
 	
 	def model_evaluate(self, data, epoch=0):
