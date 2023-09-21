@@ -35,6 +35,7 @@ def main(flags):
      verbose = 1,
   )
   '''
+  '''
   # Clear all previously registered custom objects
   kr.saving.get_custom_objects().clear()
 
@@ -50,29 +51,30 @@ def main(flags):
     model.load_weights(path + ".h5")
 
   else: 
+  '''
 
+  model = PCxGAN_mask(flags)
+  model.compile()
 
-    model = PCxGAN_mask(flags)
-    model.compile()
-
-    history = model.fit(
-      train_data,
-      validation_data=test_data,
-      epochs=flags.epochs,
-      verbose=1,
-      batch_size = flags.batch_size,
-      callbacks=[modules.GanMonitor(test_data, flags)],
-    )
+  history = model.fit(
+    train_data,
+    validation_data=test_data,
+    epochs=flags.epochs,
+    verbose=1,
+    batch_size = flags.batch_size,
+    callbacks=[modules.GanMonitor(test_data, flags)],
+  )
 
   # Save the model architecture to a JSON file
-
+  '''
   model_json = model.to_json()
   with open(path + ".json", "w") as json_file:
       json_file.write(model_json)
 
   # Save the model weights to an HDF5 file
   model.save_weights(path + ".h5")
-  
+  '''
+
   end_time = time.time()
 
   # Calculate the training duration

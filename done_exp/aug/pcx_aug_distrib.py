@@ -2,8 +2,8 @@
 import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
-from . import modules_mask as modules
-import loss
+import pcxgan.modules_no_mask as modules
+import loss_save
 import evaluate
 from datetime import datetime
 import os
@@ -11,15 +11,48 @@ import pandas as pd
 from  matplotlib import pyplot as plt
 from datetime import datetime
 
+class VGG(kr.Model):
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+		self.encoder_layers = [
+			"block1_conv1",
+			"block2_conv1",
+			"block3_conv1",
+			"block4_conv1",
+			"block5_conv1",
+		]
+		#self.weights = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
+		vgg = kr.applications.VGG19(include_top=False, weights="imagenet")
+		layer_outputs = [vgg.get_layer(x).output for x in self.encoder_layers]
+		self.vgg_model = kr.Model(vgg.input, layer_outputs, name="VGG")
+	
+	def call(self, y_true, y_pred):
+		y_true = (y_true + 1.0) / 2.0
+		y_pred = (y_pred + 1.0) / 2.0
+		
+		y_true = tf.image.grayscale_to_rgb(y_true)
+		y_pred = tf.image.grayscale_to_rgb(y_pred)
+		
+		y_true = kr.applications.vgg19.preprocess_input(127.5 * (y_true + 1))
+		y_pred = kr.applications.vgg19.preprocess_input(127.5 * (y_pred + 1))
+		real_features = self.vgg_model(y_true)
+		fake_features = self.vgg_model(y_pred)
+		return real_features, fake_features
+	
 
-class PCxGAN_mask(kr.Model):
+
+class PCxGAN(kr.Model):
 	def __init__(
 			self,
 			flags,
+			vgg,
+			num_replicas,
 			**kwargs
 	):
 		super().__init__(**kwargs)
 		self.flags = flags
+		self.num_replicas = num_replicas
+
 		self.experiment_name = flags.name
 		self.hist_path = flags.hist_path
 		self.samples_dir = flags.sample_dir
@@ -28,7 +61,8 @@ class PCxGAN_mask(kr.Model):
 		self.image_size = flags.crop_size
 		self.latent_dim = flags.latent_dim
 		self.batch_size = flags.batch_size
-		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
+		#self.mask_shape = (flags.crop_size, flags.crop_size, 2)
+		self.vgg_model = vgg
 
 		self.vgg_feature_loss_coeff = 1 #flags.vgg_feature_loss_coeff
 		self.kl_divergence_loss_coeff = 50*flags.kl_divergence_loss_coeff
@@ -37,7 +71,7 @@ class PCxGAN_mask(kr.Model):
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
 		self.encoder = modules.Encoder(self.flags)
-		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
+		self.sampler = modules.GaussianSampler(int(self.batch_size / num_replicas), self.latent_dim)
 		self.patch_size, self.combined_model = self.build_combined_model()
 		
 		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
@@ -45,15 +79,7 @@ class PCxGAN_mask(kr.Model):
 		self.kl_loss_tracker = tf.keras.metrics.Mean(name="kl_loss")
 		self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
 		
-		self.en_optimizer = kr.optimizers.Adam()
-		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1,
-																									beta_2=self.flags.gen_beta_2)
-		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1,
-																											beta_2=self.flags.disc_beta_2)
-		self.discriminator_loss = loss.DiscriminatorLoss()
-		self.feature_matching_loss = loss.FeatureMatchingLoss()
-		self.vgg_loss = loss.VGGFeatureMatchingLoss()
-		self.mae_loss = loss.MAE()
+
 	
 	@property
 	def metrics(self):
@@ -67,32 +93,38 @@ class PCxGAN_mask(kr.Model):
 	def build_combined_model(self):
 		
 		self.discriminator.trainable = False
-		mask_input = kr.Input(shape=self.mask_shape, name="mask")
+		#mask_input = kr.Input(shape=self.mask_shape, name="mask")
 		image_input = kr.Input(shape=self.image_shape, name="image")
 		latent_input = kr.Input(shape=self.latent_dim, name="latent")
-		generated_image = self.decoder([latent_input, mask_input, image_input])
+		generated_image = self.decoder([latent_input, image_input])
 		discriminator_output = self.discriminator([image_input, generated_image])
 		
 		patch_size = discriminator_output[-1].shape[1]
 		combined_model = kr.Model(
-			[latent_input, mask_input, image_input],
+			[latent_input, image_input],
 			[discriminator_output, generated_image],
 		)
 		return patch_size, combined_model
 	
 	def compile(self, **kwargs):
 		
+		self.en_optimizer = kr.optimizers.Adam()
+		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1,
+																									beta_2=self.flags.gen_beta_2)
+		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1,
+																											beta_2=self.flags.disc_beta_2)
+		
 		super().compile(**kwargs)
 	
-	def train_discriminator(self, latent_vector, segmentation_map, real_image, labels):
+	def train_discriminator(self, latent_vector, segmentation_map, real_image):
 		
-		fake_images = self.decoder([latent_vector, labels, segmentation_map])
+		fake_images = self.decoder([latent_vector, segmentation_map])
 		
 		with tf.GradientTape() as gradient_tape:
 			pred_fake = self.discriminator([segmentation_map, fake_images])[-1]  # check
 			pred_real = self.discriminator([segmentation_map, real_image])[-1]  # check
-			loss_fake = self.discriminator_loss(False, pred_fake)
-			loss_real = self.discriminator_loss(True, pred_real)
+			loss_fake = self.DiscriminatorLoss(False, pred_fake) * (1. / self.batch_size)
+			loss_real = self.DiscriminatorLoss(True, pred_real) * (1. / self.batch_size)
 			total_loss = 0.5 * (loss_fake + loss_real)
 		
 		self.discriminator.trainable = True
@@ -106,7 +138,7 @@ class PCxGAN_mask(kr.Model):
 		return total_loss
 	
 	
-	def train_generator(self, latent_vector, segmentation_map, labels, image):
+	def train_generator(self, latent_vector, segmentation_map, image):
 		
 		self.discriminator.trainable = False
 
@@ -117,7 +149,7 @@ class PCxGAN_mask(kr.Model):
 
 			
 			# Compute generator losses.
-			kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
+			kl_loss = self.kl_divergence_loss_coeff * self.kl_divergence_loss(mean, variance) * (1. / self.batch_size)
 
 		
 		en_trainable_variables = (
@@ -138,14 +170,14 @@ class PCxGAN_mask(kr.Model):
 
 			real_d_output = self.discriminator([segmentation_map, image])
 			fake_d_output, fake_image = self.combined_model(
-				[latent_vector, labels, segmentation_map]
+				[latent_vector, segmentation_map]
 			)
 			pred = fake_d_output[-1]
 
 			
 			# Compute generator losses.
-			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(image, fake_image)
-			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(image, fake_image)
+			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(image, fake_image) * (1. / self.batch_size)
+			ssim_loss = self.ssim_loss_coeff * self.SSIMLoss(image, fake_image) * (1. / self.batch_size)
 			total_loss = vgg_loss + ssim_loss
 
 		
@@ -164,7 +196,7 @@ class PCxGAN_mask(kr.Model):
 	
 	
 	def train_step(self, data):
-		ct, mri, labels = data
+		ct, mri = data
 
 		# Obtain the learned moments of the real image distribution.
 		mean, variance = self.encoder(mri)
@@ -173,10 +205,10 @@ class PCxGAN_mask(kr.Model):
 		latent_vector = self.sampler([mean, variance])
 
 		discriminator_loss = self.train_discriminator(
-			latent_vector, ct, mri, labels
+			latent_vector, ct, mri
 		)
 		(kl_loss, vgg_loss, ssim_loss) = self.train_generator(
-			latent_vector, ct, labels, mri
+			latent_vector, ct, mri
 		)
 		
 		# Report progress.
@@ -189,27 +221,27 @@ class PCxGAN_mask(kr.Model):
 		return results
 	
 	def test_step(self, data):
-		ct, mri, labels = data
+		ct, mri = data
 		mean, variance = self.encoder(mri)
 		latent_vector = self.sampler([mean, variance])
-		fake_images = self.decoder([latent_vector, labels, ct])
+		fake_images = self.decoder([latent_vector, ct])
 		
 		# Calculate the losses.
 		pred_fake = self.discriminator([ct, fake_images])[-1]
 		pred_real = self.discriminator([ct, mri])[-1]
-		loss_fake = self.discriminator_loss(False, pred_fake)
-		loss_real = self.discriminator_loss(True, pred_real)
+		loss_fake = self.DiscriminatorLoss(False, pred_fake) * (1. / self.batch_size)
+		loss_real = self.DiscriminatorLoss(True, pred_real) * (1. / self.batch_size)
 		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
 		
 		real_d_output = self.discriminator([ct, mri])
 		fake_d_output, fake_image = self.combined_model(
-			[latent_vector, labels, ct]
+			[latent_vector, ct]
 		)
 		pred = fake_d_output[-1]
 		
-		kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
+		kl_loss = self.kl_divergence_loss_coeff * loss_save.kl_divergence_loss(mean, variance)
 		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
-		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
+		ssim_loss = self.ssim_loss_coeff * loss_save.SSIMLoss(mri, fake_image)
 		#total_generator_loss = kl_loss + vgg_loss + ssim_loss
 		
 		# Report progress.
@@ -222,22 +254,20 @@ class PCxGAN_mask(kr.Model):
 		return results
 	
 	def call(self, inputs):
-		latent_vectors, labels, ct = inputs
-		return self.decoder([latent_vectors, labels, ct])
-	
+		latent_vectors, ct = inputs
+		return self.decoder([latent_vectors, ct])
 	
 	def model_evaluate(self, data, epoch=0):
 		results = []
 		
-		for ct, mri, label in data:
+		for ct, mri in data:
 
 			# Sample latent from a normal distribution.
 			latent_vector = tf.random.normal(
 				shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=2.0
 			)
-			fake_image = self.decoder([latent_vector, label, ct])
+			fake_image = self.decoder([latent_vector, ct])
 
-			# normalize to values between 0 and 1
 			mri = (mri + 1.0) / 2.0
 			fake_image = (fake_image + 1.0) / 2.0
 			
@@ -263,7 +293,7 @@ class PCxGAN_mask(kr.Model):
 	
 	
 	def save_model(self):
-		self.encoder.save(self.flags.model_path + self.experiment_name + '_e')
+		#self.encoder.save(self.flags.model_path + self.experiment_name + '_e')
 		self.decoder.save(self.flags.model_path + self.experiment_name + '_d')
 
 
@@ -288,5 +318,29 @@ class PCxGAN_mask(kr.Model):
 			plt.legend([loss + '_loss','val_' + loss + '_loss'],loc='upper right')
 			plt.savefig(exp_path + '/pcxgan_' + loss + '.png')
 
+	def DiscriminatorLoss(self, is_real, y_pred):
+		label = 1.0 if is_real else -1.0
+		h = kr.losses.Hinge(reduction=kr.losses.Reduction.SUM)
+
+		return h(label, y_pred)
 
 
+	def vgg_loss(self, y_true, y_pred):
+		real_features, fake_features = self.vgg_model(y_true, y_pred)
+		weights__ = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
+		#mae = kr.losses.MeanAbsoluteError(reduction=kr.losses.Reduction.SUM)
+		
+		loss = 0
+		for i in range(len(real_features)):
+			loss += weights__[i] * tf.reduce_mean(tf.abs((real_features[i]- fake_features[i])))
+		return loss
+
+
+	def SSIMLoss(self, y_true, y_pred):
+		y_true = (y_true + 1.0) / 2.0
+		y_pred = (y_pred + 1.0) / 2.0
+		return 1 - tf.reduce_mean(tf.image.ssim(y_true, y_pred, 1.0))
+
+    
+	def kl_divergence_loss(self, mean, variance):
+	    return -0.5 * tf.reduce_sum(1 + variance - tf.square(mean) - tf.exp(variance))

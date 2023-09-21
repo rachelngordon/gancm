@@ -11,8 +11,9 @@ import data_loader
 import flags
 import random
 import tensorflow_addons as tfa
+import keras
 
-
+@keras.saving.register_keras_serializable(package="MyLayers")
 class SPADE(kr.layers.Layer):
 	def __init__(self, filters, flags, **kwargs):
 		super().__init__(**kwargs)
@@ -35,8 +36,29 @@ class SPADE(kr.layers.Layer):
 		normalized = (input_tensor - mean) / std
 		output = gamma * normalized + beta
 		return output
+	
+	def get_config(self):
+		base_config = super().get_config()
+		config = {
+            "conv": kr.saving.serialize_keras_object(self.conv),
+			"conv_gamma": kr.saving.serialize_keras_object(self.conv_gamma),
+			"conv_beta": kr.saving.serialize_keras_object(self.conv_beta),
+        }
+		return {**base_config, **config}
+	
+	@classmethod
+	def from_config(cls, config):
+		conv_config = config.pop("conv")
+		conv = kr.saving.deserialize_keras_object(conv_config)
+		conv_gamma_config = config.pop("conv_gamma")
+		conv_gamma = kr.saving.deserialize_keras_object(conv_gamma_config)
+		conv_beta_config = config.pop("conv_beta")
+		conv_beta = kr.saving.deserialize_keras_object(conv_beta_config)
+		return cls(conv, conv_gamma, conv_beta, **config)
+	
 
 
+@kr.saving.register_keras_serializable(package="MyLayers")
 class ResBlock(kr.layers.Layer):
 	def __init__(self, flags, filters, **kwargs):
 		super().__init__(**kwargs)
@@ -68,8 +90,37 @@ class ResBlock(kr.layers.Layer):
 		)
 		output = skip + x
 		return output
+	
+	def get_config(self):
+		base_config = super().get_config()
+		config = {
+            "spade_1": kr.saving.serialize_keras_object(self.spade_1),
+			"spade_2": kr.saving.serialize_keras_object(self.spade_2),
+			"spade_3": kr.saving.serialize_keras_object(self.spade_3),
+			"conv_1": kr.saving.serialize_keras_object(self.spade_1),
+			"conv_2": kr.saving.serialize_keras_object(self.spade_2),
+			"conv_3": kr.saving.serialize_keras_object(self.spade_3),
+        }
+		return {**base_config, **config}
+	
+	@classmethod
+	def from_config(cls, config):
+		spade_1_config = config.pop("spade_1")
+		spade_1 = kr.saving.deserialize_keras_object(spade_1_config)
+		spade_2_config = config.pop("spade_2")
+		spade_2 = kr.saving.deserialize_keras_object(spade_2_config)
+		spade_3_config = config.pop("spade_3")
+		spade_3 = kr.saving.deserialize_keras_object(spade_3_config)
+		conv_1_config = config.pop("conv_1")
+		conv_1 = kr.saving.deserialize_keras_object(conv_1_config)
+		conv_2_config = config.pop("conv_2")
+		conv_2 = kr.saving.deserialize_keras_object(conv_2_config)
+		conv_3_config = config.pop("conv_3")
+		conv_3 = kr.saving.deserialize_keras_object(conv_3_config)
+		return cls(spade_1, spade_2, spade_3, conv_1, conv_2, conv_3, **config)
+	
 
-
+@kr.saving.register_keras_serializable(package="MyLayers")
 class GaussianSampler(kr.layers.Layer):
 	def __init__(self, batch_size, latent_dim, **kwargs):
 		super().__init__(**kwargs)
@@ -83,8 +134,9 @@ class GaussianSampler(kr.layers.Layer):
 		)
 		samples = means + tf.exp(0.5 * variance) * epsilon
 		return samples
+	
 
-
+@kr.saving.register_keras_serializable(package="MyLayers")
 class DownsampleModule(kr.layers.Layer):
 	def __init__(self, channels, filter_size, apply_norm=True, **kwargs):
 		super().__init__(**kwargs)
@@ -108,8 +160,24 @@ class DownsampleModule(kr.layers.Layer):
 	
 	def call(self, inputs__):
 		return self.block(inputs__)
+	
+	def get_config(self):
+		base_config = super().get_config()
+		config = {
+            "gamma_init": kr.saving.serialize_keras_object(self.gamma_init),
+			"block": kr.saving.serialize_keras_object(self.block),
+        }
+		return {**base_config, **config}
+	
+	@classmethod
+	def from_config(cls, config):
+		gamma_init_config = config.pop("gamma_init")
+		gamma_init = kr.saving.deserialize_keras_object(gamma_init_config)
+		block_config = config.pop("block")
+		block = kr.saving.deserialize_keras_object(block_config)
+		return cls(gamma_init, block, **config)
 
-
+@kr.saving.register_keras_serializable(package="MyLayers")
 class UpsampleModule(kr.layers.Layer):
 	def __init__(self, channels, filter_size, batch_norm=True, dropout=True,
 							 apply_activation=True, **kwargs):
@@ -134,8 +202,21 @@ class UpsampleModule(kr.layers.Layer):
 	
 	def call(self, inputs_):
 		return self.block(inputs_)
+	
+	def get_config(self):
+		base_config = super().get_config()
+		config = {
+			"block": kr.saving.serialize_keras_object(self.block),
+        }
+		return {**base_config, **config}
+	
+	@classmethod
+	def from_config(cls, config):
+		block_config = config.pop("block")
+		block = kr.saving.deserialize_keras_object(block_config)
+		return cls(block, **config)
 
-
+@kr.saving.register_keras_serializable(package="MyLayers")
 class Encoder(kr.Model):
 	def __init__(self, flags, **kwargs):
 		super().__init__(**kwargs)
@@ -167,8 +248,54 @@ class Encoder(kr.Model):
 	def build_graph(self):
 		x = kr.layers.Input(shape=self.image_shape)
 		return kr.Model(inputs=[x], outputs=self.call(x))
+	
+
+	def get_config(self):
+		base_config = super().get_config()
+		config = {
+			"image_shape": kr.saving.serialize_keras_object(self.image_shape),
+
+			"downsample1": kr.saving.serialize_keras_object(self.downsample1),
+			"downsample2": kr.saving.serialize_keras_object(self.downsample2),
+			"downsample3": kr.saving.serialize_keras_object(self.downsample3),
+			"downsample4": kr.saving.serialize_keras_object(self.downsample4),
+			"downsample5": kr.saving.serialize_keras_object(self.downsample5),
+
+			"flatten": kr.saving.serialize_keras_object(self.flatten),
+			"mean": kr.saving.serialize_keras_object(self.mean),
+			"variance": kr.saving.serialize_keras_object(self.variance),
+        }
+		return {**base_config, **config}
+	
+	@classmethod
+	def from_config(cls, config):
+
+		image_shape_config = config.pop("image_shape")
+		image_shape = kr.saving.deserialize_keras_object(image_shape_config)
+
+		downsample1_config = config.pop("downsample1")
+		downsample1 = kr.saving.deserialize_keras_object(downsample1_config)
+		downsample2_config = config.pop("downsample2")
+		downsample2 = kr.saving.deserialize_keras_object(downsample2_config)
+		downsample3_config = config.pop("downsample3")
+		downsample3 = kr.saving.deserialize_keras_object(downsample3_config)
+		downsample4_config = config.pop("downsample4")
+		downsample4 = kr.saving.deserialize_keras_object(downsample4_config)
+		downsample5_config = config.pop("downsample5")
+		downsample5 = kr.saving.deserialize_keras_object(downsample5_config)
+
+		flatten_config = config.pop("flatten")
+		flatten = kr.saving.deserialize_keras_object(flatten_config)
+		mean_config = config.pop("mean")
+		mean = kr.saving.deserialize_keras_object(mean_config)
+		variance_config = config.pop("variance")
+		variance = kr.saving.deserialize_keras_object(variance_config)
+
+		return cls(image_shape, downsample1, downsample2, downsample3, downsample4, downsample5, 
+			 flatten, mean, variance, **config)
 
 
+@kr.saving.register_keras_serializable(package="MyLayers")
 class Decoder(kr.Model):
 	def __init__(self, flags, **kwargs):
 		super().__init__(**kwargs)
@@ -221,8 +348,81 @@ class Decoder(kr.Model):
 		# x = self.upsample7(x)
 		x = self.activation(x)
 		return self.out_image(x)
+	
 
+	def get_config(self):
+		base_config = super().get_config()
+		config = {
+			"mask_shape": kr.saving.serialize_keras_object(self.mask_shape),
+			"image_shape": kr.saving.serialize_keras_object(self.image_shape),
+			"dense1": kr.saving.serialize_keras_object(self.dense1),
+			"reshape": kr.saving.serialize_keras_object(self.reshape),
 
+			"resblock1": kr.saving.serialize_keras_object(self.resblock1),
+			"upsample1": kr.saving.serialize_keras_object(self.upsample1),
+			"resblock2": kr.saving.serialize_keras_object(self.resblock2),
+			"upsample2": kr.saving.serialize_keras_object(self.upsample2),
+			"resblock3": kr.saving.serialize_keras_object(self.resblock3),
+			"upsample3": kr.saving.serialize_keras_object(self.upsample3),
+			"resblock4": kr.saving.serialize_keras_object(self.resblock4),
+			"upsample4": kr.saving.serialize_keras_object(self.upsample4),
+			"resblock5": kr.saving.serialize_keras_object(self.resblock5),
+			"upsample5": kr.saving.serialize_keras_object(self.upsample5),
+			"resblock6": kr.saving.serialize_keras_object(self.resblock6),
+			"upsample6": kr.saving.serialize_keras_object(self.upsample6),
+
+			"activation": kr.saving.serialize_keras_object(self.activation),
+			"out_image": kr.saving.serialize_keras_object(self.out_image),
+        }
+		return {**base_config, **config}
+	
+	@classmethod
+	def from_config(cls, config):
+		mask_shape_config = config.pop("mask_shape")
+		mask_shape = kr.saving.deserialize_keras_object(mask_shape_config)
+		image_shape_config = config.pop("image_shape")
+		image_shape = kr.saving.deserialize_keras_object(image_shape_config)
+
+		dense1_config = config.pop("dense1")
+		dense1 = kr.saving.deserialize_keras_object(dense1_config)
+		reshape_config = config.pop("reshape")
+		reshape = kr.saving.deserialize_keras_object(reshape_config)
+
+		resblock1_config = config.pop("resblock1")
+		resblock1 = kr.saving.deserialize_keras_object(resblock1_config)
+		upsample1_config = config.pop("upsample1")
+		upsample1 = kr.saving.deserialize_keras_object(upsample1_config)
+		resblock2_config = config.pop("resblock2")
+		resblock2 = kr.saving.deserialize_keras_object(resblock2_config)
+		upsample2_config = config.pop("upsample2")
+		upsample2 = kr.saving.deserialize_keras_object(upsample2_config)
+		resblock3_config = config.pop("resblock3")
+		resblock3 = kr.saving.deserialize_keras_object(resblock3_config)
+		upsample3_config = config.pop("upsample3")
+		upsample3 = kr.saving.deserialize_keras_object(upsample3_config)
+		resblock4_config = config.pop("resblock4")
+		resblock4 = kr.saving.deserialize_keras_object(resblock4_config)
+		upsample4_config = config.pop("upsample4")
+		upsample4 = kr.saving.deserialize_keras_object(upsample4_config)
+		resblock5_config = config.pop("resblock5")
+		resblock5 = kr.saving.deserialize_keras_object(resblock5_config)
+		upsample5_config = config.pop("upsample5")
+		upsample5 = kr.saving.deserialize_keras_object(upsample5_config)
+		resblock6_config = config.pop("resblock6")
+		resblock6 = kr.saving.deserialize_keras_object(resblock6_config)
+		upsample6_config = config.pop("upsample6")
+		upsample6 = kr.saving.deserialize_keras_object(upsample6_config)
+
+		activation_config = config.pop("activation")
+		activation = kr.saving.deserialize_keras_object(activation_config)
+		out_image_config = config.pop("out_image")
+		out_image = kr.saving.deserialize_keras_object(out_image_config)
+
+		return cls(mask_shape, image_shape, dense1, reshape, 
+			 resblock1, upsample1, resblock2, upsample2, resblock3, upsample3, resblock4, upsample4,
+			  resblock5, upsample5, resblock6, upsample6, activation, out_image, **config)
+
+@kr.saving.register_keras_serializable(package="MyLayers")
 class Discriminator(kr.Model):
 	def __init__(self, flags, **kwargs):
 		super().__init__(**kwargs)
@@ -250,6 +450,43 @@ class Discriminator(kr.Model):
 		x1 = kr.layers.Input(shape=self.image_shape)
 		x2 = kr.layers.Input(shape=self.image_shape)
 		return kr.Model(inputs=[x1, x2], outputs=self.call([x1, x2]))
+	
+	def get_config(self):
+		base_config = super().get_config()
+		config = {
+			"image_shape": kr.saving.serialize_keras_object(self.image_shape),
+			"merged": kr.saving.serialize_keras_object(self.merged),
+
+			"downsample1": kr.saving.serialize_keras_object(self.downsample1),
+			"downsample2": kr.saving.serialize_keras_object(self.downsample2),
+			"downsample3": kr.saving.serialize_keras_object(self.downsample3),
+			"downsample4": kr.saving.serialize_keras_object(self.downsample4),
+
+			"conv": kr.saving.serialize_keras_object(self.conv),
+        }
+		return {**base_config, **config}
+	
+	@classmethod
+	def from_config(cls, config):
+
+		image_shape_config = config.pop("image_shape")
+		image_shape = kr.saving.deserialize_keras_object(image_shape_config)
+		merged_config = config.pop("merged")
+		merged = kr.saving.deserialize_keras_object(merged_config)
+
+		downsample1_config = config.pop("downsample1")
+		downsample1 = kr.saving.deserialize_keras_object(downsample1_config)
+		downsample2_config = config.pop("downsample2")
+		downsample2 = kr.saving.deserialize_keras_object(downsample2_config)
+		downsample3_config = config.pop("downsample3")
+		downsample3 = kr.saving.deserialize_keras_object(downsample3_config)
+		downsample4_config = config.pop("downsample4")
+		downsample4 = kr.saving.deserialize_keras_object(downsample4_config)
+
+		conv_config = config.pop("conv")
+		conv = kr.saving.deserialize_keras_object(conv_config)
+
+		return cls(image_shape, merged, downsample1, downsample2, downsample3, downsample4, conv, **config)
 
 
 class GanMonitor(kr.callbacks.Callback):
