@@ -1,13 +1,11 @@
-from pcxgan.pcxgan_mask import PCxGAN_mask
+from checkpointing.pcxgan_ckpt import PCxGAN_mask
 from flags import Flags
 import data_loader
-import pcxgan.modules_mask as modules
+import checkpointing.modules as modules
 import numpy as np
-import math
 import tensorflow as tf
 import tensorflow.keras as kr
 import time
-import os
 
 
 def main(flags):
@@ -32,7 +30,6 @@ def main(flags):
     batch_size = flags.batch_size,
     callbacks=[modules.GanMonitor(test_data, flags)],
   )
-
 
   end_time = time.time()
 

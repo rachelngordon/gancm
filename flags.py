@@ -15,6 +15,11 @@ class Flags():
     parser.add_argument('--gpu_ids', type=str, default='1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
     parser.add_argument('--data_path', type=str, default='/media/aisec-102/DATA31/rachel/PCGAN/data/folds1234.npz', help='Data .npz file' )# CT_MRI-512-Updated
     parser.add_argument('--test_fold', type=int, default=5, help='fold to be left out of trainings' )
+
+    parser.add_argument('--disc_path', type=str, default='/grand/EVITA/ct-mri/exp_results/models/pcx_ckpt_test_disc', help='')
+    parser.add_argument('--dec_path', type=str, default='/grand/EVITA/ct-mri/exp_results/models/pcx_ckpt_test_d', help='' )# CT_MRI-512-Updated
+    parser.add_argument('--enc_path', type=str, default='/grand/EVITA/ct-mri/exp_results/models/pcx_ckpt_test_e', help='' )
+
     '''
     parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
     parser.add_argument('--sample_dir', type=str, default='./training_samples', help='samples are saved here')
