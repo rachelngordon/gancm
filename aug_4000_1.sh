@@ -1,4 +1,4 @@
 # !/bin/bash
 module load conda
 conda activate 
-python3 ~/pcxgan/no_aug_32_2000_2.py
+python3 ~/pcxgan/aug_4000_1.py
