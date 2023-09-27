@@ -34,13 +34,13 @@ class PCxGAN_mask(kr.Model):
 		self.kl_divergence_loss_coeff = 50*flags.kl_divergence_loss_coeff
 		self.ssim_loss_coeff = flags.ssim_loss_coeff
 		
-		self.discriminator = modules.Discriminator(self.flags)
-		self.decoder = modules.Decoder(self.flags)
-		self.encoder = modules.Encoder(self.flags)
+		#self.discriminator = modules.Discriminator(self.flags)
+		#self.decoder = modules.Decoder(self.flags)
+		#self.encoder = modules.Encoder(self.flags)
 		
-		#self.discriminator = kr.models.load_model(flags.disc_path)
-		#self.decoder = kr.models.load_model(flags.dec_path)
-		#self.encoder = kr.models.load_model(flags.enc_path)
+		self.discriminator = kr.models.load_model(flags.disc_path)
+		self.decoder = kr.models.load_model(flags.dec_path)
+		self.encoder = kr.models.load_model(flags.enc_path)
 	
 		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
 		self.patch_size, self.combined_model = self.build_combined_model()
