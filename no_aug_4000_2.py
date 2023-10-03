@@ -3,7 +3,7 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 ~/pcxgan/train_pcxgan_ckpt.py --exp_name pcx_seg_ct_no_aug_32_2345_4000 --test_fold 1 --epochs 2000 --epoch_interval 100 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_mask/norm_mask_neg1pos1_fold' --disc_path '/grand/EVITA/ct-mri/exp_results/models/aug_new/pcx_seg_ct_no_aug_32_2345_2000_disc' --dec_path '/grand/EVITA/ct-mri/exp_results/models/aug_new/pcx_seg_ct_no_aug_32_2345_2000_d' --enc_path '/grand/EVITA/ct-mri/exp_results/models/aug_new/pcx_seg_ct_no_aug_32_2345_2000_e'", 0)
+    ("python3 ~/pcxgan/train_pcxgan_ckpt.py --exp_name pcx_seg_ct_no_aug_32_2345_4000 --test_fold 1 --epochs 2000 --epoch_interval 100 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_mask/norm_mask_neg1pos1_fold' --disc_path '/grand/EVITA/ct-mri/exp_results/models/pcx_seg_ct_no_aug_32_2345_2000_disc' --dec_path '/grand/EVITA/ct-mri/exp_results/models/pcx_seg_ct_no_aug_32_2345_2000_d' --enc_path '/grand/EVITA/ct-mri/exp_results/models/pcx_seg_ct_no_aug_32_2345_2000_e'", 0)
 ]
 
 # Function to run a command on a GPU
