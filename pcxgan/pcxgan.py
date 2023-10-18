@@ -63,6 +63,8 @@ class PCxGAN(kr.Model):
         
 		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
 		self.patch_size, self.combined_model = self.build_combined_model()
+
+		self.mask_generator = modules.MaskGenerationLayer()
 		
 		# Define MRI loss trackers.
 		self.disc_pair_loss_mri_tracker = tf.keras.metrics.Mean(name="disc_pair_loss_mri")
@@ -108,14 +110,6 @@ class PCxGAN(kr.Model):
 			self.identity_loss_ct_tracker
 		]
 	
-	def get_mask(self, image):
-
-		# Obtain sgementation mask.
-		np_image = modules.ConvertToNumPyArray()(image)
-		img_smooth = cv2.GaussianBlur(np_image, (5,5), 0)
-		_, threshold = cv2.threshold(img_smooth, np.mean(img_smooth)+0.01, 1, cv2.THRESH_BINARY)
-		
-		return np.expand_dims(threshold, -1)
 	
 	def build_combined_model(self):
 		
@@ -141,8 +135,8 @@ class PCxGAN(kr.Model):
 		id_ct = self.de_ct([ct_latent, ct_mask, ct_input])
 
 		# Get segmentation masks from generated images.
-		gen_ct_mask = self.get_mask(generated_ct)
-		gen_mri_mask = self.get_mask(generated_mri)
+		gen_ct_mask = self.mask_generator(generated_ct)
+		gen_mri_mask = self.mask_generator(generated_mri)
 
 		# Generate MRI and CT for forward/backward cycle.
 		cycled_mri = self.de_mri([mri_latent, gen_ct_mask, generated_ct])

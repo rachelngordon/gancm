@@ -10,6 +10,7 @@ from datetime import datetime
 import data_loader
 import flags
 import random
+import cv2
 #import tensorflow_addons as tfa
 
 
@@ -252,10 +253,22 @@ class Discriminator(kr.Model):
 		return kr.Model(inputs=[x1, x2], outputs=self.call([x1, x2]))
 
 
-class ConvertToNumPyArray(kr.layers.Layer):
+class MaskGenerationLayer(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(MaskGenerationLayer, self).__init__(**kwargs)
+
     def call(self, inputs):
-        # Convert the symbolic tensor to a NumPy array
-        return np.array(inputs)
+        img_smooth = tf.py_function(self._get_mask, [inputs], tf.float32)
+        img_smooth.set_shape(inputs.shape)  # Set the shape of the output tensor
+        return img_smooth
+
+    @staticmethod
+    def _get_mask(image):
+        # Obtain segmentation mask.
+        img_smooth = cv2.GaussianBlur(image.numpy(), (5, 5), 0)
+        _, threshold = cv2.threshold(img_smooth, np.mean(img_smooth) + 0.01, 1, cv2.THRESH_BINARY)
+        return np.expand_dims(threshold, -1)
+	
 
 
 class GanMonitor(kr.callbacks.Callback):
