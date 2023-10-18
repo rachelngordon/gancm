@@ -253,13 +253,16 @@ class Discriminator(kr.Model):
 		return kr.Model(inputs=[x1, x2], outputs=self.call([x1, x2]))
 
 
+
 class MaskGenerationLayer(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
         super(MaskGenerationLayer, self).__init__(**kwargs)
 
     def call(self, inputs):
         # Ensure the inputs have the correct shape
-        inputs = tf.reshape(inputs, [-1, 256, 256, 3])  # Assuming input shape is (None, 256, 256, 3)
+        inputs = tf.image.resize(inputs, (256, 256))  # Resize input to (256, 256)
+        inputs = tf.image.rgb_to_grayscale(inputs)  # Convert to grayscale if needed
+        inputs = tf.math.round(inputs)  # Ensure pixel values are binary (0 or 1)
 
         # Apply mask generation logic using tf.py_function
         img_smooth = tf.py_function(func=self._get_mask, inp=[inputs], Tout=tf.float32, name='mask_generation')
