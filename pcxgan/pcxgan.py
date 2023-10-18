@@ -140,8 +140,8 @@ class PCxGAN(kr.Model):
 		id_ct = self.de_ct([ct_latent, ct_mask, ct_input])
 
 		# Get segmentation masks from generated images.
-		gen_ct_mask = self.get_mask(generated_ct.numpy())
-		gen_mri_mask = self.get_mask(generated_mri.numpy())
+		gen_ct_mask = self.get_mask(tf.make_ndarray(generated_ct))
+		gen_mri_mask = self.get_mask(tf.make_ndarray(generated_mri))
 
 		# Generate MRI and CT for forward/backward cycle.
 		cycled_mri = self.de_mri([mri_latent, gen_ct_mask, generated_ct])
