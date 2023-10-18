@@ -62,9 +62,8 @@ class PCxGAN(kr.Model):
 		self.mri_dc_optimizer = kr.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1)
         
 		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
-		self.patch_size, self.combined_model = self.build_combined_model()
-		
 		self.mask_generator = modules.MaskGenerationLayer()
+		self.patch_size, self.combined_model = self.build_combined_model()
 		
 		# Define MRI loss trackers.
 		self.disc_pair_loss_mri_tracker = tf.keras.metrics.Mean(name="disc_pair_loss_mri")
