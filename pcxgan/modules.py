@@ -258,8 +258,13 @@ class MaskGenerationLayer(tf.keras.layers.Layer):
         super(MaskGenerationLayer, self).__init__(**kwargs)
 
     def call(self, inputs):
-        img_smooth = tf.py_function(self._get_mask, [inputs], tf.float32)
-        img_smooth.set_shape(inputs.shape)  # Set the shape of the output tensor
+        # Ensure the inputs have the correct shape
+        inputs = tf.reshape(inputs, [-1, 256, 256, 3])  # Assuming input shape is (None, 256, 256, 3)
+
+        # Apply mask generation logic using tf.py_function
+        img_smooth = tf.py_function(func=self._get_mask, inp=[inputs], Tout=tf.float32, name='mask_generation')
+        img_smooth.set_shape((None, 256, 256, 1))  # Set the shape of the output tensor
+
         return img_smooth
 
     @staticmethod
@@ -267,7 +272,8 @@ class MaskGenerationLayer(tf.keras.layers.Layer):
         # Obtain segmentation mask.
         img_smooth = cv2.GaussianBlur(image.numpy(), (5, 5), 0)
         _, threshold = cv2.threshold(img_smooth, np.mean(img_smooth) + 0.01, 1, cv2.THRESH_BINARY)
-        return np.squeeze(threshold)
+        return np.expand_dims(np.squeeze(threshold), axis=-1)
+
 	
 
 
