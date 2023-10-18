@@ -1,7 +1,7 @@
-from gancm.gancm_mask_ct import PCxGAN_mask
+from pcxgan.pcxgan import PCxGAN
 from flags import Flags
 import data_loader
-import gancm.modules_mask_ct as modules
+import pcxgan.modules as modules
 import numpy as np
 import math
 import tensorflow as tf
@@ -21,7 +21,7 @@ def main(flags):
   # Start the timer
   start_time = time.time()
 
-  model = PCxGAN_mask(flags)
+  model = PCxGAN(flags)
   model.compile()
 
   history = model.fit(

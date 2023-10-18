@@ -1,7 +1,7 @@
-from gancm.gancm_mask import PCxGAN_mask as PCxGAN
+from gancm.gancm_mask_ct import PCxGAN_mask as PCxGAN
 from flags import Flags
 import data_loader
-import gancm.modules_mask as modules
+import gancm.modules_mask_ct as modules
 import numpy as np
 import math
 import tensorflow as tf
