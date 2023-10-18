@@ -1,16 +1,18 @@
-from pcxgan.pcxgan_just_mask import PCxGAN_mask
+from gancm.gancm_mask import PCxGAN_mask
 from flags import Flags
 import data_loader
-import pcxgan.modules_just_mask as modules
+import gancm.modules_mask as modules
 import numpy as np
 import math
 import tensorflow as tf
 import tensorflow.keras as kr
 import time
+import os
 
 
 def main(flags):
 
+  # pass path to data in flags
 
   train_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=True).load()
   test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
@@ -19,10 +21,9 @@ def main(flags):
   # Start the timer
   start_time = time.time()
 
-
-  #Build and train the model
   model = PCxGAN_mask(flags)
   model.compile()
+
   history = model.fit(
     train_data,
     validation_data=test_data,
@@ -31,7 +32,8 @@ def main(flags):
     batch_size = flags.batch_size,
     callbacks=[modules.GanMonitor(test_data, flags)],
   )
-  
+
+
   end_time = time.time()
 
   # Calculate the training duration
