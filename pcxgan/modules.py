@@ -267,7 +267,7 @@ class MaskGenerationLayer(tf.keras.layers.Layer):
         # Obtain segmentation mask.
         img_smooth = cv2.GaussianBlur(image.numpy(), (5, 5), 0)
         _, threshold = cv2.threshold(img_smooth, np.mean(img_smooth) + 0.01, 1, cv2.THRESH_BINARY)
-        return np.expand_dims(threshold, -1)
+        return threshold
 	
 
 
