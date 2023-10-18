@@ -251,7 +251,11 @@ class Discriminator(kr.Model):
 		x2 = kr.layers.Input(shape=self.image_shape)
 		return kr.Model(inputs=[x1, x2], outputs=self.call([x1, x2]))
 
-	
+
+class ConvertToNumPyArray(kr.layers.Layer):
+    def call(self, inputs):
+        # Convert the symbolic tensor to a NumPy array
+        return np.array(inputs)
 
 
 class GanMonitor(kr.callbacks.Callback):
