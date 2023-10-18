@@ -63,7 +63,7 @@ class PCxGAN(kr.Model):
         
 		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
 		self.patch_size, self.combined_model = self.build_combined_model()
-
+		
 		self.mask_generator = modules.MaskGenerationLayer()
 		
 		# Define MRI loss trackers.
