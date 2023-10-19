@@ -14,8 +14,8 @@ def main(flags):
 
   # pass path to data in flags
 
-  train_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=True).load()
-  test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
+  train_data = data_loader.DataGenerator_BothReady(flags, flags.data_path, if_train=True).load()
+  test_data = data_loader.DataGenerator_BothReady(flags, flags.data_path, if_train=False).load()
 
 
   # Start the timer
