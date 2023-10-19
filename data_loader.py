@@ -27,7 +27,7 @@ class DataGenerator_BothReady(kr.utils.Sequence):
     self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration = not if_train)
     self.dataset = self.dataset.map(
     
-    lambda x, y, z, w: (x, tf.one_hot(tf.squeeze(tf.cast(y, tf.int32)), 2), z, tf.one_hot(tf.squeeze(tf.cast(w, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
+    lambda x, y, z, w: (x, y, z, tf.one_hot(tf.squeeze(tf.cast(w, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
     print('y: ', y.shape)
     print('w: ', w.shape)
     
