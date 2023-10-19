@@ -314,6 +314,11 @@ class PCxGAN(kr.Model):
 	def train_step(self, data):
 
 		ct, ct_mask, mri, mri_mask = data
+		
+		ct = tf.squeeze(ct, axis=0)
+		ct_mask = tf.squeeze(ct_mask, axis=0)
+		mri = tf.squeeze(mri, axis=0)
+		mri_mask = tf.squeeze(mri_mask, axis=0)
 
 		# Obtain the learned moments of the real image distribution.
 		mean_mri, variance_mri = self.en_mri(mri)
