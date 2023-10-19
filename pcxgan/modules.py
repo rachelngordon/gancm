@@ -261,7 +261,7 @@ class MaskGenerationLayer(tf.keras.layers.Layer):
     def call(self, inputs):
         # Ensure the inputs have the correct shape
         inputs = tf.image.resize(inputs, (256, 256))  # Resize input to (256, 256)
-        inputs = tf.image.rgb_to_grayscale(inputs)  # Convert to grayscale if needed
+        #inputs = tf.image.rgb_to_grayscale(inputs)  # Convert to grayscale if needed
         inputs = tf.math.round(inputs)  # Ensure pixel values are binary (0 or 1)
 
         # Apply mask generation logic using tf.py_function
