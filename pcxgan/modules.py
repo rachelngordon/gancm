@@ -206,9 +206,6 @@ class Decoder(kr.Model):
 		latent, mask, ct = inputs_
 		x = self.dense1(latent)
 		x = self.reshape(x)
-		print('x: ', x.shape)
-		print('mask: ', mask.shape)
-		print('ct: ', ct.shape)
 		x = self.resblock1(x, mask, ct)
 		x = self.upsample1(x)
 		x = self.resblock2(x, mask, ct)
@@ -269,8 +266,9 @@ class MaskGenerationLayer(tf.keras.layers.Layer):
 
         # Apply mask generation logic using tf.py_function
         img_smooth = tf.py_function(func=self._get_mask, inp=[inputs], Tout=tf.float32, name='mask_generation')
-        img_smooth.set_shape((None, 256, 256, 2))  # Set the shape of the output tensor
-        print('gen mask: ', img_smooth.shape)
+        img_smooth = tf.one_hot(tf.squeeze(tf.cast(img_smooth, tf.int32)), 2)
+        #img_smooth.set_shape((None, 256, 256, 2))  # Set the shape of the output tensor
+
         return img_smooth
 
     @staticmethod
