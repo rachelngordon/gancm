@@ -260,11 +260,11 @@ class MaskGenerationLayer(tf.keras.layers.Layer):
 
     def call(self, inputs):
         # Ensure the inputs have the correct shape
-        print(type(inputs))
+        #print(type(inputs))
         inputs = tf.image.resize(inputs, (256, 256))  # Resize input to (256, 256)
         #print(inputs.shape)
         #inputs = tf.image.rgb_to_grayscale(inputs)  # Convert to grayscale if needed
-        inputs = tf.math.round(inputs)  # Ensure pixel values are binary (0 or 1)
+        inputs = tf.math.round(tf.squeeze(inputs, axis=[0, 3]))  # Ensure pixel values are binary (0 or 1)
 
         # Apply mask generation logic using tf.py_function
         img_smooth = tf.py_function(func=self._get_mask, inp=[inputs], Tout=tf.float32, name='mask_generation')
