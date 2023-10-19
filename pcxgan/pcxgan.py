@@ -166,8 +166,6 @@ class PCxGAN(kr.Model):
 
 	def train_discriminators(self, mri_latent, real_mri, mri_mask, ct_latent, real_ct, ct_mask):
 
-		print('ct_mask: ', ct_mask)
-		print('mri_mask: ', mri_mask)
 
 		fake_mri = self.de_mri([mri_latent, ct_mask, real_ct])
 		fake_ct = self.de_mri([ct_latent, mri_mask, real_mri])
@@ -314,6 +312,8 @@ class PCxGAN(kr.Model):
 	def train_step(self, data):
 
 		ct, ct_mask, mri, mri_mask = data
+		print('ct_mask: ', ct_mask)
+		print('mri_mask: ', mri_mask)
 
 		# Obtain the learned moments of the real image distribution.
 		mean_mri, variance_mri = self.en_mri(mri)
