@@ -166,10 +166,10 @@ class PCxGAN(kr.Model):
 
 	def train_discriminators(self, mri_latent, real_mri, mri_mask, ct_latent, real_ct, ct_mask):
 
-		real_ct = tf.squeeze(real_ct, axis=0)
-		ct_mask = tf.squeeze(ct_mask, axis=0)
-		real_mri = tf.squeeze(real_mri, axis=0)
-		mri_mask = tf.squeeze(mri_mask, axis=0)
+		#real_ct = tf.squeeze(real_ct, axis=0)
+		#ct_mask = tf.squeeze(ct_mask, axis=0)
+		#real_mri = tf.squeeze(real_mri, axis=0)
+		#mri_mask = tf.squeeze(mri_mask, axis=0)
 
 		fake_mri = self.de_mri([mri_latent, ct_mask, real_ct])
 		fake_ct = self.de_mri([ct_latent, mri_mask, real_mri])
@@ -268,10 +268,10 @@ class PCxGAN(kr.Model):
 			zip(en_ct_gradients, en_ct_trainable_variables))
 		
 
-		ct = tf.squeeze(ct, axis=0)
-		ct_mask = tf.squeeze(ct_mask, axis=0)
-		mri = tf.squeeze(mri, axis=0)
-		mri_mask = tf.squeeze(mri_mask, axis=0)
+		#ct = tf.squeeze(ct, axis=0)
+		#ct_mask = tf.squeeze(ct_mask, axis=0)
+		#mri = tf.squeeze(mri, axis=0)
+		#mri_mask = tf.squeeze(mri_mask, axis=0)
 
 
 		# Train MRI decoder.
