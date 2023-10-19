@@ -16,10 +16,6 @@ class DataGenerator_BothReady(kr.utils.Sequence):
     
 	# load data
     x, y, z, w = self.load_data(flags, self.data_path, if_train=if_train)
-    print('x: ', x.shape)
-    print('y: ', y.shape)
-    print('z: ', z.shape)
-    print('w: ', w.shape)
     
     
 	# create dataset

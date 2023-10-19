@@ -312,8 +312,6 @@ class PCxGAN(kr.Model):
 	def train_step(self, data):
 
 		ct, ct_mask, mri, mri_mask = data
-		print('ct_mask: ', ct_mask)
-		print('mri_mask: ', mri_mask)
 
 		# Obtain the learned moments of the real image distribution.
 		mean_mri, variance_mri = self.en_mri(mri)
