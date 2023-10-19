@@ -166,7 +166,9 @@ class PCxGAN(kr.Model):
 
 	def train_discriminators(self, mri_latent, real_mri, mri_mask, ct_latent, real_ct, ct_mask):
 
-
+		# tf.squeeze(ct, axis=0)
+		print('ct: ', real_ct.shape)
+		print('mask: ', ct_mask.shape)
 		fake_mri = self.de_mri([mri_latent, ct_mask, real_ct])
 		fake_ct = self.de_mri([ct_latent, mri_mask, real_mri])
 		
