@@ -269,7 +269,7 @@ class MaskGenerationLayer(tf.keras.layers.Layer):
 
         # Apply mask generation logic using tf.py_function
         img_smooth = tf.py_function(func=self._get_mask, inp=[inputs], Tout=tf.float32, name='mask_generation')
-        img_smooth.set_shape((None, 256, 256, 1))  # Set the shape of the output tensor
+        img_smooth.set_shape((None, 256, 256, 2))  # Set the shape of the output tensor
         print('gen mask: ', img_smooth.shape)
         return img_smooth
 
