@@ -4,68 +4,6 @@ import numpy as np
 import math
 #import keras_cv
 
-# data generator for pcxgan with both ct and mri masks
-class DataGenerator_BothReady(kr.utils.Sequence):
-  def __init__(self, flags, data_path, if_train = True, **kwargs):
-    
-    super().__init__(**kwargs)
-
-    
-    self.data_path = data_path
-    self.batch_size = flags.batch_size
-    
-	# load data
-    x, y, z, w = self.load_data(flags, self.data_path, if_train=if_train)
-    
-    
-	# create dataset
-    self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z, w))
-    self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration = not if_train)
-    #self.dataset = self.dataset.map(
-    
-    #lambda x, y, z, w: (x, tf.one_hot(tf.squeeze(tf.cast(y, tf.int32)), 2), z, tf.one_hot(tf.squeeze(tf.cast(w, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
-
-    
-	
-	
-  def load_data(self, flags, data_path, if_train=True):
-	
-	# concatenate training folds
-    if if_train:
-      
-      folds = list(range(1,6))
-      
-	  # remove test fold
-      folds.remove(flags.test_fold)
-      
-      for i in folds:
-        path = f"{data_path}{i}.npz"
-        if i == folds[0]:
-          data = np.load(path)
-          x, y, z, w = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
-        else:
-          data = np.load(path)
-          x = np.concatenate((x, data['arr_0']), axis=0)
-          y = np.concatenate((y, data['arr_1']), axis=0)
-          z = np.concatenate((z, data['arr_2']), axis=0)
-          w = np.concatenate((w, data['arr_3']), axis=0)
-	
-      return x, y, z, w
-
-	# load test fold
-    else: 
-        path = f"{data_path}{flags.test_fold}.npz"
-        data = np.load(path)
-        x, y, z, w = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
-        return x, y, z, w
-    
-  def __getitem__(self, idx):
-    return self.dataset.batch(self.batch_size, drop_remainder=True)
-  
-  def load(self):
-      return self.dataset.batch(self.batch_size, drop_remainder=True)
-	
-    
 # data generator for augmenting pcxgan data
 class DataGeneratorAug(kr.utils.Sequence):
     def __init__(self, flags, data_path, if_train=True, **kwargs):
