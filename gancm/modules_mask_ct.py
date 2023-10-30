@@ -57,6 +57,7 @@ class ResBlock(kr.layers.Layer):
 			self.conv_3 = kr.layers.Conv2D(self.filters, self.flags.s_gamma_filter_size, padding="same")
 	
 	def call(self, input_tensor, mask, ct):
+		print(self.learned_skip)
 		x = self.spade_1(input_tensor, mask, ct)
 		x = self.conv_1(tf.nn.leaky_relu(x, 0.2))
 		x = self.spade_2(x, mask, ct)
