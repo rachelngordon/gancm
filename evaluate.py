@@ -62,9 +62,9 @@ def get_metrics(y_true, y_pred):
   
   im1 = tf.image.convert_image_dtype(y_true, tf.float32)
   im2 = tf.image.convert_image_dtype(y_pred, tf.float32)
-  # ssim=float(tf.image.ssim(im1, im2, max_val=1.0, filter_size=11,
-  #                          filter_sigma=1.5, k1=0.01, k2=0.03)[0])
-  ssim=float(tf.image.ssim(im1, im2, 1)[0])
+  ssim=float(tf.image.ssim(im1, im2, max_val=1.0, filter_size=11,
+                            filter_sigma=1.5, k1=0.01, k2=0.03)[0])
+  #ssim=float(tf.image.ssim(im1, im2, 1)[0])
 
   return mse, mae, cs, psnr,ssim
 
