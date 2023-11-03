@@ -23,6 +23,7 @@ def main(flags):
 
   model = PCxGAN_mask(flags)
   model.compile()
+  print(model.summary())
 
   history = model.fit(
     train_data,
