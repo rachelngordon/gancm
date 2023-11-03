@@ -23,6 +23,17 @@ def main(flags):
 
   model = PCxGAN_mask(flags)
   model.compile()
+  
+  # Define a sample input shape (batch_size, height, width, channels) for your model
+  sample_input_ct = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 1))
+  sample_input_mri = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 1))
+  sample_input_mask = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 2))
+  sample_latent_vector = tf.keras.layers.Input(shape=(flags.latent_dim,))
+
+  # Call the build method with the sample input shapes
+  model.build(input_shapes=[sample_latent_vector.shape, sample_input_mask.shape, sample_input_ct.shape])
+
+
   print(model.summary())
 
   history = model.fit(
