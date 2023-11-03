@@ -4,7 +4,7 @@ import tensorflow as tf
 import os
 import numpy as np
 from datetime import datetime
-import tensorflow_addons as tfa
+#import tensorflow_addons as tfa
 
 
 
@@ -26,8 +26,8 @@ class Residual(kr.layers.Layer):
             self.conv3 = kr.layers.Conv2D(
                 num_channels, kernel_size=1, strides=strides, use_bias=False,
                 kernel_initializer = kr.initializers.GlorotNormal())
-        self.bn1 = tfa.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
-        self.bn2 = tfa.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
+        self.bn1 = kr.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
+        self.bn2 = kr.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
 
     def call(self, X):
         Y = kr.activations.relu(self.bn1(self.conv1(X)))
@@ -50,7 +50,7 @@ class ResidualT(kr.layers.Layer):
             num_channels, padding='same', kernel_size=4, strides=strides,
             kernel_initializer = kr.initializers.GlorotNormal())
        
-        self.bn1 = tfa.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
+        self.bn1 = kr.layers.GroupNormalization(groups=num_channels, gamma_initializer=gamma_init)
      
 
     def call(self, X):
@@ -115,7 +115,7 @@ class EncoderModule(kr.Model):
         #first conv
         self.b1 = [kr.layers.Conv2D(channels, kernel_size=5, strides=2, padding='same', 
                                     input_shape=image_shape, name="Conv1"),
-                    tfa.layers.GroupNormalization(groups=channels, name='BN1', gamma_initializer=gamma_init),
+                    kr.layers.GroupNormalization(groups=channels, name='BN1', gamma_initializer=gamma_init),
                    #kr.layers.BatchNormalization(name='BN1'),
                    kr.layers.Activation('relu', name='Relu'),
                    kr.layers.MaxPool2D(pool_size=3, strides=2, 
