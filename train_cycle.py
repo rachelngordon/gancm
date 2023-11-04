@@ -28,7 +28,7 @@ def main(flags):
   sample_latent_vector = tf.keras.layers.Input(shape=(flags.latent_dim,))
 
   # Call the build method with the sample input shapes
-  model.build(input_shape=[sample_input_ct.shape, sample_input_mri.shape])
+  model.build(input_shape=sample_input_ct.shape)
 
 
   print(model.summary())
