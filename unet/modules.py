@@ -9,6 +9,7 @@ class downsample(tf.keras.layers.Layer):
 	def __init__(self, filters, size, apply_batchnorm=True, **kwargs):
 		super().__init__(**kwargs)
 		initializer = tf.random_normal_initializer(0., 0.02)
+		gamma_init = tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
 
 		self.block = tf.keras.Sequential()
     
@@ -17,7 +18,7 @@ class downsample(tf.keras.layers.Layer):
                               kernel_initializer=initializer, use_bias=False))
 
 		if apply_batchnorm:
-			self.block.add(tf.keras.layers.BatchNormalization())
+			self.block.add(tf.keras.layers.GroupNormalization(groups=1, gamma_initializer=gamma_init))
 
 		self.block.add(tf.keras.layers.LeakyReLU())
   
@@ -31,6 +32,7 @@ class upsample(tf.keras.layers.Layer):
 	def __init__(self, filters, size, apply_dropout=False, **kwargs):
 		super().__init__(**kwargs)
 		initializer = tf.random_normal_initializer(0., 0.02)
+		gamma_init = tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
 
 		self.block = tf.keras.Sequential()
 		self.block.add(
@@ -39,7 +41,7 @@ class upsample(tf.keras.layers.Layer):
                                       kernel_initializer=initializer,
                                       use_bias=False))
 
-		self.block.add(tf.keras.layers.BatchNormalization())
+		self.block.add(tf.keras.layers.GroupNormalization(groups=1, gamma_initializer=gamma_init))
 
 		if apply_dropout:
 			self.block.add(tf.keras.layers.Dropout(0.5))
@@ -114,6 +116,7 @@ class Discriminator(tf.keras.Model):
         self.merged = tf.keras.layers.Concatenate()
 
         initializer = tf.random_normal_initializer(0., 0.02)
+        gamma_init = tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
 
         self.down1 = downsample(64, 4, False)  # (batch_size, 128, 128, 64)
         self.down2 = downsample(128, 4)  # (batch_size, 64, 64, 128)
@@ -124,7 +127,7 @@ class Discriminator(tf.keras.Model):
                                       kernel_initializer=initializer,
                                       use_bias=False)  # (batch_size, 31, 31, 512)
 
-        self.batchnorm1 = tf.keras.layers.BatchNormalization()
+        self.batchnorm1 = tf.keras.layers.GroupNormalization(groups=1, gamma_initializer=gamma_init)
 
         self.leaky_relu = tf.keras.layers.LeakyReLU()
 
