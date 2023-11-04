@@ -94,13 +94,24 @@ class CycleGAN(kr.Model):
         cycled_mri = self.generator_mri(generated_ct)
         cycled_ct = self.generator_ct(generated_mri)
 
+        # newly added to obtain disc parameters
+        disc_mri_gen = (mri_input, generated_mri)
+        disc_mri_id = (mri_input, id_mri)
+        disc_mri_cycle = (mri_input, cycled_mri)
+        disc_ct_gen = (ct_input, generated_ct)
+        disc_ct_id = (ct_input, id_ct)
+        disc_ct_cycle = (ct_input, cycled_mri)
+
         
        
         combined_model = kr.Model(
             [ct_input, mri_input],
             [generated_mri, generated_ct,
              id_mri, id_ct,
-             cycled_mri, cycled_ct
+             cycled_mri, cycled_ct,
+             disc_mri_gen, disc_ct_gen,
+             disc_mri_id, disc_ct_id,
+             disc_mri_cycle, disc_ct_cycle
              ])
 
         return combined_model
