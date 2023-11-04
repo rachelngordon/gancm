@@ -21,17 +21,17 @@ def main(flags):
   model = CycleGAN(flags)
   model.compile()
 
-  # # Define a sample input shape (batch_size, height, width, channels) for your model
-  # sample_input_ct = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 1))
-  # sample_input_mri = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 1))
-  # sample_input_mask = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 2))
-  # sample_latent_vector = tf.keras.layers.Input(shape=(flags.latent_dim,))
+  # Define a sample input shape (batch_size, height, width, channels) for your model
+  sample_input_ct = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 1))
+  sample_input_mri = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 1))
+  sample_input_mask = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 2))
+  sample_latent_vector = tf.keras.layers.Input(shape=(flags.latent_dim,))
 
-  # # Call the build method with the sample input shapes
-  # model.build(input_shape=[sample_input_ct.shape, sample_input_mri.shape])
+  # Call the build method with the sample input shapes
+  model.build(input_shape=[sample_input_ct.shape, sample_input_mri.shape])
 
 
-  # print(model.summary())
+  print(model.summary())
 
   history = model.fit(
     train_data,
