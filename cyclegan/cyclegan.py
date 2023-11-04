@@ -168,7 +168,7 @@ class CycleGAN(kr.Model):
         self.discriminator_ct.trainable = False
 
         with tf.GradientTape(persistent=True) as mri_tape:
-            generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct = self.combined_model([ct, mri__])
+            generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct, disc_mri_gen, disc_ct_gen, disc_mri_id, disc_ct_id, disc_mri_cycle, disc_ct_cycle = self.combined_model([ct, mri__])
     
             ssim_loss_mri = self.ssim_loss_coeff * loss.SSIMLoss(mri__, generated_mri)
             vgg_loss_mri = self.vgg_loss_coeff * self.vgg_loss(mri__, generated_mri)
@@ -178,7 +178,7 @@ class CycleGAN(kr.Model):
             total_loss_mri = ssim_loss_mri + vgg_loss_mri + cycle_loss_mri + cycle_loss_ct + identity_loss_mri
 
         with tf.GradientTape(persistent=True) as ct_tape:
-            generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct = self.combined_model([ct, mri__])
+            generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct, disc_mri_gen, disc_ct_gen, disc_mri_id, disc_ct_id, disc_mri_cycle, disc_ct_cycle = self.combined_model([ct, mri__])
 
             ssim_loss_ct = self.ssim_loss_coeff * loss.SSIMLoss(ct, generated_ct)
             vgg_loss_ct = self.vgg_loss_coeff * self.vgg_loss(ct, generated_ct)
@@ -259,7 +259,7 @@ class CycleGAN(kr.Model):
         total_loss_ct = self.disc_loss_coeff * (loss_fake_ct + loss_real_ct)
 
 
-        generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct = self.combined_model([ct, mri])
+        generated_mri, generated_ct, id_mri, id_ct, cycled_mri, cycled_ct, disc_mri_gen, disc_ct_gen, disc_mri_id, disc_ct_id, disc_mri_cycle, disc_ct_cycle = self.combined_model([ct, mri])
         ssim_loss_mri = self.ssim_loss_coeff * loss.SSIMLoss(mri, generated_mri)
         vgg_loss_mri = self.vgg_loss_coeff * self.vgg_loss(mri, generated_mri)
         ssim_loss_ct = self.ssim_loss_coeff * loss.SSIMLoss(ct, generated_ct)
