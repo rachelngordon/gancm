@@ -38,7 +38,7 @@ class PCxGAN_mask(kr.Model):
 		self.decoder = modules.Decoder(self.flags)
 		self.encoder = modules.Encoder(self.flags)
 		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
-		self.patch_size, self.combined_model, _ = self.build_combined_model()
+		self.patch_size, self.combined_model = self.build_combined_model()
 		
 		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
 		self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
