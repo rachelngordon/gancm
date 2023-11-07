@@ -32,7 +32,8 @@ def main(flags):
 
   # Call the build method with the sample input shapes
   model.build(input_shape=[sample_latent_vector.shape, sample_input_mask.shape, sample_input_ct.shape])
-
+  
+  model.encoder.build(input_shape=[sample_input_mri.shape])
 
   print(model.summary())
   print(model.encoder.summary())
