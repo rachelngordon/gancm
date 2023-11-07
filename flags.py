@@ -20,7 +20,7 @@ class Flags():
     parser.add_argument('--dec_path', type=str, default='/grand/EVITA/ct-mri/exp_results/models/pcx_ckpt_test_d', help='' )# CT_MRI-512-Updated
     parser.add_argument('--enc_path', type=str, default='/grand/EVITA/ct-mri/exp_results/models/pcx_ckpt_test_e', help='' )
 
-    '''
+
     parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
     parser.add_argument('--sample_dir', type=str, default='./training_samples', help='samples are saved here')
     parser.add_argument('--result_logs', type=str, default='./results' , help='Logs are stored here' )
@@ -32,7 +32,7 @@ class Flags():
     parser.add_argument('--result_logs', type=str, default='/grand/EVITA/ct-mri/exp_results/results' , help='Logs are stored here' )
     parser.add_argument('--model_path', type=str, default='/grand/EVITA/ct-mri/exp_results/models/' , help='Model is stored here' )
     parser.add_argument('--hist_path', type=str, default='/grand/EVITA/ct-mri/exp_results/history/' , help='Model is stored here' )
-
+    '''
     parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
     
     # input/output sizes
