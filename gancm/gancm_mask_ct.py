@@ -38,7 +38,7 @@ class PCxGAN_mask(kr.Model):
 		self.decoder = modules.Decoder(self.flags)
 		self.encoder = modules.Encoder(self.flags)
 		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
-		self.patch_size, self.combined_model = self.build_combined_model()
+		self.patch_size, self.combined_model, _ = self.build_combined_model()
 		
 		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
 		self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
@@ -81,7 +81,7 @@ class PCxGAN_mask(kr.Model):
 		patch_size = discriminator_output[-1].shape[1]
 		combined_model = kr.Model(
 			[latent_vector, mask_input, image_input, mri_input],
-			[discriminator_output, generated_image],
+			[discriminator_output, generated_image, latent_vector],
 		)
 		return patch_size, combined_model
 	
@@ -142,7 +142,7 @@ class PCxGAN_mask(kr.Model):
 
 
 			real_d_output = self.discriminator([segmentation_map, image])
-			fake_d_output, fake_image = self.combined_model(
+			fake_d_output, fake_image, latent = self.combined_model(
 				[latent_vector, labels, segmentation_map, image]
 			)
 			pred = fake_d_output[-1]
@@ -207,7 +207,7 @@ class PCxGAN_mask(kr.Model):
 		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
 		
 		real_d_output = self.discriminator([ct, mri])
-		fake_d_output, fake_image = self.combined_model(
+		fake_d_output, fake_image, latent = self.combined_model(
 			[latent_vector, labels, ct, mri]
 		)
 		pred = fake_d_output[-1]
