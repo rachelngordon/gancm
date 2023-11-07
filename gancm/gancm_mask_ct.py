@@ -175,7 +175,6 @@ class PCxGAN_mask(kr.Model):
 
 		# Obtain the learned moments of the real image distribution.
 		mean, variance = self.encoder(mri)
-		print(self.encoder.summary())
 		
 		# Sample a latent from the distribution defined by the learned moments.
 		latent_vector = self.sampler([mean, variance])
