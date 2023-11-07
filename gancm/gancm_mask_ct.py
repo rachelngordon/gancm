@@ -37,7 +37,7 @@ class PCxGAN_mask(kr.Model):
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
 		self.encoder = modules.Encoder(self.flags)
-		print(self.encoder.summary())
+		
 		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
 		self.patch_size, self.combined_model = self.build_combined_model()
 		
@@ -175,6 +175,7 @@ class PCxGAN_mask(kr.Model):
 
 		# Obtain the learned moments of the real image distribution.
 		mean, variance = self.encoder(mri)
+		print(self.encoder.summary())
 		
 		# Sample a latent from the distribution defined by the learned moments.
 		latent_vector = self.sampler([mean, variance])
