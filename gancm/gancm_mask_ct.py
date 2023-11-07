@@ -37,6 +37,7 @@ class PCxGAN_mask(kr.Model):
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
 		self.encoder = modules.Encoder(self.flags)
+		print(self.encoder.summary())
 		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
 		self.patch_size, self.combined_model = self.build_combined_model()
 		
