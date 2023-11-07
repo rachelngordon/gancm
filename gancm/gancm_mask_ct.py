@@ -71,17 +71,18 @@ class PCxGAN_mask(kr.Model):
 		image_input = kr.Input(shape=self.image_shape, name="image")
 		latent_input = kr.Input(shape=self.latent_dim, name="latent")
 
-		mri_input = kr.Input(shape=self.image_shape, name="mri")
-		mean, variance = self.encoder(mri_input)
-		latent_vector = self.sampler([mean, variance])
+		# added to get parameters
+		# mri_input = kr.Input(shape=self.image_shape, name="mri")
+		# mean, variance = self.encoder(mri_input)
+		# latent_vector = self.sampler([mean, variance])
 
-		generated_image = self.decoder([latent_vector, mask_input, image_input])
+		generated_image = self.decoder([latent_input, mask_input, image_input])
 		discriminator_output = self.discriminator([image_input, generated_image])
 		
 		patch_size = discriminator_output[-1].shape[1]
 		combined_model = kr.Model(
-			[latent_vector, mask_input, image_input, mri_input],
-			[discriminator_output, generated_image, latent_vector],
+			[latent_input, mask_input, image_input],
+			[discriminator_output, generated_image],
 		)
 		return patch_size, combined_model
 	
@@ -142,8 +143,8 @@ class PCxGAN_mask(kr.Model):
 
 
 			real_d_output = self.discriminator([segmentation_map, image])
-			fake_d_output, fake_image, latent = self.combined_model(
-				[latent_vector, labels, segmentation_map, image]
+			fake_d_output, fake_image = self.combined_model(
+				[latent_vector, labels, segmentation_map]
 			)
 			pred = fake_d_output[-1]
 
@@ -207,8 +208,8 @@ class PCxGAN_mask(kr.Model):
 		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
 		
 		real_d_output = self.discriminator([ct, mri])
-		fake_d_output, fake_image, latent = self.combined_model(
-			[latent_vector, labels, ct, mri]
+		fake_d_output, fake_image = self.combined_model(
+			[latent_vector, labels, ct]
 		)
 		pred = fake_d_output[-1]
 		
