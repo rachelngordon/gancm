@@ -35,6 +35,7 @@ def main(flags):
 
 
   print(model.summary())
+  print(model.encoder.summary())
 
   history = model.fit(
     train_data,
