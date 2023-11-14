@@ -1,4 +1,4 @@
 # !/bin/bash
 module load conda
 conda activate 
-python3 ~/pcxgan/edge_ct_new_extra.py
+python3 ~/gancm/edge_ct_new_extra.py

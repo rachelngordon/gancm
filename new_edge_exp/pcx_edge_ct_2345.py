@@ -3,9 +3,9 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 ~/pcxgan/train_gancm_mask.py --exp_name pcx_edge_thresh_ct_no_aug_8_2345 --test_fold 1 --epochs 500 --batch_size 8 --data_path '/grand/EVITA/ct-mri/data/CV/new_edge/avg_eq_edge_threshold/norm_mask_neg1pos1_fold'", 0),
-    ("python3 ~/pcxgan/train_gancm_mask.py --exp_name pcx_edge_thresh_ct_no_aug_16_2345 --test_fold 1 --epochs 500 --batch_size 16 --data_path '/grand/EVITA/ct-mri/data/CV/new_edge/avg_eq_edge_threshold/norm_mask_neg1pos1_fold'", 1), 
-    ("python3 ~/pcxgan/train_gancm_mask.py --exp_name pcx_edge_thresh_ct_no_aug_32_2345 --test_fold 1 --epochs 500 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/new_edge/avg_eq_edge_threshold/norm_mask_neg1pos1_fold'", 2)
+    ("python3 ~/gancm/train_gancm_mask.py --exp_name pcx_edge_thresh_ct_no_aug_8_2345 --test_fold 1 --epochs 500 --batch_size 8 --data_path '/grand/EVITA/ct-mri/data/CV/new_edge/avg_eq_edge_threshold/norm_mask_neg1pos1_fold'", 0),
+    ("python3 ~/gancm/train_gancm_mask.py --exp_name pcx_edge_thresh_ct_no_aug_16_2345 --test_fold 1 --epochs 500 --batch_size 16 --data_path '/grand/EVITA/ct-mri/data/CV/new_edge/avg_eq_edge_threshold/norm_mask_neg1pos1_fold'", 1), 
+    ("python3 ~/gancm/train_gancm_mask.py --exp_name pcx_edge_thresh_ct_no_aug_32_2345 --test_fold 1 --epochs 500 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/new_edge/avg_eq_edge_threshold/norm_mask_neg1pos1_fold'", 2)
 ]
 
 # Function to run a command on a GPU
