@@ -3,8 +3,8 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 ~/pcxgan/train_gancm_aug_mask.py --exp_name pcx_edge_thresh_ct_aug_32_1234 --test_fold 5 --epochs 500 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_edge_threshold/norm_mask_neg1pos1_fold'", 0, 1),
-    ("python3 ~/pcxgan/train_gancm_aug_mask.py --exp_name pcx_edge_thresh_ct_aug_32_1235 --test_fold 4 --epochs 500 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/avg_eq_edge_threshold/norm_mask_neg1pos1_fold'", 2, 3)
+    ("python3 ~/pcxgan/train_gancm_aug_mask.py --exp_name pcx_edge_thresh_ct_aug_32_1234 --test_fold 5 --epochs 500 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/new_edge/avg_eq_edge_threshold/norm_mask_neg1pos1_fold'", 0, 1),
+    ("python3 ~/pcxgan/train_gancm_aug_mask.py --exp_name pcx_edge_thresh_ct_aug_32_1235 --test_fold 4 --epochs 500 --batch_size 32 --data_path '/grand/EVITA/ct-mri/data/CV/new_edge/avg_eq_edge_threshold/norm_mask_neg1pos1_fold'", 2, 3)
 ]
 
 # Function to run a command on two GPUs

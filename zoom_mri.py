@@ -19,9 +19,11 @@ def crop_mris(rmri_path, smri_path):
     print(cropped_rmri.shape)
     cropped_smri = tf.image.crop_to_bounding_box(smri, y1, x1, height, width)
     
-    resize_rmri = tf.image.resize(cropped_rmri, [rmri.shape[0], rmri.shape[1]], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+    resize_rmri = tf.image.resize(cropped_rmri, [rmri.shape[0], rmri.shape[1]], 
+                                  method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
     print(resize_rmri.shape)
-    resize_smri = tf.image.resize(cropped_smri, [smri.shape[0], smri.shape[1]], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+    resize_smri = tf.image.resize(cropped_smri, [smri.shape[0], smri.shape[1]], 
+                                  method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
     cropped_rmri_np = resize_rmri.numpy()
     print(cropped_rmri_np.shape)
