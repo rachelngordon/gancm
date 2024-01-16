@@ -64,7 +64,16 @@ class Flags():
     parser.add_argument('--disc_beta_2', type=float, default=0.999 , help='' )
     parser.add_argument('--loss_weights', type=list, default=[1,100] , help='' )
     parser.add_argument('--result_log', type=str, default='results.log' , help='' )
-    
+
+    # UVIT
+    parser.add_argument('--timesteps', type=int, default=1000 , help='total timesteps for uvit model' )
+    parser.add_argument('--norm_groups', type=int, default=8 , help='number of groups for group normalization in uvit model' )
+    parser.add_argument('--img_channels', type=int, default=1 , help='number of image channels for uvit model')
+    parser.add_argument('--first_conv_channels', type=int, default=32 , help='' )
+    parser.add_argument('--channel_multiplier', type=list, default=[1, 2, 4, 8] , help='' )
+    parser.add_argument('--has_attention', type=list, default=[False, False, True, True] , help='' )
+    parser.add_argument('--num_res_blocks', type=int, default=2 , help='' )
+
     # encoder/decoder options
     parser.add_argument('--s_epsilon', type=float, default= 1e-5, help='' )
     parser.add_argument('--s_gamma_filters', type=int, default=128 , help='' )

@@ -72,6 +72,78 @@ class TimeEmbedding(layers.Layer):
 		return emb
 	
 
+def ResidualBlock(width, groups=8, activation_fn=keras.activations.swish):
+	def apply(inputs):
+		x, t = inputs
+		input_width = x.shape[3]
+		
+		if input_width == width:
+			residual = x
+		else:
+			residual = layers.Conv2D(
+				width, kernel_size=1, kernel_initializer=kernel_init(1.0)
+			)(x)
+		
+		#temb = activation_fn(t)
+		temb = layers.Dense(width, kernel_initializer=kernel_init(1.0))(t)[
+						:, None, None, :
+						]
+		
+		x = layers.GroupNormalization(groups=groups)(x)
+		x = activation_fn(x)
+		x = layers.Conv2D(
+			width, kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0)
+		)(x)
+		
+		x = layers.Add()([x, temb])
+		x = layers.GroupNormalization(groups=groups)(x)
+		x = activation_fn(x)
+		
+		x = layers.Conv2D(
+			width, kernel_size=3, padding="same", kernel_initializer=kernel_init(0.0)
+		)(x)
+		x = layers.Add()([x, residual])
+		return x
+	
+	return apply
+
+	
+def DownSample(width, activation_fn='relu'):
+	def apply(x):
+		x = layers.Conv2D(
+			width,
+			kernel_size=3,
+			strides=2,
+			padding="same",
+			kernel_initializer=kernel_init(1.0),activation=activation_fn
+		)(x)
+		return x
+	
+	return apply
+	
+
+def UpSample(width, interpolation="nearest", activation_fn='relu'):
+	def apply(x):
+		x = layers.UpSampling2D(size=2, interpolation=interpolation)(x)
+		x = layers.Conv2D(
+			width, kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0),activation=activation_fn
+		)(x)
+		return x
+	
+	return apply
+	
+
+def TimeMLP(units, activation_fn=keras.activations.swish):
+	def apply(inputs):
+		temb = layers.Dense(
+			units, activation=activation_fn, kernel_initializer=kernel_init(1.0)
+		)(inputs)
+		temb = layers.Dense(units, kernel_initializer=kernel_init(1.0))(temb)
+		return temb
+	
+	return apply
+	
+
 class ResidualBlockLayer(layers.Layer):
     def __init__(self, width, groups=8, activation_fn=tf.keras.activations.swish, **kwargs):
         super(ResidualBlockLayer, self).__init__(**kwargs)
@@ -123,20 +195,155 @@ class ResidualBlockLayer(layers.Layer):
         return config
 	
 
+class uvit_generator(keras.Model):
+
+	def __init__(self, flags, **kwargs):
+		super().__init__(**kwargs)
+
+		self.flags = flags
+		self.first_conv_channels = self.flags.first_conv_channels
+		self.has_attention = self.flags.has_attention
+		self.num_res_blocks = self.flags.num_res_blocks
+		self.norm_groups = self.flags.norm_groups
+		self.widths = [self.first_conv_channels * mult for mult in self.flags.channel_multiplier]
+		self.interpolation="nearest",
+		self.activation_fn=keras.activations.swish
+
+
+	def call(self, inputs__):
+		
+		image_input, time_input = inputs__
+
+		x = layers.Conv2D(
+			self.first_conv_channels,
+			kernel_size=(3, 3),
+			padding="same",
+			kernel_initializer=kernel_init(1.0),
+		)(image_input)
+		
+		temb = TimeEmbedding(dim=self.first_conv_channels * 4)(time_input)
+		temb = TimeMLP(units=self.first_conv_channels * 4, activation_fn=self.activation_fn)(temb)
+		
+		skips = [x]
+		
+		# DownBlock
+		for i in range(len(self.widths)):
+			for _ in range(self.num_res_blocks):
+				x = ResidualBlockLayer(
+					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
+				)([x, temb])
+				if self.has_attention[i]:
+					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
+				skips.append(x)
+			
+			if self.widths[i] != self.widths[-1]:
+				x = DownSample(self.widths[i])(x)
+				skips.append(x)
+		
+		# MiddleBlock
+		x = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)(
+			[x, temb]
+		)
+		x = AttentionBlock(self.widths[-1], groups=self.norm_groups)(x)
+		x = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)(
+			[x, temb]
+		)
+		
+		# UpBlock
+		for i in reversed(range(len(self.widths))):
+			for _ in range(self.num_res_blocks + 1):
+				x = layers.Concatenate(axis=-1)([x, skips.pop()])
+				x = ResidualBlockLayer(
+					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
+				)([x, temb])
+				if self.has_attention[i]:
+					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
+			
+			if i != 0:
+				x = UpSample(self.widths[i], interpolation=self.interpolation)(x)
+		
+		# End block
+		x = layers.GroupNormalization(groups=self.norm_groups)(x)
+		x = self.activation_fn(x)
+		x = layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=kernel_init(0.0))(x)
+		return layers.Activation('tanh')(x)
+
+
+
+class DownsampleModule(layers.Layer):
+	def __init__(self, channels, filter_size, apply_norm=True, **kwargs):
+		super().__init__(**kwargs)
+		gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
+		self.block = keras.Sequential()
+		self.strides = 2
+		self.block.add(
+			layers.Conv2D(
+				channels,
+				filter_size,
+				strides=self.strides,
+				padding="same",
+				use_bias=False
+			)
+		)
+
+		if apply_norm:
+			self.block.add(layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			#self.block.add(InstanceNormalization())
+
+		self.block.add(layers.LeakyReLU(0.2))
+	
+	def call(self, inputs__):
+		return self.block(inputs__)
+	
+
+
+class Discriminator(keras.Model):
+	def __init__(self, flags, **kwargs):
+		super().__init__(**kwargs)
+		self.image_shape = (flags.crop_size, flags.crop_size, 1)
+		self.latent_dim = flags.latent_dim
+		n_filters = flags.disc_n_filters
+		filter_size = flags.disc_filter_size
+		self.merged = layers.Concatenate()
+		self.downsample1 = DownsampleModule(n_filters, filter_size, apply_norm=False)
+		self.downsample2 = DownsampleModule(2 * n_filters, filter_size)
+		self.downsample3 = DownsampleModule(4 * n_filters, filter_size)
+		self.downsample4 = DownsampleModule(8 * n_filters, filter_size)
+		self.conv = layers.Conv2D(self.image_shape[-1], kernel_size=filter_size, padding='same')
+	
+	def call(self, inputs_, **kwargs):
+		x = self.merged([inputs_[0], inputs_[1]])
+		x1 = self.downsample1(x)
+		x2 = self.downsample2(x1)
+		x3 = self.downsample3(x2)
+		x4 = self.downsample4(x3)
+		x5 = self.conv(x4)
+		return [x1, x2, x3, x4, x5]
+	
+	def build_graph(self):
+		x1 = layers.Input(shape=self.image_shape)
+		x2 = layers.Input(shape=self.image_shape)
+		return keras.Model(inputs=[x1, x2], outputs=self.call([x1, x2]))
+
+
 
 class GanMonitor(keras.callbacks.Callback):
-	def __init__(self, val_dataset, n_samples=3, epoch_interval=5):
+	def __init__(self, val_dataset, flags, n_samples=3):
 		
-		self.val_images = val_dataset
+		self.flags = flags
+		self.val_images = next(iter(val_dataset))
 		self.n_samples = n_samples
-		self.epoch_interval = epoch_interval
-		self.sample_dir = "samples_figures"
+		self.epoch_interval = flags.epoch_interval
+		self.sample_dir = flags.sample_dir
 		if not os.path.exists(self.sample_dir):
 			os.makedirs(self.sample_dir)
+
+			
 	# def sample_data(self):
 	# 	indices = np.random.permutation(self.source.shape[0])[:self.n_samples]
 	# 	return self.source[indices], self.target[indices]
-        
+	
+
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch % self.epoch_interval == 0:
 			generated_images = self.model.generate_images(self.val_images[0], num_images=self.n_samples)
@@ -145,21 +352,24 @@ class GanMonitor(keras.callbacks.Callback):
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
 				for row in range(grid_row):
 					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((self.val_images[0][row].squeeze() + 1) / 2, cmap='gray')
+					ax[0].imshow((self.val_images[0][row].numpy().squeeze() + 1) / 2, cmap='gray')
 					ax[0].axis("off")
 					ax[0].set_title("CT", fontsize=20)
-					ax[1].imshow((self.val_images[1][row].squeeze() + 1) / 2, cmap='gray')
+					ax[1].imshow((self.val_images[1][row].numpy().squeeze() + 1) / 2, cmap='gray')
 					ax[1].axis("off")
 					ax[1].set_title("Ground Truth", fontsize=20)
 					ax[2].imshow((np.array(generated_images[row]).squeeze() + 1) / 2, cmap='gray')
 					ax[2].axis("off")
 					ax[2].set_title("Generated", fontsize=20)
 				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-				sample_file = os.path.join(self.sample_dir, filename)
+				sample_file_path = self.sample_dir + f"{self.flags.exp_name}/"
+				if not os.path.exists(sample_file_path):
+					os.makedirs(sample_file_path)
+				sample_file = os.path.join(sample_file_path, filename)
 				plt.savefig(sample_file)
 		
 		if epoch > 50 and epoch % (self.epoch_interval * 2) == 0:
-			model_dir = f"saved_models/uvit/{epoch}"
+			model_dir = self.flags.model_path + self.flags.exp_name + f'/{epoch}'
 			if not os.path.exists(model_dir):
 				os.makedirs(model_dir)
 			self.model.save_model(model_dir)

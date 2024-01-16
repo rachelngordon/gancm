@@ -12,7 +12,7 @@ import loss
 import pandas as pd
 
 
-class UNetViTModel(keras.Model):
+class GAN_UVIT(keras.Model):
 	def __init__(self, flags):
 		super().__init__()
 		self.flags = flags
@@ -26,7 +26,11 @@ class UNetViTModel(keras.Model):
 
 		self.timesteps = self.flags.timesteps
 		self.img_size = self.flags.crop_size
+		self.img_channels = self.flags.img_channels
 		self.widths = [self.flags.first_conv_channels * mult for mult in self.flags.channel_multiplier]
+		
+		self.discriminator = modules.Discriminator(self.flags)
+		self.generator = modules.uvit_generator(self.flags)
 
 		self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
 		self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
@@ -39,12 +43,7 @@ class UNetViTModel(keras.Model):
 		self.optimizer = keras.optimizers.Adam(learning_rate=self.flags.gen_lr)
 
 
-		self.network = self.build_model(self.img_size,
-							self.flags.img_channels,
-							self.widths,
-							self.flags.has_attention,
-							self.flags.num_res_blocks,
-							self.flags.norm_groups)
+		self.network = self.build_combined_model()
 
 		
 	@property
@@ -55,77 +54,22 @@ class UNetViTModel(keras.Model):
 		]
 	
 
-	def build_model(
-			self,
-			img_size,
-			img_channels,
-			widths,
-			has_attention,
-			num_res_blocks=2,
-			norm_groups=8,
-			interpolation="nearest",
-			activation_fn=keras.activations.swish,
-			first_conv_channels = 32,
-	):
+	def build_combined_model(self):
+		
+		self.discriminator.trainable = False
 		image_input = layers.Input(
-			shape=(img_size, img_size, img_channels), name="image_input"
+			shape=(self.img_size, self.img_size, self.img_channels), name="image_input"
 		)
 		time_input = keras.Input(shape=(), dtype=tf.int64, name="time_input")
+		generated_image = self.generator([image_input, time_input])
+		discriminator_output = self.discriminator([image_input, generated_image])
 		
-		x = layers.Conv2D(
-			first_conv_channels,
-			kernel_size=(3, 3),
-			padding="same",
-			kernel_initializer=modules.kernel_init(1.0),
-		)(image_input)
-		
-		temb = modules.TimeEmbedding(dim=first_conv_channels * 4)(time_input)
-		temb = modules.TimeMLP(units=first_conv_channels * 4, activation_fn=activation_fn)(temb)
-		
-		skips = [x]
-		
-		# DownBlock
-		for i in range(len(widths)):
-			for _ in range(num_res_blocks):
-				x = modules.ResidualBlockLayer(
-					widths[i], groups=norm_groups, activation_fn=activation_fn
-				)([x, temb])
-				if has_attention[i]:
-					x = modules.AttentionBlock(widths[i], groups=norm_groups)(x)
-				skips.append(x)
-			
-			if widths[i] != widths[-1]:
-				x = modules.DownSample(widths[i])(x)
-				skips.append(x)
-		
-		# MiddleBlock
-		x = modules.ResidualBlockLayer(widths[-1], groups=norm_groups, activation_fn=activation_fn)(
-			[x, temb]
+		patch_size = discriminator_output[-1].shape[1]
+		combined_model = keras.Model(
+			[image_input, time_input],
+			[discriminator_output, generated_image],
 		)
-		x = modules.AttentionBlock(widths[-1], groups=norm_groups)(x)
-		x = modules.ResidualBlockLayer(widths[-1], groups=norm_groups, activation_fn=activation_fn)(
-			[x, temb]
-		)
-		
-		# UpBlock
-		for i in reversed(range(len(widths))):
-			for _ in range(num_res_blocks + 1):
-				x = layers.Concatenate(axis=-1)([x, skips.pop()])
-				x = modules.ResidualBlockLayer(
-					widths[i], groups=norm_groups, activation_fn=activation_fn
-				)([x, temb])
-				if has_attention[i]:
-					x = modules.AttentionBlock(widths[i], groups=norm_groups)(x)
-			
-			if i != 0:
-				x = modules.UpSample(widths[i], interpolation=interpolation)(x)
-		
-		# End block
-		x = layers.GroupNormalization(groups=norm_groups)(x)
-		x = activation_fn(x)
-		x = layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=modules.kernel_init(0.0))(x)
-		x = layers.Activation('tanh')(x)
-		return keras.Model(inputs=[image_input, time_input], outputs=x, name="unetvit")
+		return patch_size, combined_model
 	
 	def compile(self, **kwargs):
 		super().compile(**kwargs)
