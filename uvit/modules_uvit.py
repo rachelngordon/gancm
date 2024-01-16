@@ -122,34 +122,33 @@ class ResidualBlockLayer(layers.Layer):
                        'activation_fn': tf.keras.activations.serialize(self.activation_fn)})
         return config
 	
-	
+
+
 class GanMonitor(keras.callbacks.Callback):
-	def __init__(self, source, target, n_samples=3, epoch_interval=5):
+	def __init__(self, val_dataset, n_samples=3, epoch_interval=5):
 		
-		self.source = source
-		self.target = target
+		self.val_images = val_dataset
 		self.n_samples = n_samples
 		self.epoch_interval = epoch_interval
 		self.sample_dir = "samples_figures"
 		if not os.path.exists(self.sample_dir):
 			os.makedirs(self.sample_dir)
-	def sample_data(self):
-		indices = np.random.permutation(self.source.shape[0])[:self.n_samples]
-		return self.source[indices], self.target[indices]
+	# def sample_data(self):
+	# 	indices = np.random.permutation(self.source.shape[0])[:self.n_samples]
+	# 	return self.source[indices], self.target[indices]
         
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch % self.epoch_interval == 0:
-			s, t = self.sample_data()
-			generated_images = self.model.generate_images(s, num_images=self.n_samples)
+			generated_images = self.model.generate_images(self.val_images[0], num_images=self.n_samples)
 			for s_ in range(self.n_samples):
 				grid_row = min(generated_images.shape[0], 3)
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
 				for row in range(grid_row):
 					ax = axarr if grid_row == 1 else axarr[row]
-					ax[0].imshow((s[row].squeeze() + 1) / 2, cmap='gray')
+					ax[0].imshow((self.val_images[0][row].squeeze() + 1) / 2, cmap='gray')
 					ax[0].axis("off")
 					ax[0].set_title("CT", fontsize=20)
-					ax[1].imshow((t[row].squeeze() + 1) / 2, cmap='gray')
+					ax[1].imshow((self.val_images[1][row].squeeze() + 1) / 2, cmap='gray')
 					ax[1].axis("off")
 					ax[1].set_title("Ground Truth", fontsize=20)
 					ax[2].imshow((np.array(generated_images[row]).squeeze() + 1) / 2, cmap='gray')
