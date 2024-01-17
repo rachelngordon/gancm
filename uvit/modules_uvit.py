@@ -206,23 +206,34 @@ class uvit_generator(keras.Model):
 		self.num_res_blocks = self.flags.num_res_blocks
 		self.norm_groups = self.flags.norm_groups
 		self.widths = [self.first_conv_channels * mult for mult in self.flags.channel_multiplier]
-		self.interpolation="nearest",
+		self.interpolation="nearest"
 		self.activation_fn=keras.activations.swish
+		self.conv = layers.Conv2D(
+			self.first_conv_channels,
+			kernel_size=(3, 3),
+			padding="same",
+			kernel_initializer=kernel_init(1.0),
+		)
+		self.temb = TimeEmbedding(dim=self.first_conv_channels * 4)
+		self.tmlp = TimeMLP(units=self.first_conv_channels * 4, activation_fn=self.activation_fn)
+		# self.res_block = ResidualBlockLayer(
+		# 			self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
+		# 		)
+		self.res_block = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.att = AttentionBlock(self.widths[-1], groups=self.norm_groups)
+		self.concat = layers.Concatenate(axis=-1)
+		self.group_norm = layers.GroupNormalization(groups=self.norm_groups)
+		self.conv2 = layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=kernel_init(0.0))
 
 
 	def call(self, inputs__):
 		
 		image_input, time_input = inputs__
 
-		x = layers.Conv2D(
-			self.first_conv_channels,
-			kernel_size=(3, 3),
-			padding="same",
-			kernel_initializer=kernel_init(1.0),
-		)(image_input)
+		x = self.conv(image_input)
 		
-		temb = TimeEmbedding(dim=self.first_conv_channels * 4)(time_input)
-		temb = TimeMLP(units=self.first_conv_channels * 4, activation_fn=self.activation_fn)(temb)
+		temb_x = self.temb(time_input)
+		temb_x1 = self.tmlp(temb_x)
 		
 		skips = [x]
 		

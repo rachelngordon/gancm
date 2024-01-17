@@ -6,7 +6,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import os
 from datetime import datetime
-from uvit import uvit_disc
+from uvit import uvit_gan
 from uvit import modules_uvit as modules
 import time
 import data_loader
@@ -28,7 +28,7 @@ def main(flags):
 
 
     # Build the unet model
-    model = uvit_disc.GAN_UVIT(flags)
+    model = uvit_gan.GAN_UVIT(flags)
 
     # Compile the model
     # model.compile(optimizer=model.optimizer, loss=model.loss)

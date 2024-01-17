@@ -47,7 +47,7 @@ class GAN_UVIT(keras.Model):
 		self.discriminator_optimizer = keras.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1,
 																											beta_2=self.flags.disc_beta_2)
 		
-		self.network = self.build_combined_model()
+		self.patch_size, self.network = self.build_combined_model()
 
 		
 	@property
@@ -144,27 +144,15 @@ class GAN_UVIT(keras.Model):
 			minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
 		)
 
-		fake_images = self.decoder([ct, t])
-		
-		# Calculate the losses.
-		pred_fake = self.discriminator([ct, fake_images])[-1]
-		pred_real = self.discriminator([ct, mri])[-1]
-		loss_fake = self.discriminator_loss(False, pred_fake)
-		loss_real = self.discriminator_loss(True, pred_real)
-		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
-		
-		real_d_output = self.discriminator([ct, mri])
-		fake_d_output, fake_image = self.network(
-			[ct, t]
+		discriminator_loss = self.train_discriminator(
+			t, ct, mri
 		)
-		pred = fake_d_output[-1]
-		
-		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
-		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
-		#total_generator_loss = kl_loss + vgg_loss + ssim_loss
+		(vgg_loss, ssim_loss) = self.train_generator(
+			t, ct, mri
+		)
 		
 		# Report progress.
-		self.disc_loss_tracker.update_state(total_discriminator_loss)
+		self.disc_loss_tracker.update_state(discriminator_loss)
 		self.vgg_loss_tracker.update_state(vgg_loss)
 		self.ssim_loss_tracker.update_state(ssim_loss)
 
@@ -180,7 +168,7 @@ class GAN_UVIT(keras.Model):
 			minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
 		)
 		
-		fake_images = self.decoder([ct, t])
+		fake_images = self.generator([ct, t])
 
 
 		# Calculate the losses.
@@ -198,7 +186,7 @@ class GAN_UVIT(keras.Model):
 
 		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
 		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
-		total_loss = vgg_loss + ssim_loss
+		#total_loss = vgg_loss + ssim_loss
 
 		# Report progress.
 		self.disc_loss_tracker.update_state(total_discriminator_loss)
