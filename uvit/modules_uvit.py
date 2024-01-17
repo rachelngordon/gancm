@@ -201,6 +201,8 @@ class uvit_generator(keras.Model):
 		super().__init__(**kwargs)
 
 		self.flags = flags
+		self.img_size = self.flags.crop_size
+		self.img_channels = self.flags.img_channels
 		self.first_conv_channels = self.flags.first_conv_channels
 		self.has_attention = self.flags.has_attention
 		self.num_res_blocks = self.flags.num_res_blocks
@@ -216,15 +218,55 @@ class uvit_generator(keras.Model):
 		)
 		self.temb = TimeEmbedding(dim=self.first_conv_channels * 4)
 		self.tmlp = TimeMLP(units=self.first_conv_channels * 4, activation_fn=self.activation_fn)
-		# self.res_block = ResidualBlockLayer(
-		# 			self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
-		# 		)
 		self.res_block = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)
-		self.att = AttentionBlock(self.widths[-1], groups=self.norm_groups)
-		self.concat = layers.Concatenate(axis=-1)
-		self.group_norm = layers.GroupNormalization(groups=self.norm_groups)
-		self.conv2 = layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=kernel_init(0.0))
 
+		# # Down Block
+		# self.down_block = keras.Sequential()
+
+		# for i in range(len(self.widths)):
+		# 	for _ in range(self.num_res_blocks):
+		# 		self.down_block.add(ResidualBlockLayer(
+		# 			self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
+		# 		))
+		# 		if self.has_attention[i]:
+		# 			self.down_block.add(AttentionBlock(self.widths[i], groups=self.norm_groups))
+		# 		#skips.append(x)
+
+		# 	if self.widths[i] != self.widths[-1]:
+		# 		self.down_block.add(DownSample(self.widths[i]))
+		# 		#skips.append(x)
+
+		# # MiddleBlock
+		# self.mid_block = keras.Sequential()
+		
+		# self.mid_block.add(ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn))
+		# self.mid_block.add(AttentionBlock(self.widths[-1], groups=self.norm_groups))
+		# self.mid_block.add(ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn))
+		
+
+		# # Up Block
+		# self.up_block = keras.Sequential()
+
+		# for i in reversed(range(len(self.widths))):
+		# 	for _ in range(self.num_res_blocks + 1):
+		# 		self.up_block.add(layers.Concatenate(axis=-1))
+		# 		self.up_block.add(ResidualBlockLayer(
+		# 			self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
+		# 		))
+		# 		if self.has_attention[i]:
+		# 			self.up_block.add(AttentionBlock(self.widths[i], groups=self.norm_groups))
+			
+		# 	if i != 0:
+		# 		self.up_block.add(UpSample(self.widths[i], interpolation=self.interpolation))
+
+
+		# # End Block
+		# self.end_block = keras.Sequential()
+
+		# self.end_block.add(layers.GroupNormalization(groups=self.norm_groups))
+		# self.end_block.add(self.activation_fn)
+		# self.end_block.add(layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=kernel_init(0.0)))
+		# self.end_block.add(layers.Activation('tanh'))
 
 	def call(self, inputs__):
 		
@@ -233,7 +275,7 @@ class uvit_generator(keras.Model):
 		x = self.conv(image_input)
 		
 		temb_x = self.temb(time_input)
-		temb_x1 = self.tmlp(temb_x)
+		temb_x = self.tmlp(temb_x)
 		
 		skips = [x]
 		
@@ -242,7 +284,7 @@ class uvit_generator(keras.Model):
 			for _ in range(self.num_res_blocks):
 				x = ResidualBlockLayer(
 					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
-				)([x, temb])
+				)([x, temb_x])
 				if self.has_attention[i]:
 					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
 				skips.append(x)
@@ -253,11 +295,11 @@ class uvit_generator(keras.Model):
 		
 		# MiddleBlock
 		x = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)(
-			[x, temb]
+			[x, temb_x]
 		)
 		x = AttentionBlock(self.widths[-1], groups=self.norm_groups)(x)
 		x = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)(
-			[x, temb]
+			[x, temb_x]
 		)
 		
 		# UpBlock
@@ -266,7 +308,7 @@ class uvit_generator(keras.Model):
 				x = layers.Concatenate(axis=-1)([x, skips.pop()])
 				x = ResidualBlockLayer(
 					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
-				)([x, temb])
+				)([x, temb_x])
 				if self.has_attention[i]:
 					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
 			
@@ -277,7 +319,15 @@ class uvit_generator(keras.Model):
 		x = layers.GroupNormalization(groups=self.norm_groups)(x)
 		x = self.activation_fn(x)
 		x = layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=kernel_init(0.0))(x)
+
 		return layers.Activation('tanh')(x)
+	
+	def build_graph(self):
+		image_input = layers.Input(
+			shape=(self.img_size, self.img_size, self.img_channels), name="image_input"
+		)
+		time_input = keras.Input(shape=(), dtype=tf.int64, name="time_input")
+		return keras.Model(inputs=[image_input, time_input], outputs=self.call([image_input, time_input]))
 
 
 
