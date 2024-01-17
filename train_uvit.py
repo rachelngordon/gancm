@@ -2,12 +2,11 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
+import tensorflow.keras as kr
 import os
 from datetime import datetime
 from uvit import uvit
-from uvit import modules_uvit as modules
+from uvit import modules
 import time
 import data_loader
 from flags import Flags
@@ -35,7 +34,7 @@ def main(flags):
     model.compile()
 
     # Train the model
-    model.fit(
+    history = model.fit(
         train_data,
         validation_data=test_data,
         epochs=flags.epochs,
@@ -58,10 +57,9 @@ def main(flags):
     #       file.write("Training time: {:.2f} seconds".format(training_duration))
     #       print("Training time saved to", filename)
 
-
-    model.save_model('/media/aisec-102/DATA3/rachel/experiments/models/uvit_test')
+    model.save_model(flags)
     model.model_evaluate(test_data)
-    #model.plot_losses(history.history)
+    model.plot_losses(history.history)
 
 
 if __name__ == '__main__':
