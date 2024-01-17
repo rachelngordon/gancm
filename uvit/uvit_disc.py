@@ -34,15 +34,19 @@ class GAN_UVIT(keras.Model):
 
 		self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
 		self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
+		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
 
 		self.vgg_feature_loss_coeff = 1 #flags.vgg_feature_loss_coeff
 		self.ssim_loss_coeff = flags.ssim_loss_coeff
 
 		self.vgg_loss = loss.VGGFeatureMatchingLoss()
+		self.discriminator_loss = loss.DiscriminatorLoss()
 
-		self.optimizer = keras.optimizers.Adam(learning_rate=self.flags.gen_lr)
-
-
+		self.generator_optimizer = keras.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1,
+																									beta_2=self.flags.gen_beta_2)
+		self.discriminator_optimizer = keras.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1,
+																											beta_2=self.flags.disc_beta_2)
+		
 		self.network = self.build_combined_model()
 
 		
@@ -73,6 +77,137 @@ class GAN_UVIT(keras.Model):
 	
 	def compile(self, **kwargs):
 		super().compile(**kwargs)
+
+
+	def train_discriminator(self, time_input, ct, mri):
+		
+		fake_images = self.generator([ct, time_input])
+		
+		with tf.GradientTape() as gradient_tape:
+			pred_fake = self.discriminator([ct, fake_images])[-1]  # check
+			pred_real = self.discriminator([ct, mri])[-1]  # check
+			loss_fake = self.discriminator_loss(False, pred_fake)
+			loss_real = self.discriminator_loss(True, pred_real)
+			total_loss = 0.5 * (loss_fake + loss_real)
+		
+		self.discriminator.trainable = True
+		gradients = gradient_tape.gradient(
+			total_loss, self.discriminator.trainable_variables
+		)
+		
+		self.discriminator_optimizer.apply_gradients(
+			zip(gradients, self.discriminator.trainable_variables)
+		)
+		return total_loss
+	
+	
+	def train_generator(self, time_input, ct, mri):
+		
+		self.discriminator.trainable = False
+
+
+		with tf.GradientTape(persistent=True) as tape:
+
+
+			real_d_output = self.discriminator([ct, mri])
+			fake_d_output, fake_image = self.network(
+				[ct, time_input]
+			)
+			pred = fake_d_output[-1]
+
+			
+			# Compute generator losses.
+			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(ct, fake_image)
+			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(ct, fake_image)
+			total_loss = vgg_loss + ssim_loss
+
+		
+		all_trainable_variables = (
+				self.network.trainable_variables
+		)
+		
+		gradients = tape.gradient(total_loss, all_trainable_variables)
+
+		self.generator_optimizer.apply_gradients(
+			zip(gradients, all_trainable_variables)
+		)
+		
+
+		return vgg_loss, ssim_loss
+	
+	
+	def train_step(self, data):
+		ct, mri = data
+		batch_size = tf.shape(ct)[0]
+		
+		t = tf.random.uniform(
+			minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
+		)
+
+		fake_images = self.decoder([ct, t])
+		
+		# Calculate the losses.
+		pred_fake = self.discriminator([ct, fake_images])[-1]
+		pred_real = self.discriminator([ct, mri])[-1]
+		loss_fake = self.discriminator_loss(False, pred_fake)
+		loss_real = self.discriminator_loss(True, pred_real)
+		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
+		
+		real_d_output = self.discriminator([ct, mri])
+		fake_d_output, fake_image = self.network(
+			[ct, t]
+		)
+		pred = fake_d_output[-1]
+		
+		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
+		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
+		#total_generator_loss = kl_loss + vgg_loss + ssim_loss
+		
+		# Report progress.
+		self.disc_loss_tracker.update_state(total_discriminator_loss)
+		self.vgg_loss_tracker.update_state(vgg_loss)
+		self.ssim_loss_tracker.update_state(ssim_loss)
+
+		results = {m.name: m.result() for m in self.metrics}
+		
+		return results
+	
+
+	def test_step(self, data):
+		ct, mri = data
+		batch_size = tf.shape(ct)[0]
+		t = tf.random.uniform(
+			minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
+		)
+		
+		fake_images = self.decoder([ct, t])
+
+
+		# Calculate the losses.
+		pred_fake = self.discriminator([ct, fake_images])[-1]
+		pred_real = self.discriminator([ct, mri])[-1]
+		loss_fake = self.discriminator_loss(False, pred_fake)
+		loss_real = self.discriminator_loss(True, pred_real)
+		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
+		
+		real_d_output = self.discriminator([ct, mri])
+		fake_d_output, fake_image  = self.network([ct, t])
+		
+		pred = fake_d_output[-1]
+		
+
+		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
+		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
+		total_loss = vgg_loss + ssim_loss
+
+		# Report progress.
+		self.disc_loss_tracker.update_state(total_discriminator_loss)
+		self.vgg_loss_tracker.update_state(vgg_loss)
+		self.ssim_loss_tracker.update_state(ssim_loss)
+		
+		results = {m.name: m.result() for m in self.metrics}
+		return results
+	
 	
 	def call(self, inputs):
 		image_input, time_input = inputs
@@ -80,49 +215,7 @@ class GAN_UVIT(keras.Model):
 	
 	def save_model(self, path):
 		self.network.save(path)
-	
-	def train_step(self, data):
-		source, target = data
-		batch_size = tf.shape(source)[0]
 		
-		t = tf.random.uniform(
-			minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
-		)
-		
-		with tf.GradientTape() as tape:
-			pred_ = self.network([source, t], training=True)
-
-			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(target, pred_)
-			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(target, pred_)
-			total_loss = vgg_loss + ssim_loss
-		
-		gradients = tape.gradient(total_loss, self.network.trainable_variables)
-		self.optimizer.apply_gradients(zip(gradients, self.network.trainable_variables))
-
-		# Report progress.
-		self.vgg_loss_tracker.update_state(vgg_loss)
-		self.ssim_loss_tracker.update_state(ssim_loss)
-
-		return {"vgg_loss": vgg_loss, "ssim_loss": ssim_loss}
-	
-	def test_step(self, data):
-		source, target = data
-		batch_size = tf.shape(source)[0]
-		t = tf.random.uniform(
-			minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
-		)
-		
-		pred_ = self.network([source, t])
-		
-		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(target, pred_)
-		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(target, pred_)
-		total_loss = vgg_loss + ssim_loss
-
-		# Report progress.
-		self.vgg_loss_tracker.update_state(vgg_loss)
-		self.ssim_loss_tracker.update_state(ssim_loss)
-		
-		return {"vgg_loss": vgg_loss, "ssim_loss": ssim_loss}
 	
 	def generate_images(self, source, num_images=8):
 		t = tf.random.uniform(
