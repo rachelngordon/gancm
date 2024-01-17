@@ -275,7 +275,7 @@ class uvit_generator(keras.Model):
 		x = self.conv(image_input)
 		
 		temb_x = self.temb(time_input)
-		temb_x = self.tmlp(temb_x)
+		temb_x1 = self.tmlp(temb_x)
 		
 		skips = [x]
 		
@@ -284,7 +284,7 @@ class uvit_generator(keras.Model):
 			for _ in range(self.num_res_blocks):
 				x = ResidualBlockLayer(
 					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
-				)([x, temb_x])
+				)([x, temb_x1])
 				if self.has_attention[i]:
 					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
 				skips.append(x)
@@ -295,11 +295,11 @@ class uvit_generator(keras.Model):
 		
 		# MiddleBlock
 		x = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)(
-			[x, temb_x]
+			[x, temb_x1]
 		)
 		x = AttentionBlock(self.widths[-1], groups=self.norm_groups)(x)
 		x = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)(
-			[x, temb_x]
+			[x, temb_x1]
 		)
 		
 		# UpBlock
@@ -308,7 +308,7 @@ class uvit_generator(keras.Model):
 				x = layers.Concatenate(axis=-1)([x, skips.pop()])
 				x = ResidualBlockLayer(
 					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
-				)([x, temb_x])
+				)([x, temb_x1])
 				if self.has_attention[i]:
 					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
 			
