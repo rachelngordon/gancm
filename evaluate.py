@@ -109,11 +109,11 @@ def show_plot_generated(ct, mri, gen_image, architecture, name, step):
     pyplot.savefig(filename)
     pyplot.close()
     '''
-
-
-def predict_pcx(flags, decoder_file, ct, mri, label):
+# predict gancm with both ct and mask
+def predict_gancm_both(flags, decoder_file, ct, mri, label):
   
   decoder = load_model(decoder_file)
+  decoder.compile()
   modelname = decoder_file.split('/')[-1]
   latent_vector = tf.random.normal(
       shape=(flags.batch_size, flags.latent_dim), mean=0.0, stddev=2.0)
@@ -122,7 +122,44 @@ def predict_pcx(flags, decoder_file, ct, mri, label):
 
   counter = 0
   for image in generated:
-    show_plot_generated(ct, mri, image, "PCxGAN", modelname, counter)
+    show_plot_generated(ct, mri, image, "GAN-CM", modelname, counter)
+    counter += 1
+  
+  return generated
+
+
+# predict gancm with just mask
+def predict_gancm_mask_only(flags, decoder_file, ct, mri, label):
+  
+  decoder = load_model(decoder_file)
+  decoder.compile()
+  modelname = decoder_file.split('/')[-1]
+  latent_vector = tf.random.normal(
+      shape=(flags.batch_size, flags.latent_dim), mean=0.0, stddev=2.0)
+  
+  generated = decoder([latent_vector, label, ])
+
+  counter = 0
+  for image in generated:
+    show_plot_generated(ct, mri, image, "GAN-CM", modelname, counter)
+    counter += 1
+  
+  return generated
+
+# predict gancm with just ct
+def predict_gancm_ct_only(flags, decoder_file, ct, mri):
+  
+  decoder = load_model(decoder_file)
+  decoder.compile()
+  modelname = decoder_file.split('/')[-1]
+  latent_vector = tf.random.normal(
+      shape=(flags.batch_size, flags.latent_dim), mean=0.0, stddev=2.0)
+  
+  generated = decoder([latent_vector, ct])
+
+  counter = 0
+  for image in generated:
+    show_plot_generated(ct, mri, image, "GAN-CM", modelname, counter)
     counter += 1
   
   return generated
@@ -133,6 +170,7 @@ def predict_p2p(model_path, modelname, ct, mri):
 
   generator = load_model(model_path)
   generator.compile(optimizer='adam', loss=[loss.VGGFeatureMatchingLoss, loss.SSIMLoss])
+  generator.compile()
   
   generated = generator(ct)
   
