@@ -201,15 +201,15 @@ test_dataset = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data
 # unet_path = "/media/aisec-102/DATA3/rachel/experiments/models/unet/unet_avg_eq_1234"
 # unet = load_model(unet_path)
 # unet.compile()
-gancm_avg_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_ct_avg_eq_1234_d"
+gancm_avg_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_avg_eq_1234_d"
 gancm_avg_eq = load_model(gancm_avg_eq_path)
 gancm_avg_eq.compile()
 
-gancm_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_ct_no_eq_1234_d"
+gancm_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_no_eq_1234_d"
 gancm_no_eq = load_model(gancm_no_eq_path)
 gancm_no_eq.compile()
 
-gancm_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_ct_eq_1234_d"
+gancm_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_eq_1234_d"
 gancm_eq = load_model(gancm_eq_path)
 gancm_eq.compile()
 
