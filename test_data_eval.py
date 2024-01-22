@@ -190,7 +190,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
         return self.dataset.batch(self.batch_size, drop_remainder=True)
 	
 
-test_dataset = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/avg_eq_paired_test', if_train=False).load()
+test_dataset = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/avg_eq_seg_test', if_train=False).load()
 
 # p2p_path = "/media/aisec-102/DATA3/rachel/experiments/models/p2p/p2p_avg_eq_1234"
 # p2p = load_model(p2p_path)
