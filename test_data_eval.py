@@ -151,11 +151,11 @@ class DataGenerator_Ready(kr.utils.Sequence):
         
         self.data_path = data_path
         self.batch_size = 1
-        x, y = self.load_data(self.data_path, if_train=if_train)
-        self.dataset = tf.data.Dataset.from_tensor_slices((x, y))
+        x, y, z = self.load_data(self.data_path, if_train=if_train)
+        self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
         self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration=False)
         self.dataset = self.dataset.map(
-        lambda x, y: (x, y), num_parallel_calls=tf.data.AUTOTUNE)
+        lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
 
         
         
@@ -168,20 +168,21 @@ class DataGenerator_Ready(kr.utils.Sequence):
                 path = f"{data_path}{i}.npz"
                 if i == 1:
                     data = np.load(path)
-                    x, y = data['arr_0'], data['arr_1']
+                    x, y, z = data['arr_0'], data['arr_1'], data['arr_2']
                 else:
                     data = np.load(path)
                     x = np.concatenate((x, data['arr_0']), axis=0)
                     y = np.oncatenate((y, data['arr_1']), axis=0)
+                    z = np.oncatenate((z, data['arr_2']), axis=0)
 
             
-            return x, y
+            return x, y, z
 
         else: 
             path = f"{data_path}.npz"
             data = np.load(path)
-            x, y = data['arr_0'], data['arr_1']
-            return x, y
+            x, y, z = data['arr_0'], data['arr_1'], data['arr_2']
+            return x, y, z
         
     def __getitem__(self, idx):
         return self.dataset.batch(self.batch_size, drop_remainder=True)
