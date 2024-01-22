@@ -209,7 +209,11 @@ class UNetViTModel(kr.Model):
 
 		#for ct, mri in test_data:
 			
-			fake_mri = self.generate_images(ct)
+			fake_mri = self.generate_images(ct, num_images=self.batch_size)
+
+			print(test_data[0][i:i+self.batch_size].shape)
+			print(mri.shape)
+			print(fake_mri.shape)
 
 			# normalize to values between 0 and 1
 			mri = (mri + 1.0) / 2.0

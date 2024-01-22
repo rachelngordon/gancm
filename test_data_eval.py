@@ -190,31 +190,36 @@ class DataGenerator_Ready(kr.utils.Sequence):
         return self.dataset.batch(self.batch_size, drop_remainder=True)
 	
 
-test_dataset = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/eq_paired_test', if_train=False).load()
+test_dataset = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/avg_eq_paired_test', if_train=False).load()
 
-p2p_path = "/media/aisec-102/DATA3/rachel/experiments/models/p2p/p2p_eq_1234"
-p2p = load_model(p2p_path)
-p2p.compile()
-cy_path = "/media/aisec-102/DATA3/rachel/experiments/models/cyclegan/cy_eq_1234/g_mri"
-cy = load_model(cy_path)
-cy.compile()
-unet_path = "/media/aisec-102/DATA3/rachel/experiments/models/unet/unet_eq_1234"
-unet = load_model(unet_path)
-unet.compile()
-gancm_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcxgan/ct/pcx_no_mask_eq_1234_d"
-gancm = load_model(gancm_path)
-gancm.compile()
+# p2p_path = "/media/aisec-102/DATA3/rachel/experiments/models/p2p/p2p_avg_eq_1234"
+# p2p = load_model(p2p_path)
+# p2p.compile()
+# cy_path = "/media/aisec-102/DATA3/rachel/experiments/models/cyclegan/cy_avg_eq_1234/g_mri"
+# cy = load_model(cy_path)
+# cy.compile()
+# unet_path = "/media/aisec-102/DATA3/rachel/experiments/models/unet/unet_avg_eq_1234"
+# unet = load_model(unet_path)
+# unet.compile()
+gancm_avg_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_no_mask_avg_eq_1234_d"
+gancm_avg_eq = load_model(gancm_avg_eq_path)
+gancm_avg_eq.compile()
 
-pix2pix_evaluate('p2p/eq', p2p, test_dataset)
-print("Pix2Pix Complete.")
+gancm_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_no_mask_no_eq_1234_d"
+gancm_no_eq = load_model(gancm_no_eq_path)
+gancm_no_eq.compile()
 
-pix2pix_evaluate('cyclegan/eq', cy, test_dataset)
-print("CycleGAN Complete.")
+gancm_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_no_mask_eq_1234_d"
+gancm_eq = load_model(gancm_eq_path)
+gancm_eq.compile()
 
-pix2pix_evaluate('unet/eq', unet, test_dataset)
-print("UNet Complete.")
+pix2pix_evaluate('gancm/ct/avg_eq', gancm_avg_eq, test_dataset)
+print("GANCM Avg Eq Complete.")
 
-pcxgan_evaluate('gancm/eq', gancm, test_dataset)
-print("GANCM Complete.")
+pix2pix_evaluate('gancm/ct/no_eq', gancm_no_eq, test_dataset)
+print("GANCM No Eq Complete.")
+
+pix2pix_evaluate('gancm/ct/eq', gancm_eq, test_dataset)
+print("GANCM Eq Complete.")
 
 
