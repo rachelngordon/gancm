@@ -213,13 +213,13 @@ gancm_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx
 gancm_eq = load_model(gancm_eq_path)
 gancm_eq.compile()
 
-pix2pix_evaluate('gancm/ct/avg_eq', gancm_avg_eq, test_dataset)
+pcxgan_evaluate('gancm/ct/avg_eq', gancm_avg_eq, test_dataset)
 print("GANCM Avg Eq Complete.")
 
-pix2pix_evaluate('gancm/ct/no_eq', gancm_no_eq, test_dataset)
+pcxgan_evaluate('gancm/ct/no_eq', gancm_no_eq, test_dataset)
 print("GANCM No Eq Complete.")
 
-pix2pix_evaluate('gancm/ct/eq', gancm_eq, test_dataset)
+pcxgan_evaluate('gancm/ct/eq', gancm_eq, test_dataset)
 print("GANCM Eq Complete.")
 
 
