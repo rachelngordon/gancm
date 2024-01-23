@@ -198,7 +198,7 @@ class ResidualBlockLayer(kr.layers.Layer):
 
 
 class GanMonitor(kr.callbacks.Callback):
-	def __init__(self, val_dataset, flags, n_samples=3, epoch_interval=5):
+	def __init__(self, val_dataset, flags, n_samples=1, epoch_interval=5):
 		
 		self.val_images = next(iter(val_dataset))
 		self.source = self.val_images[0]
