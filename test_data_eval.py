@@ -117,7 +117,7 @@ def pcxgan_evaluate(dir_, decoder, test_data, epoch=0):
     latent_vector = tf.random.normal(
       shape=(1, 256), mean=0.0, stddev=2.0
     )
-    fake_image = decoder([latent_vector, mask, ct])
+    fake_image = decoder([latent_vector, mask])
     
     mri = (mri + 1.0) / 2.0
     fake_image = (fake_image + 1.0) / 2.0
@@ -191,7 +191,9 @@ class DataGenerator_Ready(kr.utils.Sequence):
         return self.dataset.batch(self.batch_size, drop_remainder=True)
 	
 
-test_dataset = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/avg_eq_seg_test', if_train=False).load()
+#test_data_avg = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/avg_eq_seg_test', if_train=False).load()
+test_data_eq = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/eq_seg_test', if_train=False).load()
+test_data_no_eq = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/no_eq_seg_test', if_train=False).load()
 
 # p2p_path = "/media/aisec-102/DATA3/rachel/experiments/models/p2p/p2p_avg_eq_1234"
 # p2p = load_model(p2p_path)
@@ -206,13 +208,16 @@ test_dataset = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data
 # gancm_avg_eq = load_model(gancm_avg_eq_path)
 # gancm_avg_eq.compile()
 
-# gancm_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_no_eq_1234_d"
-# gancm_no_eq = load_model(gancm_no_eq_path)
-# gancm_no_eq.compile()
+gancm_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_no_eq_1234_d"
+gancm_no_eq = load_model(gancm_no_eq_path)
+gancm_no_eq.compile()
 
 gancm_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_eq_1234_d"
 gancm_eq = load_model(gancm_eq_path)
 gancm_eq.compile()
 
-pcxgan_evaluate('gancm/seg_ct/eq', gancm_eq, test_dataset)
+pcxgan_evaluate('gancm/seg_ct/eq', gancm_eq, test_data_eq)
 print("GANCM Eq Complete.")
+
+pcxgan_evaluate('gancm/seg_ct/eq', gancm_no_eq, test_data_no_eq)
+print("GANCM No Eq Complete.")
