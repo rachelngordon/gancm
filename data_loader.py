@@ -386,7 +386,7 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 
 				if i == folds[0]:
 					data = np.load(path)
-					x, y = data['arr_0'][:50], data['arr_1'][:50]
+					x, y = data['arr_0'], data['arr_1']
 			
 				else:
 					data = np.load(path)
@@ -399,7 +399,7 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 		else: 
 			path = f"{data_path}{flags.test_fold}.npz"
 			data = np.load(path)
-			x, y = data['arr_0'][:50], data['arr_1'][:50]
+			x, y = data['arr_0'], data['arr_1']
 			
 			return x, y
 
