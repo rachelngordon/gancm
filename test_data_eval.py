@@ -117,7 +117,7 @@ def pcxgan_evaluate(dir_, decoder, test_data, epoch=0):
     latent_vector = tf.random.normal(
       shape=(1, 256), mean=0.0, stddev=2.0
     )
-    fake_image = decoder([latent_vector, mask])
+    fake_image = decoder([latent_vector, mask, ct])
     
     mri = (mri + 1.0) / 2.0
     fake_image = (fake_image + 1.0) / 2.0
