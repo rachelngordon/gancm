@@ -117,7 +117,7 @@ def pcxgan_evaluate(dir_, decoder, test_data, epoch=0):
     latent_vector = tf.random.normal(
       shape=(1, 256), mean=0.0, stddev=2.0
     )
-    fake_image = decoder([latent_vector, mask, ct])
+    fake_image = decoder([latent_vector, mask])
     
     mri = (mri + 1.0) / 2.0
     fake_image = (fake_image + 1.0) / 2.0
@@ -206,19 +206,19 @@ test_data_no_eq = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_d
 # unet.compile()
 
 
-gancm_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_no_eq_1234_d"
-gancm_no_eq = load_model(gancm_no_eq_path)
-gancm_no_eq.compile()
+# gancm_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_no_eq_1234_d"
+# gancm_no_eq = load_model(gancm_no_eq_path)
+# gancm_no_eq.compile()
 
-gancm_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_eq_1234_d"
-gancm_eq = load_model(gancm_eq_path)
-gancm_eq.compile()
+# gancm_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_eq_1234_d"
+# gancm_eq = load_model(gancm_eq_path)
+# gancm_eq.compile()
 
-pcxgan_evaluate('gancm/seg_ct/eq', gancm_eq, test_data_eq)
-print("GANCM Eq Complete.")
+# pcxgan_evaluate('gancm/seg_ct/eq', gancm_eq, test_data_eq)
+# print("GANCM Eq Complete.")
 
-pcxgan_evaluate('gancm/seg_ct/no_eq', gancm_no_eq, test_data_no_eq)
-print("GANCM No Eq Complete.")
+# pcxgan_evaluate('gancm/seg_ct/no_eq', gancm_no_eq, test_data_no_eq)
+# print("GANCM No Eq Complete.")
 
 
 seg_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_just_seg_no_eq_1234_d"
