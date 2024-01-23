@@ -202,23 +202,17 @@ test_dataset = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data
 # unet_path = "/media/aisec-102/DATA3/rachel/experiments/models/unet/unet_avg_eq_1234"
 # unet = load_model(unet_path)
 # unet.compile()
-gancm_avg_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_avg_eq_1234_d"
-gancm_avg_eq = load_model(gancm_avg_eq_path)
-gancm_avg_eq.compile()
+# gancm_avg_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_avg_eq_1234_d"
+# gancm_avg_eq = load_model(gancm_avg_eq_path)
+# gancm_avg_eq.compile()
 
-gancm_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_no_eq_1234_d"
-gancm_no_eq = load_model(gancm_no_eq_path)
-gancm_no_eq.compile()
+# gancm_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_no_eq_1234_d"
+# gancm_no_eq = load_model(gancm_no_eq_path)
+# gancm_no_eq.compile()
 
 gancm_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_eq_1234_d"
 gancm_eq = load_model(gancm_eq_path)
 gancm_eq.compile()
 
-pcxgan_evaluate('gancm/ct/avg_eq', gancm_avg_eq, test_dataset)
-print("GANCM Avg Eq Complete.")
-
-pcxgan_evaluate('gancm/ct/no_eq', gancm_no_eq, test_dataset)
-print("GANCM No Eq Complete.")
-
-pcxgan_evaluate('gancm/ct/eq', gancm_eq, test_dataset)
+pcxgan_evaluate('gancm/seg_ct/eq', gancm_eq, test_dataset)
 print("GANCM Eq Complete.")
