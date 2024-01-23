@@ -191,7 +191,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
         return self.dataset.batch(self.batch_size, drop_remainder=True)
 	
 
-#test_data_avg = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/avg_eq_seg_test', if_train=False).load()
+test_data_avg = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/avg_eq_seg_test', if_train=False).load()
 test_data_eq = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/eq_seg_test', if_train=False).load()
 test_data_no_eq = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_data/no_eq_seg_test', if_train=False).load()
 
@@ -204,9 +204,7 @@ test_data_no_eq = DataGenerator_Ready('/media/aisec-102/DATA3/rachel/data/test_d
 # unet_path = "/media/aisec-102/DATA3/rachel/experiments/models/unet/unet_avg_eq_1234"
 # unet = load_model(unet_path)
 # unet.compile()
-# gancm_avg_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_avg_eq_1234_d"
-# gancm_avg_eq = load_model(gancm_avg_eq_path)
-# gancm_avg_eq.compile()
+
 
 gancm_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_seg_no_eq_1234_d"
 gancm_no_eq = load_model(gancm_no_eq_path)
@@ -219,5 +217,27 @@ gancm_eq.compile()
 pcxgan_evaluate('gancm/seg_ct/eq', gancm_eq, test_data_eq)
 print("GANCM Eq Complete.")
 
-pcxgan_evaluate('gancm/seg_ct/eq', gancm_no_eq, test_data_no_eq)
+pcxgan_evaluate('gancm/seg_ct/no_eq', gancm_no_eq, test_data_no_eq)
 print("GANCM No Eq Complete.")
+
+
+seg_no_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_just_seg_no_eq_1234_d"
+seg_no_eq = load_model(seg_no_eq_path)
+seg_no_eq.compile()
+
+seg_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_just_seg_eq_1234_d"
+seg_eq = load_model(seg_eq_path)
+seg_eq.compile()
+
+gancm_avg_eq_path = "/media/aisec-102/DATA3/rachel/experiments/models/pcx_eq_new/pcx_just_seg_avg_eq_1234_d"
+gancm_avg_eq = load_model(gancm_avg_eq_path)
+gancm_avg_eq.compile()
+
+pcxgan_evaluate('gancm/just_seg/eq', seg_eq, test_data_eq)
+print("GANCM Eq Complete.")
+
+pcxgan_evaluate('gancm/just_seg/no_eq', seg_no_eq, test_data_no_eq)
+print("GANCM No Eq Complete.")
+
+pcxgan_evaluate('gancm/just_seg/avg_eq', gancm_avg_eq, test_data_avg)
+print("GANCM Avg Eq Complete.")
