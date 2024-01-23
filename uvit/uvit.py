@@ -151,7 +151,15 @@ class UNetViTModel(kr.Model):
 		
 		gradients = tape.gradient(total_loss, self.network.trainable_variables)
 		self.optimizer.apply_gradients(zip(gradients, self.network.trainable_variables))
-		return {"vgg_loss": vgg_loss, "ssim_loss": ssim_loss}
+
+		# Report progress.
+		self.vgg_loss_tracker.update_state(vgg_loss)
+		self.ssim_loss_tracker.update_state(ssim_loss)
+
+		results = {m.name: m.result() for m in self.metrics}
+		return results
+	
+		#return {"vgg_loss": vgg_loss, "ssim_loss": ssim_loss}
 	
 	def test_step(self, data):
 		source, target = data
@@ -161,11 +169,18 @@ class UNetViTModel(kr.Model):
 		)
 		
 		pred_ = self.network([source, t])
-		vgg_loss = self.vgg_loss(target, pred_)
-		ssim_loss = loss.SSIMLoss(target, pred_)
+		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(target, pred_)
+		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(target, pred_)
 		total_loss = vgg_loss + ssim_loss
+
+		# Report progress.
+		self.vgg_loss_tracker.update_state(vgg_loss)
+		self.ssim_loss_tracker.update_state(ssim_loss)
+
+		results = {m.name: m.result() for m in self.metrics}
+		return results
 		
-		return {"vgg_loss": vgg_loss, "ssim_loss": ssim_loss}
+		#return {"vgg_loss": vgg_loss, "ssim_loss": ssim_loss}
 	
 	def generate_images(self, source, num_images=8):
 		t = tf.random.uniform(
