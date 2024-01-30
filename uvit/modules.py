@@ -6,6 +6,7 @@ import tensorflow as tf
 import tensorflow.keras as kr
 import numpy as np 
 import matplotlib.pyplot as plt
+import tensorflow_addons as tfa
 
 
 # Kernel initializer to use
@@ -29,7 +30,7 @@ class AttentionBlock(kr.layers.Layer):
 		self.groups = groups
 		super().__init__(**kwargs)
 		
-		self.norm = kr.layers.GroupNormalization(groups=groups)
+		self.norm = tfa.layers.GroupNormalization(groups=groups)
 		self.query = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))
 		self.key = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))
 		self.value = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))
@@ -90,14 +91,14 @@ def ResidualBlock(width, groups=8, activation_fn=kr.activations.swish):
                         :, None, None, :
                         ]
         
-        x = kr.layers.GroupNormalization(groups=groups)(x)
+        x = tfa.layers.GroupNormalization(groups=groups)(x)
         x = activation_fn(x)
         x = kr.layers.Conv2D(
             width, kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0)
         )(x)
         
         x = kr.layers.Add()([x, temb])
-        x = kr.layers.GroupNormalization(groups=groups)(x)
+        x = tfa.layers.GroupNormalization(groups=groups)(x)
         x = activation_fn(x)
         
         x = kr.layers.Conv2D(
@@ -162,11 +163,11 @@ class ResidualBlockLayer(kr.layers.Layer):
                                                 kernel_initializer=kernel_init(0.0))
         
         self.temb_layer = kr.layers.Dense(self.width, kernel_initializer=kernel_init(0.0))
-        self.group_norm1_layer = kr.layers.GroupNormalization(groups=self.groups)
+        self.group_norm1_layer = tfa.layers.GroupNormalization(groups=self.groups)
         self.conv1_layer = kr.layers.Conv2D(self.width, kernel_size=3, padding="same",
                                          kernel_initializer=kernel_init(0.0))
         self.add_layer = kr.layers.Add()
-        self.group_norm2_layer = kr.layers.GroupNormalization(groups=self.groups)
+        self.group_norm2_layer = tfa.layers.GroupNormalization(groups=self.groups)
         self.conv2_layer = kr.layers.Conv2D(self.width, kernel_size=3, padding="same",
                                          kernel_initializer=kernel_init(0.0))
         self.add2_layer = kr.layers.Add()
