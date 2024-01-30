@@ -8,6 +8,7 @@ import loss
 from . import modules
 import evaluate
 import pandas as pd
+import tensorflow_addons as tfa
 
 class UNetViTModel(kr.Model):
 	def __init__(self, flags):
@@ -119,7 +120,7 @@ class UNetViTModel(kr.Model):
 				x = modules.UpSample(widths[i], interpolation=interpolation)(x)
 		
 		# End block
-		x = kr.layers.GroupNormalization(groups=norm_groups)(x)
+		x = tfa.layers.GroupNormalization(groups=norm_groups)(x)
 		x = activation_fn(x)
 		x = kr.layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=modules.kernel_init(0.0))(x)
 		x = kr.layers.Activation('tanh')(x)
