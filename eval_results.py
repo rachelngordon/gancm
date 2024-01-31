@@ -16,7 +16,8 @@ def main(flags):
   # get model path
   #path = "/grand/EVITA/ct-mri/exp_results/models/" + flags.name
   #path = "/grand/EVITA/ct-mri/uvit_results/uvit_models/" + flags.name
-  path = "~/uvit_models/" + flags.name
+  #path = "~/uvit_models/" + flags.name
+  path = "/media/aisec-102/DATA3/rachel/experiments/models/uvit_models/" + flags.name
 
   model = kr.models.load_model(path)
   evaluate.uvit_evaluate(flags, model, test_data)
