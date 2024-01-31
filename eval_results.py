@@ -15,10 +15,10 @@ def main(flags):
 
   # get model path
   #path = "/grand/EVITA/ct-mri/exp_results/models/" + flags.name
-  path = "/media/aisec-102/DATA3/rachel/experiments/models/equalize_exp/" + flags.name
+  path = "/media/aisec-102/DATA3/rachel/experiments/models/uvit_models/" + flags.name
 
   model = kr.models.load_model(path)
-  evaluate.pix2pix_evaluate(flags, model, test_data)
+  evaluate.uvit_evaluate(flags, model, test_data)
   
   
 if __name__ == '__main__':

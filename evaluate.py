@@ -254,3 +254,71 @@ def pcxgan_evaluate(flags, decoder, test_data, epoch=0):
     os.makedirs(results_dir)
   log_file = os.path.join(results_dir, filename)
   np.savetxt(log_file, [results], fmt='%.6f', header="fid, mse, mae, cs, psnr,ssim", delimiter=",")
+
+
+def generate_images(flags, network, source, num_images=8):
+		t = tf.random.uniform(
+			minval=0, maxval=flags.timesteps, shape=(num_images,), dtype=tf.int64
+		)
+		
+		return network([source[:num_images], t])
+	
+	# def plot_images(
+	# 		self, source, target, logs=None, num_rows=2, num_cols=4, figsize=(12, 5)
+	# ):
+		
+	# 	generated_samples = self.generate_images(source, num_images=num_rows * num_cols)
+		
+	# 	_, ax = plt.subplots(num_rows, num_cols, figsize=figsize)
+	# 	for i, image in enumerate(generated_samples.squeeze()):
+	# 		if num_rows == 1:
+	# 			ax[i].imshow(image, cmap='gray')
+	# 			ax[i].axis("off")
+	# 		else:
+	# 			ax[i // num_cols, i % num_cols].imshow(image)
+	# 			ax[i // num_cols, i % num_cols].axis("off")
+		
+	# 	plt.tight_layout()
+	# 	plt.show()
+        
+    
+    
+def uvit_evaluate(flags, model, test_dataset, epoch=0):
+
+
+		results = []
+
+		#test_data = next(iter(test_dataset))
+        
+		# num_batches = len(test_data[0]//self.batch_size)
+
+		# for i in range(0, num_batches, self.batch_size):
+		# 	ct, mri = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size]
+
+
+		for ct, mri in test_dataset:
+			
+			fake_mri = generate_images(flags, model, ct, num_images=flags.batch_size)
+
+			# normalize to values between 0 and 1
+			mri = (mri + 1.0) / 2.0
+			fake_mri = (fake_mri + 1.0) / 2.0
+			
+
+			fid = calculate_fid(mri, fake_mri, 
+				input_shape=(flags.crop_size, flags.crop_size, 3))
+
+			mse, mae, cs, psnr, ssim = get_metrics(mri, fake_mri)
+
+			results.append([fid, mse, mae, cs, psnr, ssim])
+			print("metrics: {}{}{}{}{}".format(fid, mse, mae, cs, psnr, ssim))
+
+		results = np.array(results, dtype=object).mean(axis=0)
+
+		filename = "results_{}_{}.log".format(epoch, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+		results_dir = os.path.join(flags.result_logs, flags.name)
+		if not os.path.exists(results_dir):
+			os.makedirs(results_dir)
+		log_file = os.path.join(results_dir, filename)
+		np.savetxt(log_file, [results], fmt='%.6f', header="fid, mse, mae, cs, psnr,ssim", delimiter=",")
+

@@ -215,7 +215,7 @@ class UNetViTModel(kr.Model):
 
 		results = []
 
-		test_data = next(iter(test_dataset))
+		#test_data = next(iter(test_dataset))
         
 		# num_batches = len(test_data[0]//self.batch_size)
 
@@ -223,7 +223,7 @@ class UNetViTModel(kr.Model):
 		# 	ct, mri = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size]
 
 
-		for ct, mri in test_data:
+		for ct, mri in test_dataset:
 			
 			fake_mri = self.generate_images(ct, num_images=self.batch_size)
 
