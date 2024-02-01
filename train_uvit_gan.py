@@ -6,7 +6,7 @@ import tensorflow.keras as kr
 import os
 from datetime import datetime
 from uvit import uvit_gan
-from uvit import modules_disc as modules
+from uvit import modules_gan as modules
 import time
 import data_loader
 from flags import Flags

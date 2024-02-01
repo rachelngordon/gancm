@@ -6,7 +6,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import os
 from datetime import datetime
-from .. import modules_uvit as modules
+from . import modules_gan as modules
 import evaluate
 import loss
 import pandas as pd
