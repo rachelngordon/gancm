@@ -117,7 +117,19 @@ class ResidualBlockLayer(layers.Layer):
         self.width = width
         self.groups = groups
         self.activation_fn = activation_fn
+    
+    def build(self, input_shape):
 
+        print("Width: ", self.width)
+        input_width = input_shape[0][-1]
+        print(input_width)
+        
+        if input_width == self.width:
+            self.residual_layer = layers.Lambda(lambda x: x)
+        else:
+            self.residual_layer = layers.Conv2D(self.width, kernel_size=1,
+                                                kernel_initializer=kernel_init(0.0))
+			
         self.temb_layer1 = layers.Dense(self.width, kernel_initializer=kernel_init(0.0))
         self.group_norm1_layer = layers.GroupNormalization(groups=self.groups)
         self.conv1_layer = layers.Conv2D(self.width, kernel_size=3, padding="same",
@@ -127,17 +139,6 @@ class ResidualBlockLayer(layers.Layer):
         self.conv2_layer = layers.Conv2D(self.width, kernel_size=3, padding="same",
 											kernel_initializer=kernel_init(0.0))
         self.add2_layer = layers.Add()
-    
-    def build(self, input_shape):
-
-        input_width = input_shape[0][-1]
-        print(input_width)
-        
-        if input_width == self.width:
-            self.residual_layer = layers.Lambda(lambda x: x)
-        else:
-            self.residual_layer = layers.Conv2D(self.width, kernel_size=1,
-                                                kernel_initializer=kernel_init(0.0))
     
     def call(self, inputs):
         x, t = inputs
