@@ -117,31 +117,34 @@ class ResidualBlockLayer(layers.Layer):
         self.width = width
         self.groups = groups
         self.activation_fn = activation_fn
+
+        self.temb_layer1 = layers.Dense(self.width, kernel_initializer=kernel_init(0.0))
+        self.group_norm1_layer = layers.GroupNormalization(groups=self.groups)
+        self.conv1_layer = layers.Conv2D(self.width, kernel_size=3, padding="same",
+											kernel_initializer=kernel_init(0.0))
+        self.add_layer = layers.Add()
+        self.group_norm2_layer = layers.GroupNormalization(groups=self.groups)
+        self.conv2_layer = layers.Conv2D(self.width, kernel_size=3, padding="same",
+											kernel_initializer=kernel_init(0.0))
+        self.add2_layer = layers.Add()
     
     def build(self, input_shape):
+
         input_width = input_shape[0][-1]
+        print(input_width)
         
         if input_width == self.width:
             self.residual_layer = layers.Lambda(lambda x: x)
         else:
             self.residual_layer = layers.Conv2D(self.width, kernel_size=1,
                                                 kernel_initializer=kernel_init(0.0))
-        
-        self.temb_layer = layers.Dense(self.width, kernel_initializer=kernel_init(0.0))
-        self.group_norm1_layer = layers.GroupNormalization(groups=self.groups)
-        self.conv1_layer = layers.Conv2D(self.width, kernel_size=3, padding="same",
-                                         kernel_initializer=kernel_init(0.0))
-        self.add_layer = layers.Add()
-        self.group_norm2_layer = layers.GroupNormalization(groups=self.groups)
-        self.conv2_layer = layers.Conv2D(self.width, kernel_size=3, padding="same",
-                                         kernel_initializer=kernel_init(0.0))
-        self.add2_layer = layers.Add()
     
     def call(self, inputs):
         x, t = inputs
+
         residual = self.residual_layer(x)
         t = self.activation_fn(t)
-        temb_t = self.temb_layer(t)[:, None, None, :]
+        temb_t = self.temb_layer1(t)[:, None, None, :]
         
         x = self.group_norm1_layer(x)
         x = self.activation_fn(x)
@@ -160,6 +163,7 @@ class ResidualBlockLayer(layers.Layer):
                        'groups': self.groups,
                        'activation_fn': tf.keras.activations.serialize(self.activation_fn)})
         return config
+	
 	
 
 class uvit_generator(keras.Model):
@@ -184,109 +188,214 @@ class uvit_generator(keras.Model):
 			kernel_initializer=kernel_init(1.0),
 		)
 		self.temb_layer = TimeEmbedding(dim=self.first_conv_channels * 4)
+
+		# TimeMLP Layer
 		self.tmlp1 = layers.Dense(self.first_conv_channels * 4, activation=self.activation_fn, kernel_initializer=kernel_init(1.0))
 		self.tmlp2 = layers.Dense(self.first_conv_channels * 4, kernel_initializer=kernel_init(1.0))
+
+
 		self.group_norm = layers.GroupNormalization(groups=self.norm_groups)
 		self.conv1 = layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=kernel_init(0.0))
 		self.activation = layers.Activation('tanh')
 
-	def TimeMLP(self, units, activation_fn, inputs):
+		# build generator blocks
+		self.down_block_layers = self.build_down_block()
+		self.middle_block_layers = self.build_middle_block()
+		self.up_block_layers = self.build_up_block()
 
-		temb = layers.Dense(
-			units, activation=activation_fn, kernel_initializer=kernel_init(1.0)
-		)(inputs)
-		temb = layers.Dense(units, kernel_initializer=kernel_init(1.0))(temb)
 
-		return temb
+	def build_res_block_layer(self, width, groups=8, activation_fn=keras.activations.swish, **kwargs):
+		return ResidualBlockLayer(width, groups, activation_fn, **kwargs)
 	
-	def DownSample(self, width, x, activation_fn='relu'):
-
-		x = layers.Conv2D(
-			width,
-			kernel_size=3,
-			strides=2,
-			padding="same",
-			kernel_initializer=kernel_init(1.0),activation=activation_fn
-		)(x)
-
-		return x
 	
-
+	def build_attention_layer(self, width, groups=8, **kwargs):
+		return AttentionBlock(width, groups)
 	
-
-	def UpSample(self, width, x, interpolation="nearest", activation_fn='relu'):
-
-		x = layers.UpSampling2D(size=2, interpolation=interpolation)(x)
-		x = layers.Conv2D(
-			width, kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0),activation=activation_fn
-		)(x)
-		return x
 	
-
-	def DownBlock(self, x, temb_x):
-
-		skips = [x]
+	def build_down_block(self):
+		down_block_layers = []
 
 		# DownBlock
 		for i in range(len(self.widths)):
 			for _ in range(self.num_res_blocks):
-				x = ResidualBlockLayer(
-					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
-				)([x, temb_x])
+
+				residual_block_layer = self.build_res_block_layer(width=self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn)
+				down_block_layers.append(residual_block_layer)
+
 				if self.has_attention[i]:
-					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
-				skips.append(x)
+					attention_layer =self.build_attention_layer(self.widths[i], groups=self.norm_groups)
+					down_block_layers.append(attention_layer)
+
 			
 			if self.widths[i] != self.widths[-1]:
-				x = self.DownSample(self.widths[i], x)
-				skips.append(x)
-		
-		return x, skips
+				downsample = layers.Conv2D(
+							self.widths[i],
+							kernel_size=3,
+							strides=2,
+							padding="same",
+							kernel_initializer=kernel_init(1.0),activation=self.activation_fn
+						)
+
+				down_block_layers.append(downsample)
+			
+			return down_block_layers
+
+
+
+
+	# def UpSample(self, width, x, interpolation="nearest", activation_fn='relu'):
+
+	# 	x = layers.UpSampling2D(size=2, interpolation=interpolation)(x)
+	# 	x = layers.Conv2D(
+	# 		width, kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0),activation=activation_fn
+	# 	)(x)
+	# 	return x
 	
-	def MiddleBlock(self, x, temb_x):
+
+	# def DownBlock(self, inputs):
+	# 		x, temb_x = inputs
+
+	# 		skips = [x]
+
+	# 		# DownBlock
+	# 		for i in range(len(self.widths)):
+	# 			for _ in range(self.num_res_blocks):
+	# 				# x = self.ResidualBlockLayer(inputs=[x, temb_x],
+	# 				# 	width=self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
+	# 				# )
+	# 				x = ResidualBlockLayer(
+	# 					width=self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
+	# 				)([x, temb_x])
+	# 				if self.has_attention[i]:
+	# 					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
+	# 				skips.append(x)
+				
+	# 			if self.widths[i] != self.widths[-1]:
+	# 				x = self.DownSample(self.widths[i], x)
+	# 				skips.append(x)
+			
+	# 		return x, skips
+	
+	
+	
+	# def MiddleBlock(self, x, temb_x):
+
+	# 	# MiddleBlock
+	# 	x = ResidualBlockLayer(width=self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)([x, temb_x])
+	# 	x = AttentionBlock(self.widths[-1], groups=self.norm_groups)(x)
+	# 	x = ResidualBlockLayer(width=self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)([x, temb_x])
+
+	# 	return x
+	
+	def build_middle_block(self):
+		
+		middle_block_layers = []
 
 		# MiddleBlock
-		x = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)(
-			[x, temb_x]
-		)
-		x = AttentionBlock(self.widths[-1], groups=self.norm_groups)(x)
-		x = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)(
-			[x, temb_x]
-		)
+		residual_block_layer = self.build_res_block_layer(width=self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)
+		middle_block_layers.append(residual_block_layer)
+		attention_layer =  self.build_attention_layer(self.widths[-1], groups=self.norm_groups)
+		middle_block_layers.append(attention_layer)
+		middle_block_layers.append(residual_block_layer)
 
-		return x
+		return middle_block_layers
 	
-	def UpBlock(self, x, temb_x, skips):
+	# def UpBlock(self, x, temb_x, skips):
+
+	# 	# UpBlock
+	# 	for i in reversed(range(len(self.widths))):
+	# 		for _ in range(self.num_res_blocks + 1):
+	# 			x = layers.Concatenate(axis=-1)([x, skips.pop()])
+	# 			x = ResidualBlockLayer(
+	# 				self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
+	# 			)([x, temb_x])
+	# 			if self.has_attention[i]:
+	# 				x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
+			
+	# 		if i != 0:
+	# 			x = self.UpSample(self.widths[i], x, interpolation=self.interpolation)
+
+	# 	return x
+	
+	def build_up_block(self):
+
+		up_block_layers = []
 
 		# UpBlock
 		for i in reversed(range(len(self.widths))):
 			for _ in range(self.num_res_blocks + 1):
-				x = layers.Concatenate(axis=-1)([x, skips.pop()])
-				x = ResidualBlockLayer(
+				concat = layers.Concatenate(axis=-1)
+				up_block_layers.append(concat)
+				res_block_layer = self.build_res_block_layer(
 					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
-				)([x, temb_x])
+				)
+				up_block_layers.append(res_block_layer)
 				if self.has_attention[i]:
-					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
+					attention_block = self.build_attention_layer(self.widths[i], groups=self.norm_groups)
+					up_block_layers.append(attention_block)
 			
 			if i != 0:
-				x = self.UpSample(self.widths[i], x, interpolation=self.interpolation)
+				upsample = layers.UpSampling2D(size=2, interpolation="nearest")
+				up_block_layers.append(upsample)
+				conv = layers.Conv2D(self.widths[i], kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0),activation="relu")
+				up_block_layers.append(conv)
+
+		return up_block_layers
+
 
 	def call(self, inputs__):
 		
 		image_input, time_input = inputs__
+		print(image_input.shape)
+		print(time_input.shape)
 
 		x = self.conv(image_input)
+		print(x.shape)
 		
 		temb_x = self.temb_layer(time_input)
-		temb_x1 = self.TimeMLP(units=self.first_conv_channels * 4, activation_fn=self.activation_fn, inputs=temb_x)
-		
-		x, skips = self.DownBlock(x, temb_x1)
-		
-		x = self.MiddleBlock(x, temb_x1)
+		temb_x1 = self.tmlp1(temb_x)
+		temb_x2 = self.tmlp2(temb_x1)
+		print(temb_x2.shape)
 
-		x = self.UpBlock(x, temb_x1, skips)
+		skips = [x]
 
-	
+		# Down Block
+		for layer in self.down_block_layers:
+
+			if isinstance(layer, ResidualBlockLayer):
+				x = layer([x, temb_x2])
+				print(x.shape)
+
+			else: 
+				x = layer(x)
+				print(x.shape)
+
+			skips.append(x)
+
+		# Middle Block
+		for layer in self.middle_block_layers:
+
+			if isinstance(layer, ResidualBlockLayer):
+				x = layer([x, temb_x2])
+				print(x.shape)
+
+			else: 
+				x = layer(x)
+				print(x.shape)
+
+		# Up Block
+		for layer in self.up_block_layers:
+
+			if isinstance(layer, layers.Concatenate):
+					x = layer([x, skips.pop()])
+
+			elif isinstance(layer, ResidualBlockLayer):
+					x = layer([x, temb_x2])
+
+			else: 
+				x = layer(x)
+
+		
 		# End block
 		x = self.group_norm(x)
 		x = self.activation_fn(x)
@@ -294,6 +403,7 @@ class uvit_generator(keras.Model):
 
 		return self.activation(x)
 	
+
 	def build_graph(self):
 		image_input = layers.Input(
 			shape=(self.img_size, self.img_size, self.img_channels), name="image_input"
