@@ -136,17 +136,6 @@ class UpSample(kr.layers.Layer):
               return self.conv(x)
 
 
-def TimeMLP(units, activation_fn=kr.activations.swish):
-    def apply(inputs):
-        temb = kr.layers.Dense(
-            units, activation=activation_fn, kernel_initializer=kernel_init(1.0)
-        )(inputs)
-        temb = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))(temb)
-        return temb
-    
-    return apply
-
-
 class ResidualBlockLayer(kr.layers.Layer):
     def __init__(self, width, groups=8, activation_fn=kr.activations.swish, **kwargs):
         super(ResidualBlockLayer, self).__init__(**kwargs)
@@ -204,7 +193,6 @@ class DownBlock(kr.layers.Layer):
         super().__init__(**kwargs)
 
         self.down_layers = []
-        self.add_skips = []
 
         # DownBlock
         for i in range(len(widths)):
@@ -213,26 +201,12 @@ class DownBlock(kr.layers.Layer):
                     widths[i], groups=norm_groups, activation_fn=activation_fn
                 ))
                 if has_attention[i]:
-                    self.add_skips.append(False)
                     self.down_layers.append(AttentionBlock(widths[i], groups=norm_groups))
-
-                    # if last layer in res block, add skip
-                    if _ == num_res_blocks - 1:
-                        self.add_skips.append(True)
-                    else:
-                        self.add_skips.append(False)
-                          
-
-                # if last layer in res block, add skip
-                elif _ == num_res_blocks - 1:
-                    self.add_skips.append(True)
-                else:
-                    self.add_skips.append(False)
-                
+                    
 
             if widths[i] != widths[-1]:
                 self.down_layers.append(DownSample(widths[i]))
-                self.add_skips.append(True)
+
 				
     def call(self, inputs__):
         x, temb = inputs__
@@ -242,13 +216,12 @@ class DownBlock(kr.layers.Layer):
             if isinstance(self.down_layers[i], ResidualBlockLayer):
                 x = self.down_layers[i]([x, temb])
 
-                if self.add_skips[i]:
+                if not isinstance(self.down_layers[i+1], AttentionBlock):
                     skips.append(x)
+                    
             else:
                 x = self.down_layers[i](x)
-
-                if self.add_skips[i]:
-                    skips.append(x)
+                skips.append(x)
 
             
         return x, skips
@@ -278,8 +251,8 @@ class UpBlock(kr.layers.Layer):
 
         for layer in self.up_layers:
             if isinstance(layer, kr.layers.Concatenate):
-                print(x.shape)
-                print(skips.pop().shape)
+                # print(x.shape)
+                # print(skips.pop().shape)
                 x = layer([x, skips.pop()])
             elif isinstance(layer, ResidualBlockLayer):
                 x = layer([x, temb])
@@ -326,6 +299,16 @@ class uvit_generator(kr.Model):
 		self.activation = kr.layers.Activation('tanh')
 
 
+	# def TimeMLP(self, units, activation_fn=kr.activations.swish):
+	# 	def apply(inputs):
+	# 		temb = kr.layers.Dense(
+	# 			units, activation=activation_fn, kernel_initializer=kernel_init(1.0)
+	# 		)(inputs)
+	# 		temb = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))(temb)
+	# 		return temb
+		
+	# 	return apply
+
 
 	def call(self, inputs__):
 		
@@ -334,20 +317,21 @@ class uvit_generator(kr.Model):
 		x = self.conv(image_input)
 
 		temb = self.temb_layer(time_input)
-		temb = TimeMLP(units=self.first_conv_channels * 4, activation_fn=self.activation_fn)(temb)
+		temb1 = self.tmlp1(temb)
+		temb2 = self.tmlp1(temb1)
 
 		skips = [x]
             
         # Down Block
-		x, skips = self.down_block([x, temb])
-            
+		x, skips = self.down_block([x, temb2])
+                  
         # Middle Block
-		x = self.res_block([x, temb])
+		x = self.res_block([x, temb2])
 		x = self.attention(x)
-		x = self.res_block([x, temb])
+		x = self.res_block([x, temb2])
 
 		# Up Block
-		x = self.up_block([x, temb], skips)
+		x = self.up_block([x, temb2], skips)
 		
 		# End block
 		x = self.group_norm(x)
