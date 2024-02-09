@@ -8,7 +8,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 #import tensorflow_addons as tfa
 
-
 # Kernel initializer to use
 def kernel_init(scale):
 	scale = max(scale, 1e-10)
@@ -212,7 +211,9 @@ class DownBlock(kr.layers.Layer):
         x, temb = inputs__
         skips = [x]
 
+
         for i in range(len(self.down_layers)):
+            
             if isinstance(self.down_layers[i], ResidualBlockLayer):
                 x = self.down_layers[i]([x, temb])
 
@@ -248,14 +249,14 @@ class UpBlock(kr.layers.Layer):
 				
     def call(self, inputs__, skips):
         x, temb = inputs__
-
         for layer in self.up_layers:
+            
             if isinstance(layer, kr.layers.Concatenate):
-                # print(x.shape)
-                # print(skips.pop().shape)
                 x = layer([x, skips.pop()])
+                
             elif isinstance(layer, ResidualBlockLayer):
                 x = layer([x, temb])
+                
             else:
                 x = layer(x)
 
@@ -288,12 +289,14 @@ class uvit_generator(kr.Model):
 		self.tmlp1 = kr.layers.Dense(self.first_conv_channels * 4, activation=self.activation_fn, kernel_initializer=kernel_init(1.0))
 		self.tmlp2 = kr.layers.Dense(self.first_conv_channels * 4, kernel_initializer=kernel_init(1.0))
 
+		# Middle Block Layers
 		self.res_block = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)
 		self.attention = AttentionBlock(self.widths[-1], groups=self.norm_groups)
 
 		self.down_block = DownBlock(self.widths, self.norm_groups, self.activation_fn, self.num_res_blocks, self.has_attention)
 		self.up_block = UpBlock(self.widths, self.norm_groups, self.activation_fn, self.num_res_blocks, self.has_attention)
       
+		# End Block Layers
 		self.group_norm = kr.layers.GroupNormalization(groups=self.norm_groups)
 		self.conv1 = kr.layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=kernel_init(0.0))
 		self.activation = kr.layers.Activation('tanh')
@@ -323,29 +326,29 @@ class uvit_generator(kr.Model):
 		skips = [x]
             
         # Down Block
-		x, skips = self.down_block([x, temb2])
-                  
+		x_down, skips = self.down_block([x, temb2])
+            
         # Middle Block
-		x = self.res_block([x, temb2])
+		x = self.res_block([x_down, temb2])
 		x = self.attention(x)
-		x = self.res_block([x, temb2])
-
+		x_mid = self.res_block([x, temb2])
+            
 		# Up Block
-		x = self.up_block([x, temb2], skips)
-		
+		x_up = self.up_block([x_mid, temb2], skips)
+            
 		# End block
-		x = self.group_norm(x)
+		x = self.group_norm(x_up)
 		x = self.activation_fn(x)
-		x = self.conv1(x)
+		x_end = self.conv1(x)
 
-		return self.activation(x)
+		return self.activation(x_end)
 	
 
 	def build_graph(self):
 		image_input = kr.layers.Input(
 			shape=(self.img_size, self.img_size, self.img_channels), name="image_input"
 		)
-		time_input = kr.Input(shape=(), dtype=tf.int64, name="time_input")
+		time_input = kr.layers.Input(shape=(), dtype=tf.int64, name="time_input")
 		return kr.Model(inputs=[image_input, time_input], outputs=self.call([image_input, time_input]))
 
 
@@ -413,6 +416,7 @@ class GanMonitor(kr.callbacks.Callback):
 		self.val_images = next(iter(val_dataset))
 		self.source = self.val_images[0]
 		self.target = self.val_images[1]
+		self.timesteps = flags.timesteps
         
 		self.n_samples = n_samples
 		self.epoch_interval = flags.epoch_interval
@@ -430,10 +434,11 @@ class GanMonitor(kr.callbacks.Callback):
         
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch % self.epoch_interval == 0:
-# 			s, t = self.sample_data()
+			# s, t = self.sample_data()
 			generated_images = self.model.generate_images(self.source, num_images=self.n_samples)
 			for s_ in range(self.n_samples):
 				grid_row = min(generated_images.shape[0], 3)
+				#grid_row = min(len(generated_images), 3)
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
 				for row in range(grid_row):
 					ax = axarr if grid_row == 1 else axarr[row]
@@ -446,9 +451,11 @@ class GanMonitor(kr.callbacks.Callback):
 					ax[2].imshow((np.array(generated_images[row]).squeeze() + 1) / 2, cmap='gray')
 					ax[2].axis("off")
 					ax[2].set_title("Generated", fontsize=20)
-				filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-				sample_file = os.path.join(self.sample_dir, filename)
-				plt.savefig(sample_file)
+			
+
+					filename = "sample_{}_{}_{}.png".format(epoch, s_, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+					sample_file = os.path.join(self.sample_dir, filename)
+					plt.savefig(sample_file)
                 
 
 				self.losses['vgg_loss'].append(logs['vgg_loss']) 

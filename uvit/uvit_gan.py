@@ -15,15 +15,14 @@ import pandas as pd
 class GAN_UVIT(keras.Model):
 	def __init__(self, flags):
 		super().__init__()
-		self.flags = flags
 
+		self.flags = flags
 		self.experiment_name = self.flags.name
 		self.samples_dir = self.flags.sample_dir
 		self.models_dir = self.flags.checkpoints_dir
 		self.hist_dir = self.flags.hist_path
-		self.image_size = self.flags.crop_size
-		self.batch_size = self.flags.batch_size
 
+		self.batch_size = self.flags.batch_size
 		self.timesteps = self.flags.timesteps
 		self.img_size = self.flags.crop_size
 		self.img_channels = self.flags.img_channels
@@ -54,23 +53,32 @@ class GAN_UVIT(keras.Model):
 	def metrics(self):
 		return [
 			self.vgg_loss_tracker,
-			self.ssim_loss_tracker
+			self.ssim_loss_tracker,
+			self.disc_loss_tracker
 		]
 	
 
 	def build_combined_model(self):
 		
 		self.discriminator.trainable = False
-		image_input = layers.Input(
+		# image_input = layers.Input(
+		# 	shape=(self.img_size, self.img_size, self.img_channels), name="image_input"
+		# )
+		ct_input = keras.Input(
 			shape=(self.img_size, self.img_size, self.img_channels), name="image_input"
 		)
 		time_input = keras.Input(shape=(), dtype=tf.int64, name="time_input")
-		generated_image = self.generator([image_input, time_input])
-		discriminator_output = self.discriminator([image_input, generated_image])
+		
+		mri_input = keras.Input(
+			shape=(self.img_size, self.img_size, self.img_channels), name="mri_input"
+		)
+		
+		generated_image = self.generator([ct_input, time_input])
+		discriminator_output = self.discriminator([ct_input, generated_image])
 		
 		patch_size = discriminator_output[-1].shape[1]
 		combined_model = keras.Model(
-			[image_input, time_input],
+			[ct_input, time_input, mri_input],
 			[discriminator_output, generated_image],
 		)
 		return patch_size, combined_model
@@ -82,6 +90,7 @@ class GAN_UVIT(keras.Model):
 	def train_discriminator(self, time_input, ct, mri):
 		
 		fake_images = self.generator([ct, time_input])
+
 		
 		with tf.GradientTape() as gradient_tape:
 			pred_fake = self.discriminator([ct, fake_images])[-1]  # check
@@ -111,7 +120,7 @@ class GAN_UVIT(keras.Model):
 
 			real_d_output = self.discriminator([ct, mri])
 			fake_d_output, fake_image = self.network(
-				[ct, time_input]
+				[ct, time_input, mri]
 			)
 			pred = fake_d_output[-1]
 
@@ -170,7 +179,6 @@ class GAN_UVIT(keras.Model):
 		
 		fake_images = self.generator([ct, t])
 
-
 		# Calculate the losses.
 		pred_fake = self.discriminator([ct, fake_images])[-1]
 		pred_real = self.discriminator([ct, mri])[-1]
@@ -179,7 +187,7 @@ class GAN_UVIT(keras.Model):
 		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
 		
 		real_d_output = self.discriminator([ct, mri])
-		fake_d_output, fake_image  = self.network([ct, t])
+		fake_d_output, fake_image  = self.network([ct, t, mri])
 		
 		pred = fake_d_output[-1]
 		
@@ -199,36 +207,19 @@ class GAN_UVIT(keras.Model):
 	
 	def call(self, inputs):
 		image_input, time_input = inputs
-		return self.network([image_input, time_input])
+		return self.generator([image_input, time_input])
 	
-	def save_model(self, path):
-		self.network.save(path)
+	def save_model(self, flags):
+		self.generator.save(self.flags.model_path + self.experiment_name)
 		
 	
 	def generate_images(self, source, num_images=8):
 		t = tf.random.uniform(
 			minval=0, maxval=self.timesteps, shape=(num_images,), dtype=tf.int64
 		)
-		
-		return self.network([source[:num_images], t])
+
+		return self.generator([source[:num_images], t])
 	
-	def plot_images(
-			self, val_dataset, logs=None, num_rows=2, num_cols=4, figsize=(12, 5)
-	):
-		self.val_images = val_dataset
-		generated_samples = self.generate_images(self.val_images[0], num_images=num_rows * num_cols)
-		
-		_, ax = plt.subplots(num_rows, num_cols, figsize=figsize)
-		for i, image in enumerate(generated_samples.squeeze()):
-			if num_rows == 1:
-				ax[i].imshow(image, cmap='gray')
-				ax[i].axis("off")
-			else:
-				ax[i // num_cols, i % num_cols].imshow(image)
-				ax[i // num_cols, i % num_cols].axis("off")
-		
-		plt.tight_layout()
-		plt.show()
 
 
 	def model_evaluate(self, test_dataset, epoch=0):
@@ -245,7 +236,7 @@ class GAN_UVIT(keras.Model):
 
 
 		#for ct, mri in test_data:
-			
+
 			fake_mri = self.generate_images(ct)
 
 			# normalize to values between 0 and 1

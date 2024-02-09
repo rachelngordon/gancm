@@ -6,10 +6,11 @@ import tensorflow.keras as kr
 import os
 from datetime import datetime
 from uvit import uvit_gan
-from uvit import modules_gan as modules
+from uvit import modules_new as modules
 import time
 import data_loader
 from flags import Flags
+from keras.utils.vis_utils import plot_model
 
 
 
@@ -41,7 +42,6 @@ def main(flags):
         batch_size=flags.batch_size,
         callbacks=[modules.GanMonitor(test_data, flags)],
     )
-
 
     end_time = time.time()
 
