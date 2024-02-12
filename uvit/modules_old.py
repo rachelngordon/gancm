@@ -416,7 +416,11 @@ class GanMonitor(kr.callbacks.Callback):
 		self.val_images = next(iter(val_dataset))
 		self.source = self.val_images[0]
 		self.target = self.val_images[1]
+        
 		self.timesteps = flags.timesteps
+		self.t = tf.random.uniform(
+			minval=0, maxval=self.timesteps, shape=(flags.batch_size,), dtype=tf.int64
+		)
         
 		self.n_samples = n_samples
 		self.epoch_interval = flags.epoch_interval
@@ -435,7 +439,7 @@ class GanMonitor(kr.callbacks.Callback):
 	def on_epoch_end(self, epoch, logs=None):
 		if epoch % self.epoch_interval == 0:
 			# s, t = self.sample_data()
-			generated_images = self.model.generate_images(self.source, num_images=self.n_samples)
+			generated_images = self.model([self.source, self.t])
 			for s_ in range(self.n_samples):
 				grid_row = min(generated_images.shape[0], 3)
 				#grid_row = min(len(generated_images), 3)
@@ -448,7 +452,7 @@ class GanMonitor(kr.callbacks.Callback):
 					ax[1].imshow((self.target[row].numpy().squeeze() + 1) / 2, cmap='gray')
 					ax[1].axis("off")
 					ax[1].set_title("Ground Truth", fontsize=20)
-					ax[2].imshow((np.array(generated_images[row]).squeeze() + 1) / 2, cmap='gray')
+					ax[2].imshow((tf.squeeze(generated_images[row]).numpy() + 1) / 2, cmap='gray')
 					ax[2].axis("off")
 					ax[2].set_title("Generated", fontsize=20)
 			

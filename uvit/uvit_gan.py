@@ -1,18 +1,16 @@
-import math
-import numpy as np
 import matplotlib.pyplot as plt
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
 import os
 from datetime import datetime
-from . import modules_new as modules
-import evaluate
+import tensorflow as tf
+import tensorflow.keras as kr
+import numpy as np
 import loss
+from . import modules
+import evaluate
 import pandas as pd
+#import tensorflow_addons as tfa
 
-
-class GAN_UVIT(keras.Model):
+class UNetViTModel(kr.Model):
 	def __init__(self, flags):
 		super().__init__()
 
@@ -26,29 +24,34 @@ class GAN_UVIT(keras.Model):
 		self.timesteps = self.flags.timesteps
 		self.img_size = self.flags.crop_size
 		self.img_channels = self.flags.img_channels
-		self.widths = [self.flags.first_conv_channels * mult for mult in self.flags.channel_multiplier]
+		self.first_conv_channels = self.flags.first_conv_channels
+		self.widths = [self.first_conv_channels * mult for mult in self.flags.channel_multiplier]
+		self.has_attention = self.flags.has_attention
+		self.num_res_blocks = self.flags.num_res_blocks
+		self.norm_groups = self.flags.norm_groups
 		
-		self.discriminator = modules.Discriminator(self.flags)
-		self.generator = modules.uvit_generator(self.flags)
+		self.vgg_loss = loss.VGGFeatureMatchingLoss()
+		self.optimizer = kr.optimizers.Adam(learning_rate=self.flags.gen_lr)
+		self.discriminator_loss = loss.DiscriminatorLoss()
 
 		self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
 		self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
-		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
 
 		self.vgg_feature_loss_coeff = 1 #flags.vgg_feature_loss_coeff
 		self.ssim_loss_coeff = flags.ssim_loss_coeff
-
-		self.vgg_loss = loss.VGGFeatureMatchingLoss()
-		self.discriminator_loss = loss.DiscriminatorLoss()
-
-		self.generator_optimizer = keras.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1,
-																									beta_2=self.flags.gen_beta_2)
-		self.discriminator_optimizer = keras.optimizers.Adam(self.flags.disc_lr, beta_1=self.flags.disc_beta_1,
-																											beta_2=self.flags.disc_beta_2)
-		
-		self.patch_size, self.network = self.build_combined_model()
-
-		
+		self.discriminator = modules.Discriminator(self.flags)
+		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
+		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, 
+														  beta_1=self.flags.disc_beta_1,
+														  beta_2=self.flags.disc_beta_2)
+		self.network = self.build_model(self.img_size,
+							self.img_channels,
+							self.widths,
+							self.has_attention,
+							self.num_res_blocks,
+							self.norm_groups)
+		#self.network.compile(optimizer=self.optimizer, loss=self.loss)
+	
 	@property
 	def metrics(self):
 		return [
@@ -57,39 +60,96 @@ class GAN_UVIT(keras.Model):
 			self.disc_loss_tracker
 		]
 	
-
-	def build_combined_model(self):
-		
-		self.discriminator.trainable = False
-		# image_input = layers.Input(
-		# 	shape=(self.img_size, self.img_size, self.img_channels), name="image_input"
-		# )
-		ct_input = keras.Input(
-			shape=(self.img_size, self.img_size, self.img_channels), name="image_input"
+	
+	def build_model(
+			self,
+			img_size,
+			img_channels,
+			widths,
+			has_attention,
+			num_res_blocks=2,
+			norm_groups=8,
+			interpolation="nearest",
+			activation_fn=kr.activations.swish,
+	):
+		image_input = kr.layers.Input(
+			shape=(img_size, img_size, img_channels), name="image_input"
 		)
-		time_input = keras.Input(shape=(), dtype=tf.int64, name="time_input")
+		time_input = kr.Input(shape=(), dtype=tf.int64, name="time_input")
 		
-		mri_input = keras.Input(
-			shape=(self.img_size, self.img_size, self.img_channels), name="mri_input"
+		## Encoder
+		x = kr.layers.Conv2D(
+			self.first_conv_channels,
+			kernel_size=(3, 3),
+			padding="same",
+			kernel_initializer=modules.kernel_init(1.0),
+		)(image_input)
+		
+		temb = modules.TimeEmbedding(dim=self.first_conv_channels * 4)(time_input)
+		temb = modules.TimeMLP(units=self.first_conv_channels * 4, activation_fn=activation_fn)(temb)
+		
+		skips = [x]
+		
+		# DownBlock
+		for i in range(len(widths)):
+			for _ in range(num_res_blocks):
+				x = modules.ResidualBlockLayer(
+					widths[i], groups=norm_groups, activation_fn=activation_fn
+				)([x, temb])
+				if has_attention[i]:
+					x = modules.AttentionBlock(widths[i], groups=norm_groups)(x)
+				skips.append(x)
+			
+			if widths[i] != widths[-1]:
+				x = modules.DownSample(widths[i])(x)
+				skips.append(x)
+		
+		## NA
+		# MiddleBlock
+		x = modules.ResidualBlockLayer(widths[-1], groups=norm_groups, activation_fn=activation_fn)(
+			[x, temb]
+		)
+		x = modules.AttentionBlock(widths[-1], groups=norm_groups)(x)
+		x = modules.ResidualBlockLayer(widths[-1], groups=norm_groups, activation_fn=activation_fn)(
+			[x, temb]
 		)
 		
-		generated_image = self.generator([ct_input, time_input])
-		discriminator_output = self.discriminator([ct_input, generated_image])
+		## Decoder
+		# UpBlock
+		for i in reversed(range(len(widths))):
+			for _ in range(num_res_blocks + 1):
+				x = kr.layers.Concatenate(axis=-1)([x, skips.pop()])
+				x = modules.ResidualBlockLayer(
+					widths[i], groups=norm_groups, activation_fn=activation_fn
+				)([x, temb])
+				if has_attention[i]:
+					x = modules.AttentionBlock(widths[i], groups=norm_groups)(x)
+			
+			if i != 0:
+				x = modules.UpSample(widths[i], interpolation=interpolation)(x)
 		
-		patch_size = discriminator_output[-1].shape[1]
-		combined_model = keras.Model(
-			[ct_input, time_input, mri_input],
-			[discriminator_output, generated_image],
-		)
-		return patch_size, combined_model
+		# End block
+		x = kr.layers.GroupNormalization(groups=norm_groups)(x)
+		x = activation_fn(x)
+		x = kr.layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=modules.kernel_init(0.0))(x)
+		x = kr.layers.Activation('tanh')(x)
+		return kr.Model(inputs=[image_input, time_input], outputs=x, name="unetvit")
 	
 	def compile(self, **kwargs):
 		super().compile(**kwargs)
-
-
+	
+	def call(self, inputs):
+		image_input, time_input = inputs
+		return self.network([image_input, time_input])
+	
+	def save_model(self, flags):
+		self.network.save(flags.model_path + flags.exp_name)
+	
+    
 	def train_discriminator(self, time_input, ct, mri):
+		self.discriminator.trainable = True
 		
-		fake_images = self.generator([ct, time_input])
+		fake_images = self.network([ct, time_input], training=False)
 
 		
 		with tf.GradientTape() as gradient_tape:
@@ -110,134 +170,107 @@ class GAN_UVIT(keras.Model):
 		return total_loss
 	
 	
-	def train_generator(self, time_input, ct, mri):
-		
-		self.discriminator.trainable = False
 
 
-		with tf.GradientTape(persistent=True) as tape:
 
-
-			real_d_output = self.discriminator([ct, mri])
-			fake_d_output, fake_image = self.network(
-				[ct, time_input, mri]
-			)
-			pred = fake_d_output[-1]
-
-			
-			# Compute generator losses.
-			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(ct, fake_image)
-			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(ct, fake_image)
-			total_loss = vgg_loss + ssim_loss
-
-		
-		all_trainable_variables = (
-				self.network.trainable_variables
-		)
-		
-		gradients = tape.gradient(total_loss, all_trainable_variables)
-
-		self.generator_optimizer.apply_gradients(
-			zip(gradients, all_trainable_variables)
-		)
-		
-
-		return vgg_loss, ssim_loss
-	
-	
 	def train_step(self, data):
-		ct, mri = data
-		batch_size = tf.shape(ct)[0]
+		
+		source, target = data
+		batch_size = tf.shape(source)[0]
 		
 		t = tf.random.uniform(
 			minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
 		)
-
-		discriminator_loss = self.train_discriminator(
-			t, ct, mri
-		)
-		(vgg_loss, ssim_loss) = self.train_generator(
-			t, ct, mri
-		)
 		
+
+
+		discriminator_loss = self.train_discriminator(t, source, target)
+		i_discriminator_loss = 0.5* discriminator_loss
+
+		self.discriminator.trainable = False
+		with tf.GradientTape() as tape:
+			pred_ = self.network([source, t], training=True)
+			vgg_loss = self.vgg_loss(target, pred_)
+			ssim_loss = loss.SSIMLoss(target, pred_)
+			total_loss = vgg_loss + ssim_loss + i_discriminator_loss
+		
+		gradients = tape.gradient(total_loss, self.network.trainable_variables)
+		self.optimizer.apply_gradients(zip(gradients, self.network.trainable_variables))
+
 		# Report progress.
-		self.disc_loss_tracker.update_state(discriminator_loss)
 		self.vgg_loss_tracker.update_state(vgg_loss)
 		self.ssim_loss_tracker.update_state(ssim_loss)
+		self.disc_loss_tracker.update_state(discriminator_loss)
 
 		results = {m.name: m.result() for m in self.metrics}
-		
 		return results
 	
-
+		#return {"vgg_loss": vgg_loss, "ssim_loss": ssim_loss}
+	
 	def test_step(self, data):
-		ct, mri = data
-		batch_size = tf.shape(ct)[0]
+		source, target = data
+		batch_size = tf.shape(source)[0]
 		t = tf.random.uniform(
 			minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
 		)
 		
-		fake_images = self.generator([ct, t])
-
-		# Calculate the losses.
-		pred_fake = self.discriminator([ct, fake_images])[-1]
-		pred_real = self.discriminator([ct, mri])[-1]
-		loss_fake = self.discriminator_loss(False, pred_fake)
-		loss_real = self.discriminator_loss(True, pred_real)
-		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
-		
-		real_d_output = self.discriminator([ct, mri])
-		fake_d_output, fake_image  = self.network([ct, t, mri])
-		
-		pred = fake_d_output[-1]
-		
-
-		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(mri, fake_image)
-		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(mri, fake_image)
+		pred_ = self.network([source, t])
+		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(target, pred_)
+		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(target, pred_)
 		#total_loss = vgg_loss + ssim_loss
 
 		# Report progress.
-		self.disc_loss_tracker.update_state(total_discriminator_loss)
 		self.vgg_loss_tracker.update_state(vgg_loss)
 		self.ssim_loss_tracker.update_state(ssim_loss)
-		
+
 		results = {m.name: m.result() for m in self.metrics}
 		return results
-	
-	
-	def call(self, inputs):
-		image_input, time_input = inputs
-		return self.generator([image_input, time_input])
-	
-	def save_model(self, flags):
-		self.generator.save(self.flags.model_path + self.experiment_name)
 		
+		#return {"vgg_loss": vgg_loss, "ssim_loss": ssim_loss}
 	
 	def generate_images(self, source, num_images=8):
 		t = tf.random.uniform(
 			minval=0, maxval=self.timesteps, shape=(num_images,), dtype=tf.int64
 		)
-
-		return self.generator([source[:num_images], t])
+		
+		return self.network([source[:num_images], t])
 	
-
-
+	# def plot_images(
+	# 		self, source, target, logs=None, num_rows=2, num_cols=4, figsize=(12, 5)
+	# ):
+		
+	# 	generated_samples = self.generate_images(source, num_images=num_rows * num_cols)
+		
+	# 	_, ax = plt.subplots(num_rows, num_cols, figsize=figsize)
+	# 	for i, image in enumerate(generated_samples.squeeze()):
+	# 		if num_rows == 1:
+	# 			ax[i].imshow(image, cmap='gray')
+	# 			ax[i].axis("off")
+	# 		else:
+	# 			ax[i // num_cols, i % num_cols].imshow(image)
+	# 			ax[i // num_cols, i % num_cols].axis("off")
+		
+	# 	plt.tight_layout()
+	# 	plt.show()
+        
+    
+    
 	def model_evaluate(self, test_dataset, epoch=0):
 
 
 		results = []
-		
-		num_batches = len(test_data[0]//self.batch_size)
 
-		test_data = next(iter(test_dataset))
+		#test_data = next(iter(test_dataset))
+        
+		# num_batches = len(test_data[0]//self.batch_size)
 
-		for i in range(0, num_batches, self.batch_size):
-			ct, mri = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size]
+		# for i in range(0, num_batches, self.batch_size):
+		# 	ct, mri = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size]
 
 
-		#for ct, mri in test_data:
-
-			fake_mri = self.generate_images(ct)
+		for ct, mri in test_dataset:
+			
+			fake_mri = self.generate_images(ct, num_images=self.batch_size)
 
 			# normalize to values between 0 and 1
 			mri = (mri + 1.0) / 2.0

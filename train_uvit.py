@@ -5,7 +5,7 @@ import tensorflow as tf
 import tensorflow.keras as kr
 import os
 from datetime import datetime
-from uvit import uvit
+from uvit import uvit_gan as uvit
 from uvit import modules
 import time
 import data_loader
@@ -52,10 +52,10 @@ def main(flags):
     print("Training time: {:.2f} seconds".format(training_duration))
 
     # Save the training time to a file
-    filename = '/grand/EVITA/ct-mri/uvit_results/time_train/' + flags.exp_name + "_train_time.txt"
-    with open(filename, "w") as file:
-        file.write("Training time: {:.2f} seconds".format(training_duration))
-        print("Training time saved to", filename)
+    # filename = '/grand/EVITA/ct-mri/uvit_results/time_train/' + flags.exp_name + "_train_time.txt"
+    # with open(filename, "w") as file:
+    #     file.write("Training time: {:.2f} seconds".format(training_duration))
+    #     print("Training time saved to", filename)
 
     model.save_model(flags)
     model.model_evaluate(test_data)

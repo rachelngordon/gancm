@@ -6,7 +6,7 @@ import tensorflow as tf
 import tensorflow.keras as kr
 import numpy as np 
 import matplotlib.pyplot as plt
-import tensorflow_addons as tfa
+#import tensorflow_addons as tfa
 
 
 # Kernel initializer to use
@@ -30,7 +30,7 @@ class AttentionBlock(kr.layers.Layer):
 		self.groups = groups
 		super().__init__(**kwargs)
 		
-		self.norm = tfa.layers.GroupNormalization(groups=groups)
+		self.norm = kr.layers.GroupNormalization(groups=groups)
 		self.query = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))
 		self.key = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))
 		self.value = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))
@@ -91,14 +91,14 @@ def ResidualBlock(width, groups=8, activation_fn=kr.activations.swish):
                         :, None, None, :
                         ]
         
-        x = tfa.layers.GroupNormalization(groups=groups)(x)
+        x = kr.layers.GroupNormalization(groups=groups)(x)
         x = activation_fn(x)
         x = kr.layers.Conv2D(
             width, kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0)
         )(x)
         
         x = kr.layers.Add()([x, temb])
-        x = tfa.layers.GroupNormalization(groups=groups)(x)
+        x = kr.layers.GroupNormalization(groups=groups)(x)
         x = activation_fn(x)
         
         x = kr.layers.Conv2D(
@@ -163,11 +163,11 @@ class ResidualBlockLayer(kr.layers.Layer):
                                                 kernel_initializer=kernel_init(0.0))
         
         self.temb_layer = kr.layers.Dense(self.width, kernel_initializer=kernel_init(0.0))
-        self.group_norm1_layer = tfa.layers.GroupNormalization(groups=self.groups)
+        self.group_norm1_layer = kr.layers.GroupNormalization(groups=self.groups)
         self.conv1_layer = kr.layers.Conv2D(self.width, kernel_size=3, padding="same",
                                          kernel_initializer=kernel_init(0.0))
         self.add_layer = kr.layers.Add()
-        self.group_norm2_layer = tfa.layers.GroupNormalization(groups=self.groups)
+        self.group_norm2_layer = kr.layers.GroupNormalization(groups=self.groups)
         self.conv2_layer = kr.layers.Conv2D(self.width, kernel_size=3, padding="same",
                                          kernel_initializer=kernel_init(0.0))
         self.add2_layer = kr.layers.Add()
@@ -269,4 +269,60 @@ class GanMonitor(kr.callbacks.Callback):
 		# 	if not os.path.exists(model_dir):
 		# 		os.makedirs(model_dir)
 		# 	self.model.save_model(model_dir)
+
+
+class DownsampleModule(kr.layers.Layer):
+	def __init__(self, channels, filter_size, apply_norm=True, **kwargs):
+		super().__init__(**kwargs)
+		gamma_init = kr.initializers.RandomNormal(mean=0.0, stddev=0.02, seed=1234)
+		self.block = kr.Sequential()
+		self.strides = 2
+		self.block.add(
+			kr.layers.Conv2D(
+				channels,
+				filter_size,
+				strides=self.strides,
+				padding="same",
+				use_bias=False
+			)
+		)
+
+		if apply_norm:
+			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			#self.block.add(InstanceNormalization())
+
+		self.block.add(kr.layers.LeakyReLU(0.2))
+	
+	def call(self, inputs__):
+		return self.block(inputs__)
+	
+
+
+class Discriminator(kr.Model):
+	def __init__(self, flags, **kwargs):
+		super().__init__(**kwargs)
+		self.image_shape = (flags.crop_size, flags.crop_size, 1)
+		self.latent_dim = flags.latent_dim
+		n_filters = flags.disc_n_filters
+		filter_size = flags.disc_filter_size
+		self.merged = kr.layers.Concatenate()
+		self.downsample1 = DownsampleModule(n_filters, filter_size, apply_norm=False)
+		self.downsample2 = DownsampleModule(2 * n_filters, filter_size)
+		self.downsample3 = DownsampleModule(4 * n_filters, filter_size)
+		self.downsample4 = DownsampleModule(8 * n_filters, filter_size)
+		self.conv = kr.layers.Conv2D(self.image_shape[-1], kernel_size=filter_size, padding='same')
+	
+	def call(self, inputs_, **kwargs):
+		x = self.merged([inputs_[0], inputs_[1]])
+		x1 = self.downsample1(x)
+		x2 = self.downsample2(x1)
+		x3 = self.downsample3(x2)
+		x4 = self.downsample4(x3)
+		x5 = self.conv(x4)
+		return [x1, x2, x3, x4, x5]
+	
+	def build_graph(self):
+		x1 = kr.layers.Input(shape=self.image_shape)
+		x2 = kr.layers.Input(shape=self.image_shape)
+		return kr.Model(inputs=[x1, x2], outputs=self.call([x1, x2]))
 
