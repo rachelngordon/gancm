@@ -10,7 +10,7 @@ from datetime import datetime
 import data_loader
 import flags
 import random
-import tensorflow_addons as tfa
+#import tensorflow_addons as tfa
 
 
 class SPADE(kr.layers.Layer):
@@ -25,13 +25,19 @@ class SPADE(kr.layers.Layer):
 		self.resize_shape = input_shape[1:3]
 	
 	def call(self, input_tensor, raw_mask):
+		# 256, 256, 2
 		mask = tf.image.resize(raw_mask, self.resize_shape, method="nearest")
+		# 4, 4, 2
 		x = self.conv(mask)
+		# 4, 4, 128
 		gamma = self.conv_gamma(x)
+		# 4, 4, 256
 		beta = self.conv_beta(x)
+		# 4, 4, 256
 		mean, var = tf.nn.moments(input_tensor, axes=(0, 1, 2), keepdims=True)
 		std = tf.sqrt(var + self.epsilon)
 		normalized = (input_tensor - mean) / std
+		# 4, 4, 256
 		output = gamma * normalized + beta
 		return output
 
@@ -44,6 +50,7 @@ class ResBlock(kr.layers.Layer):
 	
 	def build(self, input_shape):
 		input_filter = input_shape[-1]
+
 		self.spade_1 = SPADE(input_filter, self.flags)
 		self.spade_2 = SPADE(self.filters, self.flags)
 		self.conv_1 = kr.layers.Conv2D(self.filters, self.flags.s_gamma_filter_size, padding="same")
@@ -101,7 +108,7 @@ class DownsampleModule(kr.layers.Layer):
 		)
 
 		if apply_norm:
-			self.block.add(tfa.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
 
 		self.block.add(kr.layers.LeakyReLU(0.2))
 	
@@ -202,20 +209,28 @@ class Decoder(kr.Model):
 	
 	def call(self, inputs_, **kwargs):
 		latent, mask = inputs_
+		# 4, 4, 256
 		x = self.dense1(latent)
 		x = self.reshape(x)
+		# 8, 8, 1024
 		x = self.resblock1(x, mask)
 		x = self.upsample1(x)
+		# 16, 16, 1024
 		x = self.resblock2(x, mask)
 		x = self.upsample2(x)
+		# 32, 32, 1024
 		x = self.resblock3(x, mask)
 		x = self.upsample3(x)
+		# 64, 64, 512
 		x = self.resblock4(x, mask)
 		x = self.upsample4(x)
+		# 128, 128, 256
 		x = self.resblock5(x, mask)
 		x = self.upsample5(x)
+		# 256, 256, 128
 		x = self.resblock6(x, mask)
 		x = self.upsample6(x)
+		# 1, 256
 		# x = self.resblock7(x, mask)
 		# x = self.upsample7(x)
 		x = self.activation(x)

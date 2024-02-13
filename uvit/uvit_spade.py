@@ -29,6 +29,8 @@ class UNetViTModel(kr.Model):
 		self.has_attention = self.flags.has_attention
 		self.num_res_blocks = self.flags.num_res_blocks
 		self.norm_groups = self.flags.norm_groups
+		self.latent_dim = flags.latent_dim
+		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
 		
 		self.vgg_loss = loss.VGGFeatureMatchingLoss()
 		self.optimizer = kr.optimizers.Adam(learning_rate=self.flags.gen_lr)
@@ -44,6 +46,9 @@ class UNetViTModel(kr.Model):
 		self.discriminator_optimizer = kr.optimizers.Adam(self.flags.disc_lr, 
 														  beta_1=self.flags.disc_beta_1,
 														  beta_2=self.flags.disc_beta_2)
+		
+		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
+		
 		self.network = self.build_model(self.img_size,
 							self.img_channels,
 							self.widths,
@@ -77,7 +82,7 @@ class UNetViTModel(kr.Model):
 		)
 		time_input = kr.Input(shape=(), dtype=tf.int64, name="time_input")
 		
-
+		mask_input = kr.Input(shape=self.mask_shape, dtype=tf.int64, name="mask_input")
 
 		## Encoder
 		x = kr.layers.Conv2D(
@@ -87,7 +92,6 @@ class UNetViTModel(kr.Model):
 			kernel_initializer=modules.kernel_init(1.0),
 		)(image_input)
 		
-
 		temb = modules.TimeEmbedding(dim=self.first_conv_channels * 4)(time_input)
 		temb = modules.TimeMLP(units=self.first_conv_channels * 4, activation_fn=activation_fn)(temb)
 		
@@ -107,6 +111,7 @@ class UNetViTModel(kr.Model):
 				x = modules.DownSample(widths[i])(x)
 				skips.append(x)
 		
+		## NA
 		# MiddleBlock
 		x = modules.ResidualBlockLayer(widths[-1], groups=norm_groups, activation_fn=activation_fn)(
 			[x, temb]
@@ -116,48 +121,53 @@ class UNetViTModel(kr.Model):
 			[x, temb]
 		)
 		
-		# 32, 32, 256
+        # Obtain latent vector for decoder
+		x = kr.layers.Flatten()(x)
+		mean = kr.layers.Dense(self.latent_dim)(x)
+		variance = kr.layers.Dense(self.latent_dim)(x)
+	
+		latent_vector = self.sampler([mean, variance])
+		
+		x = kr.layers.Dense(self.latent_dim * 32 * 32)(latent_vector)
+		x = kr.layers.Reshape((32, 32, self.latent_dim))(x)
+
 		## Decoder
 		# UpBlock
+		# SPADE filters: 512, 256, 256, 128, 64, 32
 		for i in reversed(range(len(widths))):
 			for _ in range(num_res_blocks + 1):
 				x = kr.layers.Concatenate(axis=-1)([x, skips.pop()])
-				x = modules.ResidualBlockLayer(
-					widths[i], groups=norm_groups, activation_fn=activation_fn
-				)([x, temb])
+				x = modules.ResidualBlockLayerSpade(
+					self.flags, widths[i], groups=norm_groups, activation_fn=activation_fn
+				)([x, temb, mask_input])
 				if has_attention[i]:
 					x = modules.AttentionBlock(widths[i], groups=norm_groups)(x)
 			
 			if i != 0:
 				x = modules.UpSample(widths[i], interpolation=interpolation)(x)
 		
-		# 64, 64, 256
-		# 128, 128, 128
-		# 256, 256, 64
-		# 256, 256, 32
-			
 		# End block
 		x = kr.layers.GroupNormalization(groups=norm_groups)(x)
 		x = activation_fn(x)
 		x = kr.layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=modules.kernel_init(0.0))(x)
 		x = kr.layers.Activation('tanh')(x)
-		return kr.Model(inputs=[image_input, time_input], outputs=x, name="unetvit")
+		return kr.Model(inputs=[image_input, time_input, mask_input], outputs=x, name="unetvit")
 	
 	def compile(self, **kwargs):
 		super().compile(**kwargs)
 	
 	def call(self, inputs):
-		image_input, time_input = inputs
-		return self.network([image_input, time_input])
+		image_input, time_input, mask = inputs
+		return self.network([image_input, time_input, mask])
 	
 	def save_model(self, flags):
 		self.network.save(flags.model_path + flags.exp_name)
 	
     
-	def train_discriminator(self, time_input, ct, mri):
+	def train_discriminator(self, time_input, ct, mri, mask):
 		self.discriminator.trainable = True
 		
-		fake_images = self.network([ct, time_input], training=False)
+		fake_images = self.network([ct, time_input, mask], training=False)
 
 		
 		with tf.GradientTape() as gradient_tape:
@@ -183,7 +193,7 @@ class UNetViTModel(kr.Model):
 
 	def train_step(self, data):
 		
-		source, target = data
+		source, target, mask = data
 		batch_size = tf.shape(source)[0]
 		
 		t = tf.random.uniform(
@@ -192,12 +202,12 @@ class UNetViTModel(kr.Model):
 		
 
 
-		discriminator_loss = self.train_discriminator(t, source, target)
+		discriminator_loss = self.train_discriminator(t, source, target, mask)
 		i_discriminator_loss = 0.5* discriminator_loss
 
 		self.discriminator.trainable = False
 		with tf.GradientTape() as tape:
-			pred_ = self.network([source, t], training=True)
+			pred_ = self.network([source, t, mask], training=True)
 			vgg_loss = self.vgg_loss(target, pred_)
 			ssim_loss = loss.SSIMLoss(target, pred_)
 			total_loss = vgg_loss + ssim_loss + i_discriminator_loss
@@ -216,13 +226,13 @@ class UNetViTModel(kr.Model):
 		#return {"vgg_loss": vgg_loss, "ssim_loss": ssim_loss}
 	
 	def test_step(self, data):
-		source, target = data
+		source, target, mask = data
 		batch_size = tf.shape(source)[0]
 		t = tf.random.uniform(
 			minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
 		)
 		
-		pred_ = self.network([source, t])
+		pred_ = self.network([source, t, mask])
 		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(target, pred_)
 		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(target, pred_)
 		#total_loss = vgg_loss + ssim_loss
@@ -236,12 +246,12 @@ class UNetViTModel(kr.Model):
 		
 		#return {"vgg_loss": vgg_loss, "ssim_loss": ssim_loss}
 	
-	def generate_images(self, source, num_images=8):
+	def generate_images(self, source, mask, num_images=8):
 		t = tf.random.uniform(
 			minval=0, maxval=self.timesteps, shape=(num_images,), dtype=tf.int64
 		)
 		
-		return self.network([source[:num_images], t])
+		return self.network([source[:num_images], t, mask])
 	
 	# def plot_images(
 	# 		self, source, target, logs=None, num_rows=2, num_cols=4, figsize=(12, 5)
