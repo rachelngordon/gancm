@@ -599,7 +599,6 @@ class Decoder(kr.Model):
 		self.interpolation="nearest",
 		self.activation_fn=kr.activations.swish
 
-	@tf.function
 	def call(self, inputs, **kwargs):
 		latent_vector, temb, mask_input, skips = inputs
 
