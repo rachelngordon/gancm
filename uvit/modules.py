@@ -534,7 +534,8 @@ class Encoder(kr.Model):
 	@tf.function
 	def call(self, input, **kwargs):
 		
-		image_input, time_input = input
+		image_input = input[0]
+		time_input = input[1]
 
 		x = kr.layers.Conv2D(
 			self.first_conv_channels,
