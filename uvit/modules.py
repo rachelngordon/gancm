@@ -531,6 +531,7 @@ class Encoder(kr.Model):
 		self.norm_groups = self.flags.norm_groups
 		self.activation_fn=kr.activations.swish
 
+	@tf.function
 	def call(self, input, **kwargs):
 		
 		image_input, time_input = input
@@ -548,7 +549,7 @@ class Encoder(kr.Model):
 		skips = [x]
 		
 		# DownBlock
-		for i in tf.range(len(self.widths)):
+		for i in range(len(self.widths)):
 			for _ in range(self.num_res_blocks):
 				x = ResidualBlockLayer(
 					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
@@ -598,13 +599,14 @@ class Decoder(kr.Model):
 		self.interpolation="nearest",
 		self.activation_fn=kr.activations.swish
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		latent_vector, temb, mask_input, skips = inputs
 
 		x = kr.layers.Dense(self.latent_dim * 32 * 32)(latent_vector)
 		x = kr.layers.Reshape((32, 32, self.latent_dim))(x)
 
-		for i in reversed(tf.range(len(self.widths))):
+		for i in reversed(range(len(self.widths))):
 			for _ in range(self.num_res_blocks + 1):
 				x = kr.layers.Concatenate(axis=-1)([x, skips.pop()])
 				x = ResidualBlockLayerSpade(
