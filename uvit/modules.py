@@ -531,7 +531,6 @@ class Encoder(kr.Model):
 		self.norm_groups = self.flags.norm_groups
 		self.activation_fn=kr.activations.swish
 
-	@tf.function
 	def call(self, input, **kwargs):
 		
 		image_input = input[0]
