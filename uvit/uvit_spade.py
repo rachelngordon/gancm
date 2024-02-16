@@ -79,7 +79,7 @@ class UNetViTModel(kr.Model):
 		mask_input = kr.Input(shape=self.mask_shape, dtype=tf.int64, name="mask_input")
 		latent_input = kr.Input(shape=self.latent_dim, name="latent")
 
-		_, _, temb, skips = self.encoder(image_input)
+		_, _, temb, skips = self.encoder([image_input, time_input])
 		self.decoder = self.decoder.build_graph(time_input.shape, skips.shape)
 
 		generated_image = self.decoder([latent_input, temb, mask_input, skips])
