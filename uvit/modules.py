@@ -605,9 +605,12 @@ class Decoder(kr.Model):
 		x = kr.layers.Dense(self.latent_dim * 32 * 32)(latent_vector)
 		x = kr.layers.Reshape((32, 32, self.latent_dim))(x)
 
+		skips_values = tf.keras.backend.batch_get_value(skips)
+		skips_list = list(skips_values)
+
 		for i in reversed(range(len(self.widths))):
 			for _ in range(self.num_res_blocks + 1):
-				x = kr.layers.Concatenate(axis=-1)([x, skips.pop()])
+				x = kr.layers.Concatenate(axis=-1)([x, skips_list.pop()])
 				x = ResidualBlockLayerSpade(
 					self.flags, self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
 				)([x, temb, mask_input])
