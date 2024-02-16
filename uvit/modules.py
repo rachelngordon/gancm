@@ -548,7 +548,7 @@ class Encoder(kr.Model):
 		skips = [x]
 		
 		# DownBlock
-		for i in range(len(self.widths)):
+		for i in tf.range(len(self.widths)):
 			for _ in range(self.num_res_blocks):
 				x = ResidualBlockLayer(
 					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
@@ -604,7 +604,7 @@ class Decoder(kr.Model):
 		x = kr.layers.Dense(self.latent_dim * 32 * 32)(latent_vector)
 		x = kr.layers.Reshape((32, 32, self.latent_dim))(x)
 
-		for i in reversed(range(len(self.widths))):
+		for i in reversed(tf.range(len(self.widths))):
 			for _ in range(self.num_res_blocks + 1):
 				x = kr.layers.Concatenate(axis=-1)([x, skips.pop()])
 				x = ResidualBlockLayerSpade(
