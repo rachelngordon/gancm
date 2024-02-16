@@ -606,6 +606,7 @@ class Decoder(kr.Model):
 		x = kr.layers.Reshape((32, 32, self.latent_dim))(x)
 
 		# convert from keras tensor to list
+		print(tf.shape(skips))
 		skips_list = tf.unstack(skips, num=tf.shape(skips)[0], axis=0)
 
 		for i in reversed(range(len(self.widths))):
