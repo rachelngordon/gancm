@@ -605,8 +605,7 @@ class Decoder(kr.Model):
 		x = kr.layers.Dense(self.latent_dim * 32 * 32)(latent_vector)
 		x = kr.layers.Reshape((32, 32, self.latent_dim))(x)
 
-		skips_values = tf.keras.backend.batch_get_value(skips)
-		skips_list = list(skips_values)
+		skips_list = tf.unstack(skips, axis=0)
 
 		for i in reversed(range(len(self.widths))):
 			for _ in range(self.num_res_blocks + 1):
