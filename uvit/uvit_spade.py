@@ -80,7 +80,7 @@ class UNetViTModel(kr.Model):
 		latent_input = kr.Input(shape=self.latent_dim, name="latent")
 
 		_, _, temb, skips = self.encoder([image_input, time_input])
-		self.decoder = self.decoder.build_graph(time_input.shape, np.array(skips).shape)
+		self.decoder = self.decoder.build_graph(time_input.shape, len(skips))
 
 		generated_image = self.decoder([latent_input, temb, mask_input, skips])
 		discriminator_output = self.discriminator([image_input, generated_image])
