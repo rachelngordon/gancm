@@ -350,6 +350,7 @@ class DataGenerator_Ready(kr.utils.Sequence):
   def load(self):
       return self.dataset.batch(self.batch_size, drop_remainder=True)
 	
+
 	
 
 # data generator for pix2pix (normalized paired data) and cross validation with test fold ready
@@ -412,6 +413,55 @@ class DataGenerator_PairedReady(kr.utils.Sequence):
 
 
 
+# data generator for gancm no cross validation
+class DataGenerator_512Ready(kr.utils.Sequence):
+  def __init__(self, flags, data_path, if_train=True, **kwargs):
+    
+    super().__init__(**kwargs)
+
+    
+    self.data_path = data_path
+    self.batch_size = flags.batch_size
+    self.if_train = if_train
+    
+	# load data
+    x, y, z = self.load_data(flags, self.data_path)
+    
+	# create dataset
+    self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
+    self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration = not if_train)
+    self.dataset = self.dataset.map(
+    lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
+    
+	
+	
+  def load_data(self, flags, data_path):
+	
+    data = np.load(data_path)
+    x, y, z = data['arr_0'], data['arr_1'], data['arr_2']
+
+    if flags.remove_bad_images and self.if_train:
+        # bad images list
+        # you need to check to what file this applys
+        try:
+            bad_image_list = [37, 42, 111, 907, 908, 936, 1108, 1110, 1116, 1117,
+                                                1130, 1138, 1545, 1557, 2006, 2012, 2021, 1925,
+                                                1926, 1932, 1938, 950]
+            x = np.delete(x, bad_image_list, 0)
+            y = np.delete(y, bad_image_list, 0)
+            z = np.delete(z, bad_image_list, 0)
+        except:
+            print("Couldn't delete the images")
+	
+    return x, y, z
+
+    
+  def __getitem__(self, idx):
+    return self.dataset.batch(self.batch_size, drop_remainder=True)
+  
+  def load(self):
+      return self.dataset.batch(self.batch_size, drop_remainder=True)
+	
 
 
 # data generator for pcxgan (mask data) without test set ready
