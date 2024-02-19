@@ -79,19 +79,16 @@ class UNetViTModel(kr.Model):
 		mask_input = kr.Input(shape=self.mask_shape, dtype=tf.int64, name="mask_input")
 		latent_input = kr.Input(shape=self.latent_dim, name="latent")
 
-		_, _, temb, skips = self.encoder([image_input, time_input])
+		#_, _, temb = self.encoder([image_input, time_input])
 
-		# how to set the shape of skips when it is a list
-		print(type(skips))
-		print(len(skips))
-		self.decoder = self.decoder.build_graph(time_input.shape, (len(skips),))
+		#self.decoder = self.decoder.build_graph(time_input.shape)
 
-		generated_image = self.decoder([latent_input, temb, mask_input, skips])
+		generated_image = self.decoder([latent_input, time_input, mask_input])
 		discriminator_output = self.discriminator([image_input, generated_image])
 		
 		patch_size = discriminator_output[-1].shape[1]
 		combined_model = kr.Model(
-			[latent_input, temb, mask_input, skips],
+			[latent_input, time_input, mask_input, image_input],
 			[discriminator_output, generated_image],
 		)
 		return patch_size, combined_model
@@ -101,17 +98,20 @@ class UNetViTModel(kr.Model):
 		super().compile(**kwargs)
 	
 	def call(self, inputs):
-		latent_vector, temb, mask_input, skips = inputs
-		return self.combined_model([latent_vector, temb, mask_input, skips])
+		latent_vector, time_input, mask_input = inputs
+		return self.decoder([latent_vector, time_input, mask_input])
 	
-	def save_model(self, flags):
-		self.combined_model.save(flags.model_path + flags.exp_name)
+	def save_model(self):
+		self.decoder.save(self.flags.model_path + self.flags.exp_name + '_d')
+		self.encoder.save(self.flags.model_path + self.flags.exp_name + '_e')
+		self.discriminator.save(self.flags.model_path + self.flags.exp_name + '_disc')
 	
     
-	def train_discriminator(self, time_input, ct, mri, mask):
+	def train_discriminator(self, latent_vector, time_input, ct, mri, mask):
 		self.discriminator.trainable = True
 		
-		fake_images = self.combined_model([ct, time_input, mask], training=False)
+		#fake_images = self.combined_model([ct, time_input, mask], training=False)
+		fake_images = self.decoder([latent_vector, time_input, mask], training=False)
 
 		
 		with tf.GradientTape() as gradient_tape:
@@ -140,7 +140,7 @@ class UNetViTModel(kr.Model):
 
 		with tf.GradientTape(persistent=True) as en_tape:
 			
-			mean, variance, temb, skips = self.encoder([image, time_input])
+			mean, variance = self.encoder([image, time_input])
 
 			
 			# Compute generator losses.
@@ -164,7 +164,7 @@ class UNetViTModel(kr.Model):
 
 
 			real_d_output = self.discriminator([segmentation_map, image])
-			fake_d_output, fake_image = self.combined_model([latent_vector, temb, labels, skips])
+			fake_d_output, fake_image = self.combined_model([latent_vector, time_input, labels, segmentation_map])
 			pred = fake_d_output[-1]
 
 			
@@ -199,36 +199,37 @@ class UNetViTModel(kr.Model):
 		)
 		
 		# Obtain the learned moments of the real image distribution.
-		mean, variance, temb, skips = self.encoder([target, t])
+		mean, variance = self.encoder([target, t])
 		
 		# Sample a latent from the distribution defined by the learned moments.
 		latent_vector = self.sampler([mean, variance])
 
 		discriminator_loss = self.train_discriminator(
-			temb, source, target, mask
+			latent_vector, t, source, target, mask
 		)
 		(kl_loss, vgg_loss, ssim_loss) = self.train_generator(
 			latent_vector, source, mask, target, t
 		)
 		
 
-		discriminator_loss = self.train_discriminator(t, source, target, mask)
+		#discriminator_loss = self.train_discriminator(t, source, target, mask)
 		i_discriminator_loss = 0.5* discriminator_loss
 
-		self.discriminator.trainable = False
-		with tf.GradientTape() as tape:
-			pred_ = self.combined_model([latent_vector, temb, mask, skips], training=True)
-			vgg_loss = self.vgg_loss(target, pred_)
-			ssim_loss = loss.SSIMLoss(target, pred_)
-			total_loss = vgg_loss + ssim_loss + i_discriminator_loss
+		# self.discriminator.trainable = False
+		# with tf.GradientTape() as tape:
+		# 	pred_ = self.combined_model([latent_vector, t, mask], training=True)
+		# 	vgg_loss = self.vgg_loss(target, pred_)
+		# 	ssim_loss = loss.SSIMLoss(target, pred_)
+		# 	total_loss = vgg_loss + ssim_loss + i_discriminator_loss
 		
-		gradients = tape.gradient(total_loss, self.combined_model.trainable_variables)
-		self.gen_optimizer.apply_gradients(zip(gradients, self.combined_model.trainable_variables))
+		# gradients = tape.gradient(total_loss, self.combined_model.trainable_variables)
+		# self.gen_optimizer.apply_gradients(zip(gradients, self.combined_model.trainable_variables))
 
 		# Report progress.
 		self.vgg_loss_tracker.update_state(vgg_loss)
 		self.ssim_loss_tracker.update_state(ssim_loss)
 		self.disc_loss_tracker.update_state(discriminator_loss)
+		self.kl_loss_tracker.update_state(kl_loss)
 
 		results = {m.name: m.result() for m in self.metrics}
 		return results
@@ -242,19 +243,37 @@ class UNetViTModel(kr.Model):
 		)
 
 		# Obtain the learned moments of the real image distribution.
-		mean, variance, temb, skips = self.encoder([target, t])
+		mean, variance = self.encoder([target, t])
 		
 		# Sample a latent from the distribution defined by the learned moments.
 		latent_vector = self.sampler([mean, variance])
 		
-		pred_ = self.combined_model([latent_vector, temb, mask, skips])
-		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(target, pred_)
-		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(target, pred_)
+		fake_images = self.decoder([latent_vector, t, mask])
+
+		# Calculate the losses.
+		pred_fake = self.discriminator([source, fake_images])[-1]
+		pred_real = self.discriminator([source, target])[-1]
+		loss_fake = self.discriminator_loss(False, pred_fake)
+		loss_real = self.discriminator_loss(True, pred_real)
+		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
+
+		real_d_output = self.discriminator([source, target])
+		fake_d_output, fake_image = self.combined_model(
+			[latent_vector, t, mask, source]
+		)
+		pred = fake_d_output[-1]
+
+		kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
+		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(target, fake_image)
+		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(target, fake_image)
 		#total_loss = vgg_loss + ssim_loss
+
 
 		# Report progress.
 		self.vgg_loss_tracker.update_state(vgg_loss)
 		self.ssim_loss_tracker.update_state(ssim_loss)
+		self.kl_loss_tracker.update_state(kl_loss)
+		self.disc_loss_tracker.update_state(total_discriminator_loss)
 
 		results = {m.name: m.result() for m in self.metrics}
 		return results
@@ -269,10 +288,8 @@ class UNetViTModel(kr.Model):
 		t = tf.random.uniform(
 			minval=0, maxval=self.timesteps, shape=(num_images,), dtype=tf.int64
 		)
-
-		# for testing we need the encoder because it outputs the skips!! and t --> temb
 		
-		return self.combined_model([latent_vector, temb, mask, skips])
+		return self.decoder([latent_vector, t, mask])
 	
 	# def plot_images(
 	# 		self, source, target, logs=None, num_rows=2, num_cols=4, figsize=(12, 5)
@@ -307,9 +324,9 @@ class UNetViTModel(kr.Model):
 		# 	ct, mri = test_data[0][i:i+self.batch_size], test_data[1][i:i+self.batch_size]
 
 
-		for ct, mri in test_dataset:
+		for ct, mri, mask in test_dataset:
 			
-			fake_mri = self.generate_images(ct, num_images=self.batch_size)
+			fake_mri = self.generate_images(ct, mask, num_images=self.batch_size)
 
 			# normalize to values between 0 and 1
 			mri = (mri + 1.0) / 2.0

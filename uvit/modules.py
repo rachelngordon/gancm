@@ -6,7 +6,7 @@ import tensorflow as tf
 import tensorflow.keras as kr
 import numpy as np 
 import matplotlib.pyplot as plt
-import tensorflow_addons as tfa
+#import tensorflow_addons as tfa
 
 
 # Kernel initializer to use
@@ -30,7 +30,7 @@ class AttentionBlock(kr.layers.Layer):
 		self.groups = groups
 		super().__init__(**kwargs)
 		
-		self.norm = tfa.layers.GroupNormalization(groups=groups)
+		self.norm = kr.layers.GroupNormalization(groups=groups)
 		self.query = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))
 		self.key = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))
 		self.value = kr.layers.Dense(units, kernel_initializer=kernel_init(1.0))
@@ -91,14 +91,14 @@ def ResidualBlock(width, groups=8, activation_fn=kr.activations.swish):
 						:, None, None, :
 						]
 		
-		x = tfa.layers.GroupNormalization(groups=groups)(x)
+		x = kr.layers.GroupNormalization(groups=groups)(x)
 		x = activation_fn(x)
 		x = kr.layers.Conv2D(
 			width, kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0)
 		)(x)
 		
 		x = kr.layers.Add()([x, temb])
-		x = tfa.layers.GroupNormalization(groups=groups)(x)
+		x = kr.layers.GroupNormalization(groups=groups)(x)
 		x = activation_fn(x)
 		
 		x = kr.layers.Conv2D(
@@ -163,11 +163,11 @@ class ResidualBlockLayer(kr.layers.Layer):
 												kernel_initializer=kernel_init(0.0))
 		
 		self.temb_layer = kr.layers.Dense(self.width, kernel_initializer=kernel_init(0.0))
-		self.group_norm1_layer = tfa.layers.GroupNormalization(groups=self.groups)
+		self.group_norm1_layer = kr.layers.GroupNormalization(groups=self.groups)
 		self.conv1_layer = kr.layers.Conv2D(self.width, kernel_size=3, padding="same",
 										 kernel_initializer=kernel_init(0.0))
 		self.add_layer = kr.layers.Add()
-		self.group_norm2_layer = tfa.layers.GroupNormalization(groups=self.groups)
+		self.group_norm2_layer = kr.layers.GroupNormalization(groups=self.groups)
 		self.conv2_layer = kr.layers.Conv2D(self.width, kernel_size=3, padding="same",
 										 kernel_initializer=kernel_init(0.0))
 		self.add2_layer = kr.layers.Add()
@@ -177,7 +177,7 @@ class ResidualBlockLayer(kr.layers.Layer):
 		residual = self.residual_layer(x)
 		t = self.activation_fn(t)
 		temb = self.temb_layer(t)[:, None, None, :]
-		
+
 		x = self.group_norm1_layer(x)
 		x = self.activation_fn(x)
 		x = self.conv1_layer(x)
@@ -274,11 +274,11 @@ class ResidualBlockLayerSpade(kr.layers.Layer):
 												kernel_initializer=kernel_init(0.0))
 		
 		self.temb_layer = kr.layers.Dense(self.width, kernel_initializer=kernel_init(0.0))
-		self.group_norm1_layer = tfa.layers.GroupNormalization(groups=self.groups)
+		self.group_norm1_layer = kr.layers.GroupNormalization(groups=self.groups)
 		self.conv1_layer = kr.layers.Conv2D(self.width, kernel_size=3, padding="same",
 										 kernel_initializer=kernel_init(0.0))
 		self.add_layer = kr.layers.Add()
-		self.group_norm2_layer = tfa.layers.GroupNormalization(groups=self.groups)
+		self.group_norm2_layer = kr.layers.GroupNormalization(groups=self.groups)
 		self.conv2_layer = kr.layers.Conv2D(self.width, kernel_size=3, padding="same",
 										 kernel_initializer=kernel_init(0.0))
 		self.add2_layer = kr.layers.Add()
@@ -289,14 +289,22 @@ class ResidualBlockLayerSpade(kr.layers.Layer):
 		t = self.activation_fn(t)
 		temb = self.temb_layer(t)[:, None, None, :]
 		
+		# 32, 32, 256
 		x = self.group_norm1_layer(x)
+		# 32, 32, 256
 		x = self.spade_1(x, mask)
+		# 32, 32, 256
 		x = self.activation_fn(x)
+		# 32, 32, 256
 		x = self.conv1_layer(x)
+		# 32, 32, 256
 		
 		x = self.add_layer([x, temb])
+		# 1, 32, 32, 256
 		x = self.group_norm2_layer(x)
+		# 1, 32, 32, 256
 		x = self.activation_fn(x)
+		# 1, 32, 32, 256
 
 		#x = self.spade_2(x, mask)
 		x = self.activation_fn(x)
@@ -477,7 +485,7 @@ class DownsampleModule(kr.layers.Layer):
 		)
 
 		if apply_norm:
-			self.block.add(tfa.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
+			self.block.add(kr.layers.GroupNormalization(groups=channels, gamma_initializer=gamma_init))
 			#self.block.add(InstanceNormalization())
 
 		self.block.add(kr.layers.LeakyReLU(0.2))
@@ -530,11 +538,11 @@ class Encoder(kr.Model):
 		self.num_res_blocks = self.flags.num_res_blocks
 		self.norm_groups = self.flags.norm_groups
 		self.activation_fn=kr.activations.swish
+		self.batch_size = flags.batch_size
 
 	def call(self, input, **kwargs):
 		
-		image_input = input[0]
-		time_input = input[1]
+		image_input, time_input = input
 
 		x = kr.layers.Conv2D(
 			self.first_conv_channels,
@@ -546,7 +554,7 @@ class Encoder(kr.Model):
 		temb = TimeEmbedding(dim=self.first_conv_channels * 4)(time_input)
 		temb = TimeMLP(units=self.first_conv_channels * 4, activation_fn=self.activation_fn)(temb)
 		
-		skips = [x]
+		#skips = [x]
 		
 		# DownBlock
 		for i in range(len(self.widths)):
@@ -556,11 +564,11 @@ class Encoder(kr.Model):
 				)([x, temb])
 				if self.has_attention[i]:
 					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
-				skips.append(x)
+				#skips.append(x)
 			
 			if self.widths[i] != self.widths[-1]:
 				x = DownSample(self.widths[i])(x)
-				skips.append(x)
+				#skips.append(x)
 		
 		## NA
 		# MiddleBlock
@@ -577,7 +585,7 @@ class Encoder(kr.Model):
 		mean = kr.layers.Dense(self.latent_dim)(x)
 		variance = kr.layers.Dense(self.latent_dim)(x)
 
-		return [mean, variance, temb, skips]
+		return [mean, variance]
 	
 	def build_graph(self):
 		image_input = kr.layers.Input(shape=self.image_shape, name="image_input")
@@ -587,7 +595,9 @@ class Encoder(kr.Model):
 
 class Decoder(kr.Model):
 	def __init__(self, flags, **kwargs):
+		super().__init__(**kwargs)
 
+		self.flags = flags 
 		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
 		self.image_shape = (flags.crop_size, flags.crop_size, 1)
 		self.latent_dim = flags.latent_dim
@@ -596,22 +606,23 @@ class Decoder(kr.Model):
 		self.has_attention = flags.has_attention
 		self.num_res_blocks = flags.num_res_blocks
 		self.norm_groups = flags.norm_groups
-		self.interpolation="nearest",
+		self.interpolation="nearest"
 		self.activation_fn=kr.activations.swish
+		self.batch_size = flags.batch_size
 
 	def call(self, inputs, **kwargs):
-		latent_vector, temb, mask_input, skips = inputs
+		latent_vector, time_input, mask_input = inputs
+
+		temb = TimeEmbedding(dim=self.first_conv_channels * 4)(time_input)
+		temb = TimeMLP(units=self.first_conv_channels * 4, activation_fn=self.activation_fn)(temb)
+
 
 		x = kr.layers.Dense(self.latent_dim * 32 * 32)(latent_vector)
 		x = kr.layers.Reshape((32, 32, self.latent_dim))(x)
 
-		# convert from keras tensor to list
-		print(tf.shape(skips))
-		skips_list = tf.unstack(skips, num=tf.shape(skips)[0], axis=0)
-
 		for i in reversed(range(len(self.widths))):
 			for _ in range(self.num_res_blocks + 1):
-				x = kr.layers.Concatenate(axis=-1)([x, skips_list.pop()])
+				#x = kr.layers.Concatenate(axis=-1)([x, skips.pop()])
 				x = ResidualBlockLayerSpade(
 					self.flags, self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
 				)([x, temb, mask_input])
@@ -622,17 +633,17 @@ class Decoder(kr.Model):
 				x = UpSample(self.widths[i], interpolation=self.interpolation)(x)
 		
 		# End block
-		x = tfa.layers.GroupNormalization(groups=self.norm_groups)(x)
+		x = kr.layers.GroupNormalization(groups=self.norm_groups)(x)
 		x = self.activation_fn(x)
 		x = kr.layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=kernel_init(0.0))(x)
 		x = kr.layers.Activation('tanh')(x)
 
 		return x
 
-	def build_graph(self, temb_shape, skips_shape):
+	def build_graph(self):
 		latent_vector = kr.layers.Input(shape=self.latent_dim)
-		temb = kr.layers.Input(shape=temb_shape)
+		time_input = kr.layers.Input(shape=())
 		mask_input = kr.layers.Input(shape=self.mask_shape)
-		skips = kr.layers.Input(shape=skips_shape)
-		return kr.Model(inputs=[latent_vector, temb, mask_input, skips], 
-				  outputs=self.call([latent_vector, temb, mask_input, skips]))
+		#skips = kr.layers.Input(shape=skips_shape)
+		return kr.Model(inputs=[latent_vector, time_input, mask_input], 
+				  outputs=self.call([latent_vector, time_input, mask_input]))
