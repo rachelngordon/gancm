@@ -14,8 +14,8 @@ def main(flags):
 
   # pass path to data in flags
 
-  train_data = data_loader.DataGenerator_512Ready(flags, '/media/aisec-102/DATA3/rachel/data/processed_512_train/CT_MRI-512-Updated-avg-eq.npz', if_train=True).load()
-  test_data = data_loader.DataGenerator_512Ready(flags, '/media/aisec-102/DATA3/rachel/data/test_data/IMAGE-DataSet#1/512_avg_eq_seg_test.npz', if_train=False).load()
+  train_data = data_loader.DataGenerator_512Ready(flags, '/eagle/EVITA/ct-mri/data/processed_512_train/CT_MRI-512-Updated-avg-eq.npz', if_train=True).load()
+  test_data = data_loader.DataGenerator_512Ready(flags, '/eagle/EVITA/ct-mri/data/test_data/IMAGE-DataSet#1/512_avg_eq_seg_test.npz', if_train=False).load()
 
 
   # Start the timer
