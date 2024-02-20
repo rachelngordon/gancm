@@ -21,19 +21,19 @@ class Flags():
     parser.add_argument('--enc_path', type=str, default='/grand/EVITA/ct-mri/exp_results/models/pcx_ckpt_test_e', help='' )
 
 
-
+    '''
     parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
     parser.add_argument('--sample_dir', type=str, default='./training_samples', help='samples are saved here')
     parser.add_argument('--result_logs', type=str, default='./results' , help='Logs are stored here' )
     parser.add_argument('--model_path', type=str, default='./models/' , help='Model is stored here' )
     parser.add_argument('--hist_path', type=str, default='./history/' , help='Model is stored here' )
     '''
-    parser.add_argument('--checkpoints_dir', type=str, default='/eagle/EVITA/ct-mri/uvit_results/checkpoints', help='models are saved here')
-    parser.add_argument('--sample_dir', type=str, default='/eagle/EVITA/ct-mri/uvit_results/training_samples', help='samples are saved here')
-    parser.add_argument('--result_logs', type=str, default='/eagle/EVITA/ct-mri/uvit_results/results' , help='Logs are stored here' )
-    parser.add_argument('--model_path', type=str, default='/eagle/EVITA/ct-mri/uvit_results/models/' , help='Model is stored here' )
-    parser.add_argument('--hist_path', type=str, default='/eagle/EVITA/ct-mri/uvit_results/history/' , help='Model is stored here' )
-    '''
+    parser.add_argument('--checkpoints_dir', type=str, default='/eagle/EVITA/ct-mri/512_results/checkpoints', help='models are saved here')
+    parser.add_argument('--sample_dir', type=str, default='/eagle/EVITA/ct-mri/512_results/training_samples', help='samples are saved here')
+    parser.add_argument('--result_logs', type=str, default='/eagle/EVITA/ct-mri/512_results/results' , help='Logs are stored here' )
+    parser.add_argument('--model_path', type=str, default='/eagle/EVITA/ct-mri/512_results/models/' , help='Model is stored here' )
+    parser.add_argument('--hist_path', type=str, default='/eagle/EVITA/ct-mri/512_results/history/' , help='Model is stored here' )
+
 
     parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
     
