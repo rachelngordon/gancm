@@ -162,6 +162,7 @@ class Encoder(kr.Model):
 		x = self.downsample5(x)
 		x = self.downsample6(x)
 		x = self.flatten(x)
+		
 		return [self.mean(x), self.variance(x)]
 	
 	def build_graph(self):

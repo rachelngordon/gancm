@@ -154,6 +154,8 @@ class ResidualBlockLayer(kr.layers.Layer):
 		self.activation_fn = activation_fn
 	
 	def build(self, input_shape):
+
+	
 		input_width = input_shape[0][-1]
 		
 		if input_width == self.width:
@@ -265,7 +267,7 @@ class ResidualBlockLayerSpade(kr.layers.Layer):
 		input_width = input_shape[0][-1]
 
 		self.spade_1 = SPADE(input_width, self.flags)
-		#self.spade_2 = SPADE(input_width, self.flags)
+		self.spade_2 = SPADE(input_width, self.flags)
 
 		if input_width == self.width:
 			self.residual_layer = kr.layers.Lambda(lambda x: x)
@@ -540,50 +542,133 @@ class Encoder(kr.Model):
 		self.activation_fn=kr.activations.swish
 		self.batch_size = flags.batch_size
 
-	def call(self, input, **kwargs):
-		
-		image_input, time_input = input
-
-		x = kr.layers.Conv2D(
+		#define the layers
+		self.conv1 = kr.layers.Conv2D(
 			self.first_conv_channels,
 			kernel_size=(3, 3),
 			padding="same",
 			kernel_initializer=kernel_init(1.0),
-		)(image_input)
+		)
+		self.TM = TimeEmbedding(dim=self.first_conv_channels * 4)
+
+		self.TMLP1 = kr.layers.Dense(
+			self.first_conv_channels * 4, activation=self.activation_fn, kernel_initializer=kernel_init(1.0)
+		)
+		self.TMLP2 = kr.layers.Dense(self.first_conv_channels * 4, kernel_initializer=kernel_init(1.0))
+
+
+		'''
+		self.res = [[]*len(self.widths)]
+		self.att = [[]*len(self.widths)]
+		for i in range(len(self.widths)):
+			print(i,"\t#############################")
+			# self.res[i] =[[]*self.num_res_blocks]
+			# self.att[i] =[[]*self.num_res_blocks]
+			for j in range(self.num_res_blocks):
+				self.res[i].append(ResidualBlockLayer(self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn))
+				if self.has_attention[i]:
+					self.att[i].append(AttentionBlock(self.widths[i], groups=self.norm_groups))
+				else:
+					self.att[i].append(False)
+		'''
+		self.mid_res = [ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn) for i in range(2)]
+		self.mid_att = AttentionBlock(self.widths[-1], groups=self.norm_groups)
+		self.flatten = kr.layers.Flatten()
+		self.mean_dense = kr.layers.Dense(self.latent_dim)
+		self.variance_dense = kr.layers.Dense(self.latent_dim)
+
+		#self.att_1 = [ResidualBlockLayer(self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn) for i in range(self.widths) if self.has_attention[i]]
+
+		self.res1 = ResidualBlockLayer(self.widths[0], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res2 = ResidualBlockLayer(self.widths[1], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res3 = ResidualBlockLayer(self.widths[2], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res4 = ResidualBlockLayer(self.widths[3], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res11 = ResidualBlockLayer(self.widths[0], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res22 = ResidualBlockLayer(self.widths[1], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res33 = ResidualBlockLayer(self.widths[2], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res44 = ResidualBlockLayer(self.widths[3], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.att1 = AttentionBlock(self.widths[2], groups=self.norm_groups)
+		self.att2 = AttentionBlock(self.widths[3], groups=self.norm_groups)
+		self.att11 = AttentionBlock(self.widths[2], groups=self.norm_groups)
+		self.att22 = AttentionBlock(self.widths[3], groups=self.norm_groups)
+
+		self.down1 = kr.layers.Conv2D(self.widths[0],
+			kernel_size=3,
+			strides=2,
+			padding="same",
+			kernel_initializer=kernel_init(1.0),activation='relu'
+		)
+		self.down2 = kr.layers.Conv2D(self.widths[1],
+			kernel_size=3,
+			strides=2,
+			padding="same",
+			kernel_initializer=kernel_init(1.0),activation='relu'
+		)
+		self.down3 = kr.layers.Conv2D(self.widths[2],
+			kernel_size=3,
+			strides=2,
+			padding="same",
+			kernel_initializer=kernel_init(1.0),activation='relu'
+		)
+
+
+
+
+	def call(self, input, **kwargs):
 		
-		temb = TimeEmbedding(dim=self.first_conv_channels * 4)(time_input)
-		temb = TimeMLP(units=self.first_conv_channels * 4, activation_fn=self.activation_fn)(temb)
+		image_input = input[0]
+		time_input = input[1]
+
+		x = self.conv1(image_input)
 		
+		temb = self.TM(time_input)
+		temb = self.TMLP1(temb)
+		temb = self.TMLP2(temb)
+		
+		x = self.res1([x, temb])
+		x = self.res11([x, temb])
+		x = self.down1(x)
+		x = self.res2([x, temb])
+		x = self.res22([x, temb])
+		x = self.down2(x)
+		x = self.res3([x, temb])
+		x = self.att1(x)
+		x = self.res33([x, temb])
+		x = self.att11(x)
+		x = self.down3(x)
+		x = self.res4([x, temb])
+		x = self.att2(x)
+		x = self.res44([x, temb])
+		x = self.att22(x)
+
+
 		#skips = [x]
-		
+		'''
 		# DownBlock
 		for i in range(len(self.widths)):
-			for _ in range(self.num_res_blocks):
-				x = ResidualBlockLayer(
-					self.widths[i], groups=self.norm_groups, activation_fn=self.activation_fn
-				)([x, temb])
-				if self.has_attention[i]:
-					x = AttentionBlock(self.widths[i], groups=self.norm_groups)(x)
+			for j in range(self.num_res_blocks):
+				x = self.res[i][j]([x, temb])
+
+				if self.att[i]:
+					x = self.att[i][j](x)
 				#skips.append(x)
 			
 			if self.widths[i] != self.widths[-1]:
 				x = DownSample(self.widths[i])(x)
 				#skips.append(x)
-		
+		'''	
 		## NA
 		# MiddleBlock
-		x = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)(
-			[x, temb]
-		)
-		x = AttentionBlock(self.widths[-1], groups=self.norm_groups)(x)
-		x = ResidualBlockLayer(self.widths[-1], groups=self.norm_groups, activation_fn=self.activation_fn)(
-			[x, temb]
-		)
-		
+		for i in range(len(self.mid_res)):
+			x = self.mid_res[i]([x, temb])
+			if i ==0:
+				x=self.mid_att(x)
+	
+
 		# Obtain latent vector for decoder
-		x = kr.layers.Flatten()(x)
-		mean = kr.layers.Dense(self.latent_dim)(x)
-		variance = kr.layers.Dense(self.latent_dim)(x)
+		x = self.flatten(x)
+		mean = self.mean_dense(x)
+		variance = self.variance_dense(x)
 
 		return [mean, variance]
 	
@@ -610,16 +695,85 @@ class Decoder(kr.Model):
 		self.activation_fn=kr.activations.swish
 		self.batch_size = flags.batch_size
 
+		#define the layers
+		self.TM = TimeEmbedding(dim=self.first_conv_channels * 4)
+		self.TMLP1 = kr.layers.Dense(
+			self.first_conv_channels * 4, activation=self.activation_fn, kernel_initializer=kernel_init(1.0)
+		)
+		self.TMLP2 = kr.layers.Dense(self.first_conv_channels * 4, kernel_initializer=kernel_init(1.0))
+
+		self.dense = kr.layers.Dense(self.latent_dim * 32 * 32)
+		self.reshape = kr.layers.Reshape((32, 32, self.latent_dim))
+
+		self.res1 = ResidualBlockLayerSpade(self.flags, self.widths[3], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res2 = ResidualBlockLayerSpade(self.flags, self.widths[2], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res3 = ResidualBlockLayerSpade(self.flags, self.widths[1], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res4 = ResidualBlockLayerSpade(self.flags, self.widths[0], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res11 = ResidualBlockLayerSpade(self.flags, self.widths[3], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res22 = ResidualBlockLayerSpade(self.flags, self.widths[2], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res33 = ResidualBlockLayerSpade(self.flags, self.widths[1], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res44 = ResidualBlockLayerSpade(self.flags, self.widths[0], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res111 = ResidualBlockLayerSpade(self.flags, self.widths[3], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res222 = ResidualBlockLayerSpade(self.flags, self.widths[2], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res333 = ResidualBlockLayerSpade(self.flags, self.widths[1], groups=self.norm_groups, activation_fn=self.activation_fn)
+		self.res444 = ResidualBlockLayerSpade(self.flags, self.widths[0], groups=self.norm_groups, activation_fn=self.activation_fn)
+
+		self.att1 = AttentionBlock(self.widths[3], groups=self.norm_groups)
+		self.att2 = AttentionBlock(self.widths[2], groups=self.norm_groups)
+		self.att11 = AttentionBlock(self.widths[3], groups=self.norm_groups)
+		self.att22 = AttentionBlock(self.widths[2], groups=self.norm_groups)
+		self.att111 = AttentionBlock(self.widths[3], groups=self.norm_groups)
+		self.att222 = AttentionBlock(self.widths[2], groups=self.norm_groups)
+
+		self.up1 = kr.layers.UpSampling2D(size=2, interpolation=self.interpolation)
+		self.conv1 = kr.layers.Conv2D(
+			self.widths[3], kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0),activation='relu')
+		self.up2 = kr.layers.UpSampling2D(size=2, interpolation=self.interpolation)
+		self.conv2 = kr.layers.Conv2D(
+			self.widths[2], kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0),activation='relu')
+		self.up3 = kr.layers.UpSampling2D(size=2, interpolation=self.interpolation)
+		self.conv3 = kr.layers.Conv2D(
+			self.widths[1], kernel_size=3, padding="same", kernel_initializer=kernel_init(1.0),activation='relu')
+		
+
+		self.group_norm = kr.layers.GroupNormalization(groups=self.norm_groups)
+		self.conv = kr.layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=kernel_init(0.0))
+		self.tanh = kr.layers.Activation('tanh')
+
 	def call(self, inputs, **kwargs):
 		latent_vector, time_input, mask_input = inputs
 
-		temb = TimeEmbedding(dim=self.first_conv_channels * 4)(time_input)
-		temb = TimeMLP(units=self.first_conv_channels * 4, activation_fn=self.activation_fn)(temb)
+		temb = self.TM(time_input)
+		temb = self.TMLP1(temb)
+		temb = self.TMLP2(temb)
 
 
-		x = kr.layers.Dense(self.latent_dim * 32 * 32)(latent_vector)
-		x = kr.layers.Reshape((32, 32, self.latent_dim))(x)
+		x = self.dense(latent_vector)
+		x = self.reshape(x)
 
+		x = self.res1([x, temb, mask_input])
+		x = self.att1(x)
+		x = self.res11([x, temb, mask_input])
+		x = self.att11(x)
+		x = self.res111([x, temb, mask_input])
+		x = self.att111(x)
+		x = self.up1(x)
+		x = self.res2([x, temb, mask_input])
+		x = self.att2(x)
+		x = self.res22([x, temb, mask_input])
+		x = self.att22(x)
+		x = self.res222([x, temb, mask_input])
+		x = self.att222(x)
+		x = self.up2(x)
+		x = self.res3([x, temb, mask_input])
+		x = self.res33([x, temb, mask_input])
+		x = self.res333([x, temb, mask_input])
+		x = self.up3(x)
+		x = self.res4([x, temb, mask_input])
+		x = self.res44([x, temb, mask_input])
+		x = self.res444([x, temb, mask_input])
+		
+		'''
 		for i in reversed(range(len(self.widths))):
 			for _ in range(self.num_res_blocks + 1):
 				#x = kr.layers.Concatenate(axis=-1)([x, skips.pop()])
@@ -631,12 +785,13 @@ class Decoder(kr.Model):
 			
 			if i != 0:
 				x = UpSample(self.widths[i], interpolation=self.interpolation)(x)
-		
+		'''
+
 		# End block
-		x = kr.layers.GroupNormalization(groups=self.norm_groups)(x)
+		x = self.group_norm(x)
 		x = self.activation_fn(x)
-		x = kr.layers.Conv2D(1, (3, 3), padding="same", kernel_initializer=kernel_init(0.0))(x)
-		x = kr.layers.Activation('tanh')(x)
+		x = self.conv(x)
+		x = self.tanh(x)
 
 		return x
 

@@ -110,8 +110,7 @@ class UNetViTModel(kr.Model):
 	def train_discriminator(self, latent_vector, time_input, ct, mri, mask):
 		self.discriminator.trainable = True
 		
-		#fake_images = self.combined_model([ct, time_input, mask], training=False)
-		fake_images = self.decoder([latent_vector, time_input, mask], training=False)
+		fake_images = self.decoder([latent_vector, time_input, mask])
 
 		
 		with tf.GradientTape() as gradient_tape:
@@ -121,7 +120,6 @@ class UNetViTModel(kr.Model):
 			loss_real = self.discriminator_loss(True, pred_real)
 			total_loss = 0.5 * (loss_fake + loss_real)
 		
-		self.discriminator.trainable = True
 		gradients = gradient_tape.gradient(
 			total_loss, self.discriminator.trainable_variables
 		)
@@ -139,14 +137,10 @@ class UNetViTModel(kr.Model):
 
 
 		with tf.GradientTape(persistent=True) as en_tape:
-			
 			mean, variance = self.encoder([image, time_input])
 
-			
-			# Compute generator losses.
 			kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
 
-		
 		en_trainable_variables = (
 				self.encoder.trainable_variables
 		)
@@ -158,31 +152,28 @@ class UNetViTModel(kr.Model):
 		)
 		
 
-
-
-		with tf.GradientTape(persistent=True) as tape:
-
+		with tf.GradientTape() as de_tape:
 
 			real_d_output = self.discriminator([segmentation_map, image])
-			fake_d_output, fake_image = self.combined_model([latent_vector, time_input, labels, segmentation_map])
-			pred = fake_d_output[-1]
+			fake_image = self.decoder(
+				[latent_vector, time_input, labels]
+			)
 
-			
 			# Compute generator losses.
 			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(image, fake_image)
 			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(image, fake_image)
 			total_loss = vgg_loss + ssim_loss
 
-		
 		all_trainable_variables = (
 				self.combined_model.trainable_variables
 		)
 		
-		gradients = tape.gradient(total_loss, all_trainable_variables)
+		gradients = de_tape.gradient(total_loss, all_trainable_variables)
 
 		self.generator_optimizer.apply_gradients(
 			zip(gradients, all_trainable_variables)
 		)
+		
 		
 
 		return kl_loss, vgg_loss, ssim_loss
@@ -204,26 +195,9 @@ class UNetViTModel(kr.Model):
 		# Sample a latent from the distribution defined by the learned moments.
 		latent_vector = self.sampler([mean, variance])
 
-		discriminator_loss = self.train_discriminator(
-			latent_vector, t, source, target, mask
-		)
-		(kl_loss, vgg_loss, ssim_loss) = self.train_generator(
-			latent_vector, source, mask, target, t
-		)
+		discriminator_loss = self.train_discriminator(latent_vector, t, source, target, mask)
+		kl_loss, vgg_loss, ssim_loss = self.train_generator( latent_vector, source, mask, target, t)
 		
-
-		#discriminator_loss = self.train_discriminator(t, source, target, mask)
-		i_discriminator_loss = 0.5* discriminator_loss
-
-		# self.discriminator.trainable = False
-		# with tf.GradientTape() as tape:
-		# 	pred_ = self.combined_model([latent_vector, t, mask], training=True)
-		# 	vgg_loss = self.vgg_loss(target, pred_)
-		# 	ssim_loss = loss.SSIMLoss(target, pred_)
-		# 	total_loss = vgg_loss + ssim_loss + i_discriminator_loss
-		
-		# gradients = tape.gradient(total_loss, self.combined_model.trainable_variables)
-		# self.gen_optimizer.apply_gradients(zip(gradients, self.combined_model.trainable_variables))
 
 		# Report progress.
 		self.vgg_loss_tracker.update_state(vgg_loss)
@@ -257,15 +231,9 @@ class UNetViTModel(kr.Model):
 		loss_real = self.discriminator_loss(True, pred_real)
 		total_discriminator_loss = 0.5 * (loss_fake + loss_real)
 
-		real_d_output = self.discriminator([source, target])
-		fake_d_output, fake_image = self.combined_model(
-			[latent_vector, t, mask, source]
-		)
-		pred = fake_d_output[-1]
-
 		kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
-		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(target, fake_image)
-		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(target, fake_image)
+		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(target, fake_images)
+		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(target, fake_images)
 		#total_loss = vgg_loss + ssim_loss
 
 
