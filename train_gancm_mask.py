@@ -17,7 +17,7 @@ def main(flags):
   # train_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=True).load()
   # test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
   
-  train_data = data_loader.DataGenerator_Ready(flags, '/media/aisec-102/DATA3/rachel/data/CV/avg_eq_mask/norm_neg1pos1_fold', if_train=True).load()
+  train_data = data_loader.DataGenerator_Ready(flags, '/media/aisec-102/DATA3/rachel/data/CV/avg_eq_mask/norm_mask_neg1pos1_fold', if_train=True).load()
   test_data = data_loader.DataGenerator_Ready(flags, '/media/aisec-102/DATA3/rachel/data/test_data/IMAGE-DataSet#1/avg_eq_seg_test', if_train=False).load()
 
 
@@ -60,7 +60,7 @@ def main(flags):
   print("Training time: {:.2f} seconds".format(training_duration))
 
   # Save the training time to a file
-  filename = '/grand/EVITA/ct-mri/new_edge_results/time_train/' + flags.exp_name + "_train_time.txt"
+  filename = '/media/aisec-102/DATA3/rachel/experiments/time_train/' + flags.exp_name + "_train_time.txt"
   with open(filename, "w") as file:
       file.write("Training time: {:.2f} seconds".format(training_duration))
       print("Training time saved to", filename)
