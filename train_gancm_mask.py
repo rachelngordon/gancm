@@ -14,8 +14,11 @@ def main(flags):
 
   # pass path to data in flags
 
-  train_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=True).load()
-  test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
+  # train_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=True).load()
+  # test_data = data_loader.DataGenerator_Ready(flags, flags.data_path, if_train=False).load()
+  
+  train_data = data_loader.DataGenerator_Ready(flags, '/media/aisec-102/DATA3/rachel/data/CV/avg_eq_mask/norm_neg1pos1_fold', if_train=True).load()
+  test_data = data_loader.DataGenerator_Ready(flags, '/media/aisec-102/DATA3/rachel/data/test_data/IMAGE-DataSet#1/avg_eq_seg_test', if_train=False).load()
 
 
   # Start the timer
@@ -24,14 +27,14 @@ def main(flags):
   model = PCxGAN_mask(flags)
   model.compile()
   
-  # Define a sample input shape (batch_size, height, width, channels) for your model
-  sample_input_ct = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 1))
-  sample_input_mri = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 1))
-  sample_input_mask = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 2))
-  sample_latent_vector = tf.keras.layers.Input(shape=(flags.latent_dim,))
+  # # Define a sample input shape (batch_size, height, width, channels) for your model
+  # sample_input_ct = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 1))
+  # sample_input_mri = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 1))
+  # sample_input_mask = tf.keras.layers.Input(shape=(flags.crop_size, flags.crop_size, 2))
+  # sample_latent_vector = tf.keras.layers.Input(shape=(flags.latent_dim,))
 
-  # Call the build method with the sample input shapes
-  model.build(input_shape=[sample_latent_vector.shape, sample_input_mask.shape, sample_input_ct.shape])
+  # # Call the build method with the sample input shapes
+  # model.build(input_shape=[sample_latent_vector.shape, sample_input_mask.shape, sample_input_ct.shape])
   
   #model.encoder.build(input_shape=[sample_input_mri.shape])
 

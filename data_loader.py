@@ -466,7 +466,8 @@ class DataGenerator_Ready(kr.utils.Sequence):
       folds = list(range(1,6))
       
 	  # remove test fold
-      folds.remove(flags.test_fold)
+      if flags.test_fold in folds:
+        folds.remove(flags.test_fold)
       
       for i in folds:
         path = f"{data_path}{i}.npz"
@@ -483,7 +484,8 @@ class DataGenerator_Ready(kr.utils.Sequence):
 
 	# load test fold
     else: 
-        path = f"{data_path}{flags.test_fold}.npz"
+        #path = f"{data_path}{flags.test_fold}.npz"
+        path = f"{data_path}.npz"
         data = np.load(path)
         x, y, z = data['arr_0'], data['arr_1'], data['arr_2']
         return x, y, z
