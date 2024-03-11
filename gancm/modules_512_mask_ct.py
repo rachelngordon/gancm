@@ -25,6 +25,7 @@ class SPADE(kr.layers.Layer):
 		self.resize_shape = input_shape[1:3]
 	
 	def call(self, input_tensor, raw_mask, raw_ct):
+
 		merge = kr.layers.concatenate([raw_mask, raw_ct])
 		mask = tf.image.resize(merge, self.resize_shape, method="nearest")
 		x = self.conv(mask)
@@ -205,19 +206,28 @@ class Decoder(kr.Model):
 	def call(self, inputs_, **kwargs):
 		latent, mask, ct = inputs_
 		x = self.dense1(latent)
+		# , 4096
+		# 4, 4, 256
 		x = self.reshape(x)
+		# 8, 8, 1024
 		x = self.resblock1(x, mask, ct)
 		x = self.upsample1(x)
+		# 16, 16, 1024
 		x = self.resblock2(x, mask, ct)
 		x = self.upsample2(x)
+		# 32, 32, 1024
 		x = self.resblock3(x, mask, ct)
 		x = self.upsample3(x)
+		# 64, 64, 512
 		x = self.resblock4(x, mask, ct)
 		x = self.upsample4(x)
+		# 128, 128, 256
 		x = self.resblock5(x, mask, ct)
 		x = self.upsample5(x)
+		# 256, 256, 128
 		x = self.resblock6(x, mask, ct)
 		x = self.upsample6(x)
+		# 512, 512, 64
 		x = self.resblock7(x, mask, ct)
 		x = self.upsample7(x)
 		x = self.activation(x)
@@ -314,6 +324,13 @@ class GanMonitor(kr.callbacks.Callback):
 		self.model.decoder.save(os.path.join(self.checkpoints_path, d_name))
 	
 	def on_epoch_end(self, epoch, logs=None):
+		# save model halfway through 
+		if epoch % 1000 == 0:
+			try:
+				self.model.save_model(epoch)
+			except:
+				pass
+
 		if epoch > 0 and epoch % self.epoch_interval == 0:
 			'''
 			#self.save_models(epoch)

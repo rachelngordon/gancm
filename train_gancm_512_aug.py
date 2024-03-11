@@ -14,8 +14,8 @@ def main(flags):
 
   # pass path to data in flags
 
-  train_data = data_loader.DataGeneratorAug_512Mask(flags, '/eagle/EVITA/ct-mri/data/processed_512_train/CT_MRI-512-Updated-avg-eq.npz', if_train=True).load()
-  test_data = data_loader.DataGeneratorAug_512Mask(flags, '/eagle/EVITA/ct-mri/data/test_data/IMAGE-DataSet#1/512_avg_eq_seg_test.npz', if_train=False).load()
+  train_data = data_loader.DataGeneratorAug_512Mask(flags, '/media/aisec-102/DATA3/rachel/data/processed_512_train/CT_MRI-512-Updated-avg-eq.npz', if_train=True).load()
+  test_data = data_loader.DataGeneratorAug_512Mask(flags, '/media/aisec-102/DATA3/rachel/data/test_data/IMAGE-DataSet#1/512_avg_eq_seg_test.npz', if_train=False).load()
 
 
   # Start the timer
@@ -44,7 +44,7 @@ def main(flags):
   print("Training time: {:.2f} seconds".format(training_duration))
 
   # Save the training time to a file
-  filename = '/eagle/EVITA/ct-mri/512_results/time_train/' + flags.exp_name + "_train_time.txt"
+  filename = '/media/aisec-102/DATA3/rachel/experiments/time_train/' + flags.exp_name + "_train_time.txt"
   with open(filename, "w") as file:
       file.write("Training time: {:.2f} seconds".format(training_duration))
       print("Training time saved to", filename)

@@ -269,10 +269,16 @@ class PCxGAN_mask(kr.Model):
 
 	
 	
-	def save_model(self):
-		self.encoder.save(self.flags.model_path + self.experiment_name + '_e')
-		self.decoder.save(self.flags.model_path + self.experiment_name + '_d')
-		self.discriminator.save(self.flags.model_path + self.experiment_name + '_disc')
+	def save_model(self, epoch=None):
+
+		if epoch:
+			self.encoder.save(self.flags.model_path + self.experiment_name + '_' + str(epoch) + '_e')
+			self.decoder.save(self.flags.model_path + self.experiment_name + '_' + str(epoch) + '_d')
+			self.discriminator.save(self.flags.model_path + self.experiment_name + '_' + str(epoch) + '_disc')
+		else:
+			self.encoder.save(self.flags.model_path + self.experiment_name + '_e')
+			self.decoder.save(self.flags.model_path + self.experiment_name + '_d')
+			self.discriminator.save(self.flags.model_path + self.experiment_name + '_disc')
 
 
 	def plot_losses(self, hist):

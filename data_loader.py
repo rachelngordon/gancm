@@ -305,10 +305,13 @@ class DataGeneratorAug_512Mask(kr.utils.Sequence):
         # load data
         self.x, self.y, self.z = self.load_data(flags, data_path)
         
+
         if self.multiply_factor > 1:
             self.x = np.repeat(self.x, self.multiply_factor, axis=0)
             self.y = np.repeat(self.y, self.multiply_factor, axis=0)
             self.z = np.repeat(self.z, self.multiply_factor, axis=0)
+
+        
                 
         self.dataset = tf.data.Dataset.from_tensor_slices(
             (self.x, self.y, self.z)
@@ -317,6 +320,9 @@ class DataGeneratorAug_512Mask(kr.utils.Sequence):
         
         if self.if_train:
             self.dataset = self.dataset.map(self.random_jitter, num_parallel_calls=tf.data.AUTOTUNE)
+        
+        
+        self.dataset = self.dataset.map(lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
     
 
     def load_data(self, flags, data_path):
@@ -378,10 +384,10 @@ class DataGeneratorAug_512Mask(kr.utils.Sequence):
     @tf.function()
     def random_jitter(self, x, y, z):
         # make the image larger to crop part of it later
-        x, y, z = self.resize(x, y, z, 544, 544)
+        #x, y, z = self.resize(x, y, z, 544, 544)
         
         # Random cropping back to 256x256
-        x, y, z = self.random_crop(x, y, z, 512, 512)
+        #x, y, z = self.random_crop(x, y, z, 512, 512)
         
         rand_flip = tf.random.uniform(())
         if rand_flip > 0.66:
@@ -410,12 +416,12 @@ class DataGeneratorAug_512Mask(kr.utils.Sequence):
             y = tf.image.adjust_brightness(y, .3)
             z = tf.image.adjust_brightness(z, .3)
         
-        rand_cen_crop = tf.random.uniform(())
-        if rand_cen_crop > 0.5:
-            x = tf.image.central_crop(x, central_fraction=0.8)
-            y = tf.image.central_crop(y, central_fraction=0.8)
-            z = tf.image.central_crop(z, central_fraction=0.8)
-            x, y, z = self.resize(x, y, z, 512, 512)
+        # rand_cen_crop = tf.random.uniform(())
+        # if rand_cen_crop > 0.5:
+        #     x = tf.image.central_crop(x, central_fraction=0.8)
+        #     y = tf.image.central_crop(y, central_fraction=0.8)
+        #     z = tf.image.central_crop(z, central_fraction=0.8)
+        #     x, y, z = self.resize(x, y, z, 512, 512)
         
         rand_rot = tf.random.uniform(())
         if rand_rot > 0.5:
@@ -572,7 +578,7 @@ class DataGenerator_512Ready(kr.utils.Sequence):
     
 	# load data
     x, y, z = self.load_data(flags, self.data_path)
-    
+
 	# create dataset
     self.dataset = tf.data.Dataset.from_tensor_slices((x, y, z))
     self.dataset.shuffle(buffer_size=10, seed=42, reshuffle_each_iteration = not if_train)
