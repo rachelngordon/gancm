@@ -57,7 +57,7 @@ def main(flags):
     #     file.write("Training time: {:.2f} seconds".format(training_duration))
     #     print("Training time saved to", filename)
 
-    model.save_model(flags)
+    model.save_model()
     model.model_evaluate(test_data)
     model.plot_losses(history.history)
 
