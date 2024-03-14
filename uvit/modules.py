@@ -240,15 +240,18 @@ class SPADE(kr.layers.Layer):
 class GaussianSampler(kr.layers.Layer):
 	def __init__(self, batch_size, latent_dim, **kwargs):
 		super().__init__(**kwargs)
-		self.batch_size = 1 #batch_size
+		self.batch_size = batch_size
 		self.latent_dim = latent_dim
 	
 	def call(self, inputs):
-		means, variance = inputs
+		means, variance= inputs
 		epsilon = tf.random.normal(
 			shape=(self.batch_size, self.latent_dim), mean=0.0, stddev=1.0, seed=1234
 		)
+
 		samples = means + tf.exp(0.5 * variance) * epsilon
+
+
 		return samples
 	
 
@@ -422,6 +425,7 @@ class GanMonitorMask(kr.callbacks.Callback):
 		if epoch % self.epoch_interval == 0:
 # 			s, t = self.sample_data()
 			generated_images = self.model.generate_images(self.source, self.mask, num_images=self.n_samples)
+			print(f"----------------------------\n{generated_images.shape}")
 			for s_ in range(self.n_samples):
 				grid_row = min(generated_images.shape[0], 3)
 				f, axarr = plt.subplots(grid_row, 3, figsize=(18, grid_row * 6))
@@ -610,6 +614,8 @@ class Encoder(kr.Model):
 			padding="same",
 			kernel_initializer=kernel_init(1.0),activation='relu'
 		)
+		self.dense_1 = kr.layers.Dense(1000, activation="relu")
+		self.dense_2 = kr.layers.Dense(1000, activation="relu")
 
 
 
@@ -669,6 +675,8 @@ class Encoder(kr.Model):
 		x = self.flatten(x)
 		mean = self.mean_dense(x)
 		variance = self.variance_dense(x)
+		# mean_t = self.dense_1(x)
+		# variance_t = self.dense_2(x)
 
 		return [mean, variance]
 	

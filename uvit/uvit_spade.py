@@ -38,20 +38,21 @@ class UNetViTModel(kr.Model):
 		self.batch_size = flags.batch_size
 		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
 
-		self.vgg_feature_loss_coeff = 1 #flags.vgg_feature_loss_coeff
-		self.kl_divergence_loss_coeff = 50*flags.kl_divergence_loss_coeff
-		self.ssim_loss_coeff = flags.ssim_loss_coeff
+		self.vgg_feature_loss_coeff = 0.5 #flags.vgg_feature_loss_coeff
+		self.kl_divergence_loss_coeff = 10
+		self.ssim_loss_coeff = 2 #flags.ssim_loss_coeff
 		
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
 		self.encoder = modules.Encoder(self.flags)
 		self.sampler = modules.GaussianSampler(self.batch_size, self.latent_dim)
-		self.patch_size, self.combined_model = self.build_combined_model()
+		#self.patch_size, self.combined_model = self.build_combined_model()
 		
 		self.disc_loss_tracker = tf.keras.metrics.Mean(name="disc_loss")
 		self.vgg_loss_tracker = tf.keras.metrics.Mean(name="vgg_loss")
 		self.kl_loss_tracker = tf.keras.metrics.Mean(name="kl_loss")
 		self.ssim_loss_tracker = tf.keras.metrics.Mean(name="ssim_loss")
+		self.total_gen_loss_tracker = tf.keras.metrics.Mean(name="total_gen_loss")
 		
 		self.en_optimizer = kr.optimizers.Adam()
 		self.generator_optimizer = kr.optimizers.Adam(self.flags.gen_lr, beta_1=self.flags.gen_beta_1,
@@ -69,8 +70,11 @@ class UNetViTModel(kr.Model):
 			self.disc_loss_tracker,
 			self.vgg_loss_tracker,
 			self.kl_loss_tracker,
-			self.ssim_loss_tracker
+			self.ssim_loss_tracker,
+			self.total_gen_loss_tracker
 		]
+	
+	"""
 	
 	
 	def build_combined_model(self):
@@ -93,7 +97,7 @@ class UNetViTModel(kr.Model):
 		)
 		return patch_size, combined_model
 
-
+    """
 	def compile(self, **kwargs):
 		super().compile(**kwargs)
 	
@@ -131,11 +135,12 @@ class UNetViTModel(kr.Model):
 	
 	
 
-	def train_generator(self, latent_vector, segmentation_map, labels, image, time_input):
+	def train_generator(self, latent_vector, source, labels, image, time_input, mean, variance):
 		
 		self.discriminator.trainable = False
 
-
+		"""
+		
 		with tf.GradientTape(persistent=True) as en_tape:
 			mean, variance = self.encoder([image, time_input])
 
@@ -150,33 +155,32 @@ class UNetViTModel(kr.Model):
 		self.en_optimizer.apply_gradients(
 			zip(en_gradients, en_trainable_variables)
 		)
+		"""
+		#mean, variance = self.encoder([image, time_input])
 		
 
 		with tf.GradientTape() as de_tape:
+			kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
 
-			real_d_output = self.discriminator([segmentation_map, image])
-			fake_image = self.decoder(
-				[latent_vector, time_input, labels]
-			)
+			#real_d_output = self.discriminator([segmentation_map, image])
+			fake_image = self.decoder([latent_vector, time_input, labels])
+			pred_fake = self.discriminator([source, fake_image])[-1]
+			des_fake = self.discriminator_loss(False, pred_fake)
 
 			# Compute generator losses.
 			vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(image, fake_image)
 			ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(image, fake_image)
-			total_loss = vgg_loss + ssim_loss
+			total_loss = vgg_loss + ssim_loss + kl_loss + des_fake
 
-		all_trainable_variables = (
-				self.combined_model.trainable_variables
-		)
+		all_trainable_variables = (self.decoder.trainable_variables)
 		
 		gradients = de_tape.gradient(total_loss, all_trainable_variables)
 
-		self.generator_optimizer.apply_gradients(
-			zip(gradients, all_trainable_variables)
-		)
+		self.generator_optimizer.apply_gradients(zip(gradients, all_trainable_variables))
 		
 		
 
-		return kl_loss, vgg_loss, ssim_loss
+		return kl_loss, vgg_loss, ssim_loss, total_loss
 	
 
 
@@ -185,9 +189,7 @@ class UNetViTModel(kr.Model):
 		source, target, mask = data
 		batch_size = tf.shape(source)[0]
 		
-		t = tf.random.uniform(
-			minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
-		)
+		t = tf.random.uniform(minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64)
 		
 		# Obtain the learned moments of the real image distribution.
 		mean, variance = self.encoder([target, t])
@@ -196,7 +198,7 @@ class UNetViTModel(kr.Model):
 		latent_vector = self.sampler([mean, variance])
 
 		discriminator_loss = self.train_discriminator(latent_vector, t, source, target, mask)
-		kl_loss, vgg_loss, ssim_loss = self.train_generator( latent_vector, source, mask, target, t)
+		kl_loss, vgg_loss, ssim_loss, total_loss = self.train_generator(latent_vector, source, mask, target, t, mean, variance)
 		
 
 		# Report progress.
@@ -204,6 +206,7 @@ class UNetViTModel(kr.Model):
 		self.ssim_loss_tracker.update_state(ssim_loss)
 		self.disc_loss_tracker.update_state(discriminator_loss)
 		self.kl_loss_tracker.update_state(kl_loss)
+		self.total_gen_loss_tracker.update_state(total_loss)
 
 		results = {m.name: m.result() for m in self.metrics}
 		return results
@@ -234,7 +237,7 @@ class UNetViTModel(kr.Model):
 		kl_loss = self.kl_divergence_loss_coeff * loss.kl_divergence_loss(mean, variance)
 		vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(target, fake_images)
 		ssim_loss = self.ssim_loss_coeff * loss.SSIMLoss(target, fake_images)
-		#total_loss = vgg_loss + ssim_loss
+		total_loss = vgg_loss + ssim_loss + kl_loss + loss_fake
 
 
 		# Report progress.
@@ -242,6 +245,7 @@ class UNetViTModel(kr.Model):
 		self.ssim_loss_tracker.update_state(ssim_loss)
 		self.kl_loss_tracker.update_state(kl_loss)
 		self.disc_loss_tracker.update_state(total_discriminator_loss)
+		self.total_gen_loss_tracker.update_state(total_loss)
 
 		results = {m.name: m.result() for m in self.metrics}
 		return results
@@ -257,7 +261,7 @@ class UNetViTModel(kr.Model):
 			minval=0, maxval=self.timesteps, shape=(num_images,), dtype=tf.int64
 		)
 		
-		return self.decoder([latent_vector, t, mask])
+		return self.decoder.predict([latent_vector, t, tf.cast(mask, tf.float64)])
 	
 	# def plot_images(
 	# 		self, source, target, logs=None, num_rows=2, num_cols=4, figsize=(12, 5)
