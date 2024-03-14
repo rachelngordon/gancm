@@ -38,9 +38,9 @@ class UNetViTModel(kr.Model):
 		self.batch_size = flags.batch_size
 		self.mask_shape = (flags.crop_size, flags.crop_size, 2)
 
-		self.vgg_feature_loss_coeff = 0.5 #flags.vgg_feature_loss_coeff
-		self.kl_divergence_loss_coeff = 10
-		self.ssim_loss_coeff = 2 #flags.ssim_loss_coeff
+		self.vgg_feature_loss_coeff = 1 #flags.vgg_feature_loss_coeff
+		self.kl_divergence_loss_coeff = 100
+		self.ssim_loss_coeff = 10 #flags.ssim_loss_coeff
 		
 		self.discriminator = modules.Discriminator(self.flags)
 		self.decoder = modules.Decoder(self.flags)
