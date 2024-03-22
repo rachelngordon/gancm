@@ -17,11 +17,11 @@ def main(flags):
   #path = "/grand/EVITA/ct-mri/exp_results/models/" + flags.name
   #path = "/grand/EVITA/ct-mri/uvit_results/uvit_models/" + flags.name
   #path = "~/uvit_models/" + flags.name
-  path = "/media/aisec-102/DATA3/rachel/experiments/models/new_edge_threshold_exp/aug_ext/no_aug_models/" + flags.exp_name + '_d'
+  path = "/media/aisec-102/DATA3/rachel/experiments/models/new_edge_threshold_exp/models/" + flags.exp_name + '_d'
 
   #path = "/media/aisec-102/DATA3/rachel/experiments/models/4000_models/" + flags.exp_name + '_d'
 
-  # test data path: "/media/aisec-102/DATA3/rachel/data/test_data/IMAGE-DataSet#1/avg_eq_seg_test.npz"
+  # test data path: "/media/aisec-102/DATA3/rachel/data/test_data/IMAGE-DataSet#1/avg_eq_seg_test.npz" 
 
   model = kr.models.load_model(path)
   evaluate.pcxgan_evaluate(flags, model, test_data)
