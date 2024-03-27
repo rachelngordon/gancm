@@ -183,7 +183,7 @@ class Flags():
     self.print_options(opt)
     if opt.isTrain:
       self.save_options(opt)
-    
+ 
     # set gpu ids
 
     str_ids = opt.gpu_ids.split(',')
