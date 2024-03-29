@@ -155,6 +155,9 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         self.dataset = tf.data.Dataset.from_tensor_slices(
             (self.x, self.y, self.z)
         )
+        
+        self.dataset = self.dataset.map(lambda x, y, z: (x, y, tf.one_hot(tf.squeeze(tf.cast(z, tf.int32)), 2)), num_parallel_calls=tf.data.AUTOTUNE)
+    
         self.dataset = self.dataset.shuffle(500) if self.if_train else self.dataset
         
         if self.if_train:
