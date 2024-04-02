@@ -94,6 +94,7 @@ def show_plot_generated(ct, mri, gen_image, architecture, name, step):
           os.makedirs(sample_dir_)
       
       filename = '%s%s_plot_%s.png' % (sample_dir_, name, step)
+      print(filename)
       pyplot.savefig(filename)
       pyplot.close()
 
@@ -124,6 +125,7 @@ def predict_gancm_both(flags, decoder_file, ct, mri, label):
   for image in generated:
     show_plot_generated(ct, mri, image, "GAN-CM", modelname, counter)
     counter += 1
+    print(counter)
   
   return generated
 
