@@ -267,12 +267,12 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
             y = tf.image.adjust_brightness(y, .3)
             z = tf.image.adjust_brightness(z, .3)
         
-        rand_cen_crop = tf.random.uniform(())
-        if rand_cen_crop > 0.5:
-            x = tf.image.central_crop(x, central_fraction=0.8)
-            y = tf.image.central_crop(y, central_fraction=0.8)
-            z = tf.image.central_crop(z, central_fraction=0.8)
-            x, y, z = self.resize(x, y, z, 256, 256)
+        # rand_cen_crop = tf.random.uniform(())
+        # if rand_cen_crop > 0.5:
+        #     x = tf.image.central_crop(x, central_fraction=0.8)
+        #     y = tf.image.central_crop(y, central_fraction=0.8)
+        #     z = tf.image.central_crop(z, central_fraction=0.8)
+        #     x, y, z = self.resize(x, y, z, 256, 256)
         
         rand_rot = tf.random.uniform(())
         if rand_rot > 0.5:
