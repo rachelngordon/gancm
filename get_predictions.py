@@ -21,7 +21,7 @@ flags = Flags().parse()
 
 
 # get pcxgan generated images
-test_data_path = "/media/aisec-102/DATA3/rachel/data/anonymized_data/test2/gancm_processed_data/avg_eq_seg.npz"
+test_data_path = "/media/aisec-102/DATA3/rachel/data/anonymized_data/test2/gancm_processed_data/avg_eq_seg"
 
 test_dataset = data_loader.DataGenerator_Ready(flags, test_data_path, if_train=False).load()
 
