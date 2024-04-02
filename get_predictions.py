@@ -21,14 +21,14 @@ flags = Flags().parse()
 
 
 # get pcxgan generated images
-test_data_path = "/media/aisec-102/DATA3/rachel/data/CV/new_edge/no_eq_edge_threshold/norm_mask_neg1pos1_fold"
+test_data_path = "/media/aisec-102/DATA3/rachel/data/anonymized_data/test2/gancm_processed_data/avg_eq_seg.npz"
 
 test_dataset = data_loader.DataGenerator_Ready(flags, test_data_path, if_train=False).load()
 
-model_path = "/media/aisec-102/DATA3/rachel/experiments/models/new_edge_threshold_exp/models/pcx_just_edge_thresh_no_eq_1234_d"
+model_path = "/media/aisec-102/DATA3/rachel/experiments/models/aug_exp_pixel/gancm_256_orig_aug_d"
 
 for ct, mri, label in test_dataset:
-    evaluate.predict_gancm_mask_only(flags, model_path, ct, mri, label)
+    evaluate.predict_gancm_both(flags, model_path, ct, mri, label)
 
 
 print("pcxgan complete")
