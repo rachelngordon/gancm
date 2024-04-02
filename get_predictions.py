@@ -31,7 +31,7 @@ counter=0
 for ct, mri, label in test_dataset:
     evaluate.predict_gancm_both(flags, model_path, ct, mri, label, counter)
     counter += 1
-    print(counter)
+
 
 
 print("pcxgan complete")

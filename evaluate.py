@@ -94,7 +94,7 @@ def show_plot_generated(ct, mri, gen_image, architecture, name, step):
           os.makedirs(sample_dir_)
       
       filename = '%s%s_plot_%s.png' % (sample_dir_, name, step)
-      print(filename)
+
       pyplot.savefig(filename)
       pyplot.close()
 
