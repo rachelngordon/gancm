@@ -111,7 +111,7 @@ def show_plot_generated(ct, mri, gen_image, architecture, name, step):
     pyplot.close()
     '''
 # predict gancm with both ct and mask
-def predict_gancm_both(flags, decoder_file, ct, mri, label, counter=0):
+def predict_gancm_both(flags, decoder_file, ct, mri, label, counter):
   
   decoder = load_model(decoder_file)
   decoder.compile()
@@ -123,8 +123,6 @@ def predict_gancm_both(flags, decoder_file, ct, mri, label, counter=0):
 
   for image in generated:
     show_plot_generated(ct, mri, image, "GAN-CM", modelname, counter)
-    counter += 1
-    print(counter)
   
   return generated
 

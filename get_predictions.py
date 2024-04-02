@@ -27,8 +27,11 @@ test_dataset = data_loader.DataGenerator_Ready(flags, test_data_path, if_train=F
 
 model_path = "/media/aisec-102/DATA3/rachel/experiments/models/aug_exp_pixel/gancm_256_aug_no_resize_crop_d"
 
+counter=0
 for ct, mri, label in test_dataset:
-    evaluate.predict_gancm_both(flags, model_path, ct, mri, label)
+    evaluate.predict_gancm_both(flags, model_path, ct, mri, label, counter)
+    counter += 1
+    print(counter)
 
 
 print("pcxgan complete")
