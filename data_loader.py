@@ -2,6 +2,7 @@ import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
 import math
+import tensorflow_addons as tfa
 #import keras_cv
 
 # data generator for augmenting pcxgan data
@@ -146,7 +147,9 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
         self.batch_size = flags.batch_size
         self.if_train = if_train
         self.multiply_factor = 3 if if_train else 1
-        
+
+        self.flags = flags
+
         if self.multiply_factor > 1:
             self.x = np.repeat(self.x, self.multiply_factor, axis=0)
             self.y = np.repeat(self.y, self.multiply_factor, axis=0)
@@ -235,19 +238,19 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
     @tf.function()
     def random_jitter(self, x, y, z):
         # # make the image larger to crop part of it later
-        # x, y, z = self.resize(x, y, z, 286, 286)
+        # x, y, z = self.resize(x, y, z, self.flags.resize_size, self.flags.resize_size)
         
         # # Random cropping back to 256x256
-        # x, y, z = self.random_crop(x, y, z, 256, 256)
+        # x, y, z = self.random_crop(x, y, z, self.flags.crop_size, self.flags.crop_size)
         
         rand_flip = tf.random.uniform(())
-        if rand_flip > 0.66:
+        if rand_flip > self.flags.rand_flip_h:
             # Random horizontal flipping
             x = tf.image.flip_left_right(x)
             y = tf.image.flip_left_right(y)
             z = tf.image.flip_left_right(z)
         
-        elif rand_flip > 0.3:
+        elif rand_flip > self.flags.rand_flip_v:
             # Random vertical flipping
             x = tf.image.flip_up_down(x)
             y = tf.image.flip_up_down(y)
@@ -262,23 +265,28 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
 
         """
         rand_brightness = tf.random.uniform(())
-        if rand_brightness > 0.5:
-            x = tf.image.adjust_brightness(x, .3)
-            y = tf.image.adjust_brightness(y, .3)
-            z = tf.image.adjust_brightness(z, .3)
+        if rand_brightness > self.flags.bright_val:
+            x = tf.image.adjust_brightness(x, self.flags.bright_intensity)
+            y = tf.image.adjust_brightness(y, self.flags.bright_intensity)
+            z = tf.image.adjust_brightness(z, self.flags.bright_intensity)
         
         # rand_cen_crop = tf.random.uniform(())
-        # if rand_cen_crop > 0.5:
-        #     x = tf.image.central_crop(x, central_fraction=0.8)
-        #     y = tf.image.central_crop(y, central_fraction=0.8)
-        #     z = tf.image.central_crop(z, central_fraction=0.8)
-        #     x, y, z = self.resize(x, y, z, 256, 256)
+        # if rand_cen_crop > self.flags.crop_val:
+        #     x = tf.image.central_crop(x, central_fraction=self.flags.cen_fraction)
+        #     y = tf.image.central_crop(y, central_fraction=self.flags.cen_fraction)
+        #     z = tf.image.central_crop(z, central_fraction=self.flags.cen_fraction)
+        #     x, y, z = self.resize(x, y, z, self.flags.crop_size, self.flags.crop_size)
         
         rand_rot = tf.random.uniform(())
-        if rand_rot > 0.5:
-            x = tf.image.rot90(x)
-            y = tf.image.rot90(y)
-            z = tf.image.rot90(z)
+        if rand_rot > self.flags.rot_val:
+            if self.flags.rot_angle == 90:
+                x = tf.image.rot90(x)
+                y = tf.image.rot90(y)
+                z = tf.image.rot90(z)
+            else:
+                x = tfa.image.rotate(x, tf.constant(self.flags.rot_angle * (math.pi / 180)))  # Convert degrees to radians
+                y = tfa.image.rotate(y, tf.constant(self.flags.rot_angle * (math.pi / 180)))
+                z = tfa.image.rotate(z, tf.constant(self.flags.rot_angle * (math.pi / 180)))
         
         return x, y, z
     
@@ -493,8 +501,8 @@ class DataGenerator_Ready(kr.utils.Sequence):
 
 	# load test fold
     else: 
-        #path = f"{data_path}{flags.test_fold}.npz"
-        path = f"{data_path}.npz"
+        path = f"{data_path}{flags.test_fold}.npz"
+        #path = f"{data_path}.npz"
         data = np.load(path)
         x, y, z = data['arr_0'], data['arr_1'], data['arr_2']
         return x, y, z

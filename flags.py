@@ -90,7 +90,17 @@ class Flags():
     parser.add_argument('--disc_n_filters', type=int, default=64 , help='' )
     parser.add_argument('--disc_filter_size', type=int, default=4 , help='' )
     parser.add_argument('--disc_strides', type=int, default=2 , help='' )
-    
+
+    # Augmentation Parameters
+    parser.add_argument('--resize_size', type=float, default= 286, help='' )
+    parser.add_argument('--rand_flip_h', type=float, default= 0.66, help='' )
+    parser.add_argument('--rand_flip_v', type=float, default= 0.3, help='' )
+    parser.add_argument('--bright_intensity', type=float, default= 0.3, help='' )
+    parser.add_argument('--bright_val', type=float, default= 0.5, help='' )
+    parser.add_argument('--rot_val', type=float, default= 0.5, help='' )
+    parser.add_argument('--rot_angle', type=float, default=90, help='' )
+    parser.add_argument('--crop_val', type=float, default= 0.5, help='' )
+    parser.add_argument('--cen_fraction', type=float, default=0.8, help='' )
     
     
     # Monitor options
