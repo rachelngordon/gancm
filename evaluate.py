@@ -221,7 +221,7 @@ def pix2pix_evaluate(flags, generator, test_data, epoch=0):
 
 
 
-def pcxgan_evaluate(flags, decoder, test_data, epoch=0):
+def pcxgan_evaluate(flags, decoder, exp_name, test_data, epoch=0):
   results = []
   
   for ct, mri, label in test_data:
@@ -248,7 +248,8 @@ def pcxgan_evaluate(flags, decoder, test_data, epoch=0):
   results = np.array(results, dtype=object).mean(axis=0)
   
   filename = "results_{}_{}.log".format(epoch, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-  results_dir = os.path.join(flags.result_logs, flags.name)
+  #results_dir = os.path.join(flags.result_logs, flags.name)
+  results_dir = os.path.join(flags.result_logs, exp_name)
   if not os.path.exists(results_dir):
     os.makedirs(results_dir)
   log_file = os.path.join(results_dir, filename)
