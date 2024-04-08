@@ -2,7 +2,7 @@ import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
 import math
-import tensorflow_addons as tfa
+#import tensorflow_addons as tfa
 #import keras_cv
 
 # data generator for augmenting pcxgan data
