@@ -3,8 +3,10 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 ~/gancm/train_uvit_spade.py --exp_name uvit_spade_seg_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/eagle/EVITA/ct-mri/data/CV/eq_mask/norm_mask_neg1pos1_fold'", 0),
-    ("python3 ~/gancm/train_uvit_spade.py --exp_name uvit_spade_seg_no_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/eagle/EVITA/ct-mri/data/CV/no_eq_mask/norm_mask_neg1pos1_fold'", 1)
+    ("python3 ~/gancm/train_uvit_spade.py --exp_name uvit_spade_seg_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/eagle/EVITA/ct-mri/data/CV/eq_seg/norm_mask_neg1pos1_fold'", 0),
+    ("python3 ~/gancm/train_uvit_spade.py --exp_name uvit_spade_seg_no_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/eagle/EVITA/ct-mri/data/CV/no_eq_seg/norm_mask_neg1pos1_fold'", 1),
+    ("python3 ~/gancm/train_uvit_spade.py --exp_name uvit_spade_seg_avg_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/eagle/EVITA/ct-mri/data/CV/avg_eq_seg/norm_mask_neg1pos1_fold'", 2),
+    ("python3 ~/gancm/train_uvit_spade.py --exp_name uvit_spade_bin_edge_no_eq_2345 --test_fold 1 --epochs 500 --batch_size 1 --data_path '/eagle/EVITA/ct-mri/data/CV/no_eq_bin_edge/norm_mask_neg1pos1_fold'", 3)
     ]
 
 # Function to run a command on a GPU
