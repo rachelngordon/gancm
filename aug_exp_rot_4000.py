@@ -3,8 +3,8 @@ import multiprocessing
 
 # Define the command lines and GPU IDs
 command_lines = [
-    ("python3 ~/gancm/train_gancm_aug_mask.py --exp_name gancm_256_aug_no_crop_4000 --data_path '/eagle/EVITA/ct-mri/data/CV/avg_eq_seg/norm_mask_neg1pos1_fold' --epochs 4000 --test_fold 5 --epoch_interval 100 --batch_size 32 --crop_val 1", 0, 1),
-    ("python3 ~/gancm/train_gancm_aug_mask.py --exp_name gancm_256_aug_no_crop_2000 --data_path '/eagle/EVITA/ct-mri/data/CV/avg_eq_seg/norm_mask_neg1pos1_fold' --epochs 2000 --test_fold 5 --epoch_interval 100 --batch_size 32 --crop_val 1", 2, 3)
+    ("python3 ~/gancm/train_gancm_aug_mask.py --exp_name gancm_32_aug_no_cen_crop_resize320_2000 --data_path '/eagle/EVITA/ct-mri/data/CV/avg_eq_seg/norm_mask_neg1pos1_fold' --epochs 2000 --test_fold 5 --epoch_interval 100 --batch_size 32 --crop_val 1", 0, 1),
+    ("python3 ~/gancm/train_gancm_aug_mask.py --exp_name gancm_64_aug_no_cen_crop_resize320_2000 --data_path '/eagle/EVITA/ct-mri/data/CV/avg_eq_seg/norm_mask_neg1pos1_fold' --epochs 2000 --test_fold 5 --epoch_interval 100 --batch_size 64 --crop_val 1", 2, 3)
 ]
 
 # Function to run a command on two GPUs

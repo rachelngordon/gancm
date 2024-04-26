@@ -237,11 +237,11 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
     
     @tf.function()
     def random_jitter(self, x, y, z):
-        # # make the image larger to crop part of it later
-        # x, y, z = self.resize(x, y, z, self.flags.resize_size, self.flags.resize_size)
+        # make the image larger to crop part of it later
+        x, y, z = self.resize(x, y, z, self.flags.resize_size, self.flags.resize_size)
         
-        # # Random cropping back to 256x256
-        # x, y, z = self.random_crop(x, y, z, self.flags.crop_size, self.flags.crop_size)
+        # Random cropping back to 256x256
+        x, y, z = self.random_crop(x, y, z, self.flags.crop_size, self.flags.crop_size)
         
         rand_flip = tf.random.uniform(())
         if rand_flip > self.flags.rand_flip_h:
