@@ -2,7 +2,7 @@ import tensorflow.keras as kr
 import tensorflow as tf
 import numpy as np
 import math
-import tensorflow_addons as tfa
+#import tensorflow_addons as tfa
 #import keras_cv
 
 # data generator for augmenting pcxgan data
@@ -283,10 +283,10 @@ class DataGeneratorAug_Mask(kr.utils.Sequence):
                 x = tf.image.rot90(x)
                 y = tf.image.rot90(y)
                 z = tf.image.rot90(z)
-            else:
-                x = tfa.image.rotate(x, tf.constant(self.flags.rot_angle * (math.pi / 180)))  # Convert degrees to radians
-                y = tfa.image.rotate(y, tf.constant(self.flags.rot_angle * (math.pi / 180)))
-                z = tfa.image.rotate(z, tf.constant(self.flags.rot_angle * (math.pi / 180)))
+            # else:
+            #     x = tfa.image.rotate(x, tf.constant(self.flags.rot_angle * (math.pi / 180)))  # Convert degrees to radians
+            #     y = tfa.image.rotate(y, tf.constant(self.flags.rot_angle * (math.pi / 180)))
+            #     z = tfa.image.rotate(z, tf.constant(self.flags.rot_angle * (math.pi / 180)))
         
         return x, y, z
     
